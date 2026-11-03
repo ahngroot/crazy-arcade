@@ -10,6 +10,18 @@ export const GAME_CONFIG = Object.freeze({
   blastMs: 500,
   initialBalloons: 1,
   initialRange: 1,
+  playerRadius: 0.28,
+  cornerAssist: 0.23,
+  fixedStepMs: 1000 / 60,
+  maxFrameMs: 250,
+  trappedMs: 1500,
+  respawnMs: 800,
+  invulnerableMs: 1500,
+  itemDropChance: 0.45,
+  maxBalloons: 6,
+  maxRange: 6,
+  maxSpeed: 6,
+  speedIncrement: 0.5,
   comboWindowMs: 3_000,
   goldenCombo: 8,
   chaserThreshold: 4,
@@ -25,6 +37,8 @@ export interface Position {
   x: number;
   y: number;
 }
+
+export * from "./game.js";
 export interface PlayerState {
   id: string;
   nickname: string;
@@ -59,12 +73,19 @@ export interface ClientEvents {
   pingCheck: (reply: (serverTime: number) => void) => void;
 }
 
-/** Rendering fixture only. Future simulation will own maps and collisions. */
+/** Symmetric arena shared by the menu preview and the practice simulation. */
 export function createPreviewMap(): Tile[][] {
   return Array.from({ length: GAME_CONFIG.rows }, (_, y) =>
     Array.from({ length: GAME_CONFIG.columns }, (_, x): Tile => {
       const mirrorX = Math.min(x, GAME_CONFIG.columns - 1 - x);
-      if (x === 0 || y === 0 || x === 14 || y === 12 || x === 7) return "wall";
+      if (
+        x === 0 ||
+        y === 0 ||
+        x === GAME_CONFIG.columns - 1 ||
+        y === GAME_CONFIG.rows - 1 ||
+        x === Math.floor(GAME_CONFIG.columns / 2)
+      )
+        return "wall";
       if (mirrorX === 1 && y <= 2) return "floor";
       if (mirrorX % 2 === 0 && y % 2 === 0) return "wall";
       return (mirrorX + y) % 3 === 0 ? "crate" : "floor";

@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-test("menu renders, connects and opens both stage-one screens", async ({
+test("menu renders, connects and opens practice and online guidance", async ({
   page,
 }) => {
   const errors: string[] = [];
@@ -17,9 +17,7 @@ test("menu renders, connects and opens both stage-one screens", async ({
   });
   for (let visit = 0; visit < 2; visit++) {
     await page.getByRole("button", { name: /연습 모드/ }).click();
-    await expect(page.getByRole("dialog")).toContainText(
-      "아직 구현되지 않았습니다",
-    );
+    await expect(page.getByRole("dialog")).toContainText("Space 물풍선");
     await expect(page.locator("#practice-arena canvas")).toHaveCount(1);
     await page.getByRole("button", { name: "메뉴로 돌아가기" }).click();
     await expect(page.locator("#practice-arena canvas")).toHaveCount(0);
