@@ -2,13 +2,14 @@ import { io, type Socket } from "socket.io-client";
 import type { ClientEvents, ServerEvents } from "@bubble/shared";
 import { effectiveStats, type PracticeState } from "@bubble/shared";
 import type { PracticeController } from "./practice";
+import { setupOnline } from "./online";
 import "./style.css";
 
 const extraStats = `<div class="competition-stats"><dl><dt>처치 점수</dt><dd data-stat="score"></dd><dt>콤보</dt><dd data-stat="combo"></dd><dt>몬스터</dt><dd data-stat="monsters"></dd></dl><div class="inventory"><span>바늘 <b data-stat="needle"></b></span><span>보호막 <b data-stat="shield"></b></span><span>파워 <b data-stat="power"></b></span></div><p data-stat="buffs"></p></div>`;
 
 document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
   <div class="shell">
-    <header class="topbar"><a class="brand" href="/" aria-label="버블 크리터 홈"><span class="brand-icon">b.</span><span>BUBBLE CRITTER<small>작은 친구들, 커다란 한 판.</small></span></a><span class="build-tag">DEVELOPMENT <b>03 / 08</b></span></header>
+    <header class="topbar"><a class="brand" href="/" aria-label="버블 크리터 홈"><span class="brand-icon">b.</span><span>BUBBLE CRITTER<small>작은 친구들, 커다란 한 판.</small></span></a><span class="build-tag">DEVELOPMENT <b>04 / 08</b></span></header>
     <main>
       <div class="eyebrow"><span></span> THE LITTLE ARCADE CLUB</div>
       <section class="intro"><div><h1>작은 물방울로,<br />시작하는 큰 모험<span>.</span></h1><p>톡, 놓고 · 쏙, 피하고 · 팡, 터뜨려요.<br />둘이 함께할 새로운 아케이드, 버블 크리터.</p></div><div class="intro-note"><span>✳</span><p>A LITTLE SPLASH.<br />A LOT OF FUN.</p></div></section>
@@ -18,16 +19,17 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
           <button id="competition" class="mode primary"><span class="mode-icon">❋</span><span><strong>꼬물이 대전</strong><small>몬스터를 잡아 상대 정원으로! · 로컬 2인</small></span><span class="arrow">↗</span></button>
           <label class="duration-label">경기 시간 <select id="round-duration"><option value="180000">기본 180초</option><option value="30000">짧게 30초</option></select></label>
           <button id="practice" class="mode secondary"><span class="mode-icon">✳</span><span><strong>연습 모드</strong><small>몬스터 없이 물풍선 연습하기</small></span><span class="arrow">↗</span></button>
-          <button id="online" class="mode secondary"><span class="mode-icon">◎</span><span><strong>온라인 대전</strong><small>개발 안내 · 서버 연결 확인</small></span><span class="arrow">↗</span></button>
-          <div class="stage-note"><span>세 번째 단계 · 작은 친구들의 경쟁</span><p>처치한 몬스터가 상대 진영에 늘어나요.<br />콤보와 특수 아이템으로 점수를 겨뤄요.</p></div>
-          <div class="connection"><span id="connection-dot"></span><span id="connection" role="status">서버 연결 중…</span><span>DEV 0.3</span></div>
+          <button id="online" class="mode secondary"><span class="mode-icon">◎</span><span><strong>온라인 대전</strong><small>방 코드로 만나 각자의 브라우저에서 플레이</small></span><span class="arrow">↗</span></button>
+          <div class="stage-note"><span>네 번째 단계 · 함께하는 정원</span><p>8자리 방 코드를 친구에게 공유하세요.<br />둘 다 READY를 누르면 대전이 시작돼요.</p></div>
+          <div class="connection"><span id="connection-dot"></span><span id="connection" role="status">서버 연결 중…</span><span>DEV 0.4</span></div>
         </aside>
       </section>
-      <section class="bottom-grid"><div><span class="detail-icon">⌘</span><div><h3>간단한 조작, 즐거운 대결</h3><p>이동 <kbd>W A S D</kbd> 물풍선 <kbd>SPACE</kbd><small>P2는 방향키 이동 · Enter 물풍선</small></p></div></div><div><span class="detail-icon">❋</span><div><h3>우리만의 작은 친구들</h3><p>직접 만든 캐릭터와 밝은 정원.<br />새로운 버블 세계를 함께 만들어가요.</p></div></div><div><span class="detail-icon">↗</span><div><h3>두 사람을 위한 아케이드</h3><p>방 코드로 만나는 1:1 대전.<br />온라인 플레이는 4단계에서 준비됩니다.</p></div></div></section>
+      <section class="bottom-grid"><div><span class="detail-icon">⌘</span><div><h3>간단한 조작, 즐거운 대결</h3><p>이동 <kbd>W A S D</kbd> 물풍선 <kbd>SPACE</kbd><small>로컬 P2는 방향키 이동 · Enter 물풍선</small></p></div></div><div><span class="detail-icon">❋</span><div><h3>우리만의 작은 친구들</h3><p>직접 만든 캐릭터와 밝은 정원.<br />새로운 버블 세계를 함께 만들어가요.</p></div></div><div><span class="detail-icon">↗</span><div><h3>두 사람을 위한 아케이드</h3><p>방 코드로 만나는 1:1 대전.<br />온라인은 두 사람이 READY하면 시작해요.</p></div></div></section>
     </main><footer><span>BUBBLE CRITTER DUEL © 2026</span><span>독자 리소스로 만드는 비공식 아케이드 프로젝트</span></footer>
   </div>
   <dialog id="practice-dialog" aria-labelledby="practice-title"><div class="dialog-header"><div><span class="section-number">PRACTICE · LOCAL DUO</span><h2 id="practice-title">둘이 노는 클로버 정원</h2></div><button class="close" aria-label="연습 화면 닫기">×</button></div>
     <p class="practice-help"><b>P1 빨강</b> WASD 이동 · Space 물풍선　 /　 <b>P2 초록</b> 방향키 이동 · Enter 물풍선<br />2.5초 뒤 팡! 상자를 부수고 아이템을 모으세요. 물줄기에 닿으면 갇힌 뒤 재생성됩니다.</p>
+    <p id="network-message" role="status" hidden></p>
     <div id="round-bar" hidden><span>RED <b id="red-score">0</b></span><div><time id="round-clock">03:00</time><small id="round-warning" role="status"></small></div><span><b id="green-score">0</b> GREEN</span></div>
     <p id="special-controls" hidden>P1 바늘 Q · 보호막 E · 파워 R　 /　 P2 바늘 J · 보호막 K · 파워 L<br />초록 꼬물이는 안전해요. 보라 까칠이와 닿으면 탈락! 8연속 처치하면 황금 등장.</p>
     <div class="practice-layout"><div class="competition-stage"><div id="practice-arena" aria-label="로컬 2인 게임 경기장"></div><section id="result-panel" aria-label="경기 결과" hidden><span>ROUND COMPLETE</span><h3 id="result-title"></h3><p id="result-score"></p><p>아래 재대결 버튼으로 다시 시작해요.</p></section></div><aside class="practice-hud" aria-label="플레이어 능력치">
@@ -35,7 +37,10 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
       <div class="player-panel green-panel" data-player="p2"><h3>P2 · GREEN</h3><p class="player-status" role="status"></p><dl><dt>물풍선</dt><dd data-stat="balloon"></dd><dt>물줄기</dt><dd data-stat="range"></dd><dt>이동속도</dt><dd data-stat="speed"></dd><dt>재생성</dt><dd data-stat="deaths"></dd></dl>${extraStats}</div>
       <p class="item-guide">아이템 안내<br /><span>●</span> 물풍선 개수 증가<br /><span>＋</span> 물줄기 거리 증가<br /><span>▶</span> 이동속도 증가</p><p class="practice-note" id="mode-note">연습은 시간제한 없이 계속됩니다.</p>
     </aside></div><div class="practice-actions"><button id="restart-practice">처음부터 다시</button><button class="back">메뉴로 돌아가기</button></div></dialog>
-  <dialog id="online-dialog" aria-labelledby="online-title"><div class="dialog-header"><div><span class="section-number">ONLINE · COMING IN STAGE 04</span><h2 id="online-title">함께할 준비를 하고 있어요</h2></div><button class="close" aria-label="온라인 안내 닫기">×</button></div><p>현재는 서버 연결 기반만 동작합니다.<br />방 생성, 코드 입장, READY, 온라인 대전은 4단계에서 구현합니다.</p><div class="online-status" id="online-status" role="status">연결 상태 확인 중…</div><button class="back">확인했어요</button></dialog>
+  <dialog id="online-dialog" aria-labelledby="online-title"><div class="dialog-header"><div><span class="section-number">ONLINE · CRITTER DUEL</span><h2 id="online-title">친구와 정원에서 만나요</h2></div><button class="close" aria-label="온라인 화면 닫기">×</button></div>
+    <div id="online-setup"><label>닉네임<input id="nickname" maxlength="16" autocomplete="nickname" placeholder="1~16자 닉네임" /></label><label>온라인 경기 시간<select id="online-duration"><option value="180000">180초</option><option value="30000">30초</option></select></label><button id="online-create">방 만들기</button><div class="join-row"><label>방 코드<input id="join-code" maxlength="8" placeholder="8자리 코드" autocapitalize="characters" /></label><button id="online-join">방 참가하기</button></div></div>
+    <div id="online-lobby" hidden><p id="online-team"></p><output id="room-code" aria-label="현재 방 코드"></output><div class="lobby-actions"><button id="copy-code">코드 복사</button><button id="copy-link">초대 링크 복사</button></div><ul id="room-players"></ul><p id="lobby-status" role="status"></p><div class="lobby-actions"><button id="online-ready">READY</button><button id="online-leave">방 나가기</button></div></div>
+    <p id="online-message" role="status"></p><div class="online-status" id="online-status" role="status">연결 상태 확인 중…</div><button class="back">메뉴로 돌아가기</button></dialog>
 `;
 
 const socket: Socket<ServerEvents, ClientEvents> = io({ timeout: 5000 });
@@ -47,7 +52,7 @@ function connection(ready: boolean) {
     .querySelector("#connection-dot")!
     .classList.toggle("connected", ready);
   document.querySelector("#online-status")!.textContent = ready
-    ? "● Socket.IO 연결 확인 · 게임방 기능은 준비 중"
+    ? "● 서버 연결됨 · 온라인 2인 대전"
     : "○ 서버에 연결할 수 없습니다. 개발 서버 실행 상태를 확인하세요.";
 }
 socket.on("hello", (message) => connection(message.protocol === 1));
@@ -56,6 +61,8 @@ socket.on("connect_error", () => connection(false));
 
 let preview: PracticeController | undefined;
 let previewGeneration = 0;
+let onlineGame = false;
+let onlinePlayerId: string | null = null;
 function updatePracticeHud(state: PracticeState) {
   document.querySelector<HTMLElement>("#practice-arena")!.dataset.tick = String(
     state.tick,
@@ -95,6 +102,20 @@ function updatePracticeHud(state: PracticeState) {
       document.querySelector("#result-score")!.textContent =
         `RED ${state.players[0].score} : ${state.players[1].score} GREEN`;
     }
+  }
+  if (onlineGame) {
+    const view = online.current();
+    const button =
+      document.querySelector<HTMLButtonElement>("#restart-practice")!;
+    button.hidden = !view || view.phase === "PLAYING";
+    const self = view?.players.find((p) => p.id === onlinePlayerId);
+    button.disabled =
+      !online.connected() ||
+      !!self?.ready ||
+      view?.phase === "COUNTDOWN" ||
+      view?.players.length !== 2 ||
+      !!view?.players.some((p) => !p.connected);
+    button.textContent = self?.ready ? "재대결 준비 중" : "재대결 준비";
   }
   for (const player of state.players) {
     const panel = document.querySelector<HTMLElement>(
@@ -156,13 +177,76 @@ sceneModule
     document.querySelector("#arena")!.textContent =
       "화면을 불러오지 못했습니다. 새로고침해 주세요.";
   });
-for (const mode of ["practice", "competition", "online"]) {
+const online = setupOnline(socket, {
+  openGame: async (timeline) => {
+    const dialog =
+      document.querySelector<HTMLDialogElement>("#practice-dialog")!;
+    onlineGame = true;
+    onlinePlayerId = timeline.playerId;
+    dialog.classList.add("competition-mode");
+    document.querySelector("#practice-title")!.textContent =
+      `온라인 대전 · ${timeline.playerId === "p1" ? "빨강 팀" : "초록 팀"}`;
+    document.querySelector(".practice-help")!.textContent =
+      "내 캐릭터 이동 WASD / 방향키 · 물풍선 Space / Enter · 바늘 Q/J · 보호막 E/K · 파워 R/L";
+    document.querySelector("#mode-note")!.textContent =
+      "각자 자신의 캐릭터만 조작합니다. 서버에서 경기 상태를 판정합니다.";
+    for (const element of document.querySelectorAll<HTMLElement>(
+      "#round-bar,#special-controls,.competition-stats,#network-message",
+    ))
+      element.hidden = false;
+    if (!dialog.open) dialog.showModal();
+    menuPreview?.loop.sleep();
+    const generation = ++previewGeneration;
+    try {
+      const { mountPractice } = await import("./practice");
+      if (
+        !dialog.open ||
+        generation !== previewGeneration ||
+        !timeline.view?.game
+      )
+        return;
+      preview?.destroy(true);
+      preview = mountPractice(
+        document.querySelector("#practice-arena")!,
+        updatePracticeHud,
+        {
+          remote: {
+            initial: timeline.view.game,
+            frame: (inputs, delta) =>
+              timeline.frame(inputs, delta, online.connected()),
+            restart: () => void online.ready(),
+          },
+        },
+      );
+    } catch {
+      document.querySelector("#network-message")!.textContent =
+        "게임 화면을 열지 못했습니다. 새로고침하면 자리 복구를 시도합니다.";
+    }
+  },
+  closeGame: () => {
+    onlineGame = false;
+    document.querySelector<HTMLDialogElement>("#practice-dialog")!.close();
+  },
+  status: (message) => {
+    if (onlineGame)
+      document.querySelector("#network-message")!.textContent = message;
+  },
+});
+for (const mode of ["practice", "competition"]) {
   const dialog = document.querySelector<HTMLDialogElement>(
     `#${mode === "competition" ? "practice" : mode}-dialog`,
   )!;
   document.querySelector(`#${mode}`)!.addEventListener("click", async () => {
     dialog.showModal();
-    if (mode !== "online") {
+    {
+      onlineGame = false;
+      document.querySelector<HTMLElement>("#network-message")!.hidden = true;
+      const restart =
+        document.querySelector<HTMLButtonElement>("#restart-practice")!;
+      restart.hidden = false;
+      restart.disabled = false;
+      document.querySelector(".practice-help")!.textContent =
+        "P1 빨강 WASD 이동 · Space 물풍선 / P2 초록 방향키 이동 · Enter 물풍선. 2.5초 뒤 팡! 물줄기에 닿으면 갇힌 뒤 재생성됩니다.";
       menuPreview?.loop.sleep();
       const competition = mode === "competition";
       dialog.classList.toggle("competition-mode", competition);
@@ -208,10 +292,13 @@ for (const mode of ["practice", "competition", "online"]) {
     );
   dialog.addEventListener("close", () => {
     if (mode === "practice") {
+      const leavingOnline = onlineGame;
+      onlineGame = false;
       previewGeneration++;
       preview?.destroy(true);
       preview = undefined;
       menuPreview?.loop.wake();
+      if (leavingOnline) void online.leave();
     }
   });
 }

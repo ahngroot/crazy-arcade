@@ -199,7 +199,7 @@ export function collectItem(p: PracticePlayer, kind: ItemKind) {
   else p.inventory[kind] = Math.min(C.inventoryLimit, p.inventory[kind] + 1);
 }
 
-function move(
+export function movePlayer(
   s: PracticeState,
   p: PracticePlayer,
   raw: LocalInput,
@@ -421,7 +421,7 @@ function tick(s: PracticeState, inputs: readonly LocalInput[]) {
     }
     if (p.status === "respawning" && s.time >= p.statusUntil) respawn(s, p);
     if (p.status === "active") {
-      move(s, p, input, dt);
+      movePlayer(s, p, input, dt);
       // Remove the pass-through permission once the entire body has left the cell.
       for (const b of s.balloons)
         if (!overlapsCell(p.position, b))

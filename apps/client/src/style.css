@@ -9,6 +9,91 @@
 [hidden] {
   display: none !important;
 }
+button:disabled {
+  opacity: 0.5;
+  cursor: default;
+  transform: none;
+}
+#online-dialog label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 12px;
+  margin-bottom: 16px;
+}
+#online-dialog input,
+#online-dialog select {
+  font: inherit;
+  border: 1px solid #c5d5be;
+  border-radius: 8px;
+  padding: 12px;
+  background: #fffef8;
+  color: #294535;
+  min-width: 0;
+}
+#online-dialog button:not(.close):not(.back) {
+  font: inherit;
+  border: 1px solid #c4d4bc;
+  border-radius: 8px;
+  padding: 11px 16px;
+  background: #e3edd9;
+  color: #345d47;
+}
+#online-dialog #online-create,
+#online-dialog #online-ready {
+  background: #345d47;
+  color: #fff;
+}
+.join-row {
+  display: flex;
+  gap: 12px;
+  align-items: end;
+  margin-top: 22px;
+}
+.join-row label {
+  flex: 1;
+  min-width: 0;
+}
+.join-row button {
+  margin-bottom: 16px;
+}
+#join-code {
+  text-transform: uppercase;
+  letter-spacing: 3px;
+}
+#room-code {
+  display: block;
+  font: 700 30px monospace;
+  letter-spacing: 5px;
+  margin: 15px 0;
+  color: #345d47;
+}
+.lobby-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 15px 0;
+}
+#room-players {
+  list-style: none;
+  padding: 0;
+  font-size: 13px;
+  line-height: 2.3;
+  background: #e7efde;
+  border-radius: 10px;
+  padding: 10px 16px;
+}
+#network-message {
+  padding: 10px 14px;
+  border: 1px solid #c8d8bd;
+  border-radius: 8px;
+  background: #e4edda;
+  font-size: 12px;
+}
+#online-message {
+  color: #9b694d;
+  min-height: 20px;
+}
 .duration-label {
   display: flex;
   align-items: center;

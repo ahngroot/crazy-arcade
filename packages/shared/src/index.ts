@@ -58,6 +58,13 @@ export const GAME_CONFIG = Object.freeze({
   simulationHz: 30,
   snapshotHz: 20,
   reconnectGraceMs: 30_000,
+  countdownMs: 3000,
+  emptyRoomTtlMs: 60_000,
+  inputTimeoutMs: 300,
+  interpolationMs: 100,
+  correctionMs: 65,
+  maxPendingInputs: 120,
+  maxRooms: 200,
 });
 export type Team = "red" | "green";
 export type RoomPhase =
@@ -70,6 +77,7 @@ export interface Position {
 
 export * from "./game.js";
 export * from "./competition.js";
+export * from "./network.js";
 export interface PlayerState {
   id: string;
   nickname: string;
@@ -85,13 +93,6 @@ export interface PlayerInput {
   y: number;
   balloon: boolean;
 }
-export interface RoomSnapshot {
-  code: string;
-  phase: RoomPhase;
-  tick: number;
-  serverTime: number;
-  players: PlayerState[];
-}
 export interface ServerHello {
   protocol: 1;
   stage: 1;
@@ -99,9 +100,31 @@ export interface ServerHello {
 }
 export interface ServerEvents {
   hello: (message: ServerHello) => void;
+  room: (view: import("./network.js").RoomView) => void;
+  roomClosed: (reason: string) => void;
 }
 export interface ClientEvents {
   pingCheck: (reply: (serverTime: number) => void) => void;
+  createRoom: (
+    request: unknown,
+    reply: (response: import("./network.js").AdmissionResult) => void,
+  ) => void;
+  joinRoom: (
+    request: unknown,
+    reply: (response: import("./network.js").AdmissionResult) => void,
+  ) => void;
+  resumeRoom: (
+    request: unknown,
+    reply: (response: import("./network.js").AdmissionResult) => void,
+  ) => void;
+  readyRoom: (
+    ready: unknown,
+    reply: (response: import("./network.js").ActionResult) => void,
+  ) => void;
+  leaveRoom: (
+    reply: (response: import("./network.js").ActionResult) => void,
+  ) => void;
+  input: (packet: unknown) => void;
 }
 
 /** Symmetric arena shared by the menu preview and the practice simulation. */

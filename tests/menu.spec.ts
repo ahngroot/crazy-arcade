@@ -23,7 +23,7 @@ test("menu renders, connects and opens practice and online guidance", async ({
     await expect(page.locator("#practice-arena canvas")).toHaveCount(0);
   }
   await page.getByRole("button", { name: /온라인 대전/ }).click();
-  await expect(page.getByRole("dialog")).toContainText("게임방 기능은 준비 중");
+  await expect(page.getByRole("dialog")).toContainText("방 만들기");
   await page.keyboard.press("Escape");
   await expect(page.getByRole("dialog")).toHaveCount(0);
   expect(errors).toEqual([]);

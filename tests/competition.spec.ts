@@ -4,7 +4,7 @@ test("default competition is 180 seconds and stays separate from unlimited pract
   page,
 }) => {
   await page.goto("/");
-  await expect(page.getByLabel("경기 시간")).toHaveValue("180000");
+  await expect(page.getByLabel(/^경기 시간/)).toHaveValue("180000");
   await page.getByRole("button", { name: /꼬물이 대전/ }).click();
   await expect(page.locator("#practice-arena")).toHaveAttribute(
     "data-ready",
@@ -39,7 +39,7 @@ test("two players use specials and balloons, finish a short round and rematch", 
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
   await page.goto("/");
-  await page.getByLabel("경기 시간").selectOption("30000");
+  await page.getByLabel(/^경기 시간/).selectOption("30000");
   await page.getByRole("button", { name: /꼬물이 대전/ }).click();
   await expect(page.locator("#practice-arena")).toHaveAttribute(
     "data-ready",

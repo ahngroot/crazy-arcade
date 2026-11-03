@@ -272,13 +272,23 @@ export interface PracticeController {
 export function mountPractice(
   parent: HTMLElement,
   onState: (state: PracticeState) => void,
-  options: { competition?: boolean; durationMs?: number } = {},
+  options: {
+    competition?: boolean;
+    durationMs?: number;
+    remote?: {
+      initial: PracticeState;
+      frame: (inputs: LocalInput[], delta: number) => PracticeState | null;
+      restart: () => void;
+    };
+  } = {},
 ): PracticeController {
   const keyboard = new PracticeKeyboard();
   const newState = () =>
-    options.competition
-      ? createCompetition(C.competitionSeed, options.durationMs ?? C.roundMs)
-      : createPractice();
+    options.remote
+      ? options.remote.initial
+      : options.competition
+        ? createCompetition(C.competitionSeed, options.durationMs ?? C.roundMs)
+        : createPractice();
   let state = newState(),
     stopped = false;
   class PracticeScene extends Phaser.Scene {
@@ -299,7 +309,10 @@ export function mountPractice(
       if (stopped) return;
       // Never catch up a hidden tab with minutes of inputs. Keyboard clears on blur.
       const previousTick = state.tick;
-      if (!document.hidden)
+      if (options.remote) {
+        state = options.remote.frame(keyboard.inputs(), delta) ?? state;
+        keyboard.consumeActions();
+      } else if (!document.hidden)
         stepPractice(state, keyboard.inputs(), Math.min(delta, C.maxFrameMs));
       if (previousTick !== state.tick) keyboard.consumeActions();
       if (this.revision !== state.mapRevision) {
@@ -441,6 +454,11 @@ export function mountPractice(
     },
     reset() {
       keyboard.clear();
+      if (options.remote) {
+        options.remote.restart();
+        parent.focus();
+        return;
+      }
       state = newState();
       scene.resetTerrain();
       parent.focus();
