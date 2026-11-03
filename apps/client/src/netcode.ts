@@ -7,10 +7,22 @@ import {
   type RoomView,
 } from "@bubble/shared";
 
+const actionKeys = ["balloon", "needle", "shield", "power"] as const;
+/** Releases must arrive too, otherwise a subsequent press can remain latched on the server. */
+export function hasActionTransition(current: LocalInput, previous: LocalInput) {
+  return actionKeys.some(
+    (key) => Boolean(current[key]) !== Boolean(previous[key]),
+  );
+}
+
 /** Client-side movement only. Scores, items, monsters and balloons always come from snapshots. */
 export class OnlineTimeline {
   view: RoomView | null = null;
-  private samples: { at: number; game: PracticeState }[] = [];
+  private samples: {
+    at: number;
+    game: PracticeState;
+    monsters: Map<number, { x: number; y: number }>;
+  }[] = [];
   private pending: { packet: NetworkInput; dt: number }[] = [];
   private predicted: PracticeState | null = null;
   private sequence = 0;
@@ -52,11 +64,25 @@ export class OnlineTimeline {
     if (view.roundId !== this.view?.roundId) this.resetConnection();
     this.view = view;
     if (!view.game) return;
-    this.samples.push({ at: this.now(), game: view.game });
+    this.samples.push({
+      at: this.now(),
+      game: view.game,
+      monsters: new Map(
+        view.game.round?.monsters.map((m) => [m.id, m.position]),
+      ),
+    });
     this.samples = this.samples.slice(-10);
     const ack = view.players.find((p) => p.id === this.playerId)?.ack ?? 0;
     this.pending = this.pending.filter((frame) => frame.packet.sequence > ack);
-    this.predicted = structuredClone(view.game);
+    // movePlayer only writes the predicted player's position, facing and moving flag.
+    // Share read-only map/entities rather than copying the whole arena every snapshot.
+    this.predicted = {
+      ...view.game,
+      players: view.game.players.map((p) => ({
+        ...p,
+        position: { ...p.position },
+      })),
+    };
     if (view.phase === "PLAYING" && !view.paused)
       for (const frame of this.pending) this.predict(frame.packet, frame.dt);
     else {
@@ -100,8 +126,8 @@ export class OnlineTimeline {
     if (running) {
       this.elapsed += Math.min(delta, C.maxFrameMs);
       const dt = 1000 / C.simulationHz;
-      if (this.elapsed >= dt) {
-        this.elapsed %= dt;
+      while (this.elapsed + 1e-7 >= dt) {
+        this.elapsed = Math.max(0, this.elapsed - dt);
         const packet: NetworkInput = {
           ...combined,
           roundId: view.roundId,
@@ -197,9 +223,8 @@ export class OnlineTimeline {
             monsters: current.round.monsters.map((m) => ({
               ...m,
               position: mix(
-                a?.game.round?.monsters.find((v) => v.id === m.id)?.position,
-                b.game.round?.monsters.find((v) => v.id === m.id)?.position ??
-                  m.position,
+                a?.monsters.get(m.id),
+                b.monsters.get(m.id) ?? m.position,
               ),
             })),
           }

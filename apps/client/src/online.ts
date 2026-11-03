@@ -5,7 +5,7 @@ import type {
   RoomView,
   AdmissionResult,
 } from "@bubble/shared";
-import { OnlineTimeline } from "./netcode";
+import { OnlineTimeline, hasActionTransition } from "./netcode";
 
 export function setupOnline(
   socket: Socket<ServerEvents, ClientEvents>,
@@ -149,9 +149,11 @@ export function setupOnline(
       };
       timeline = new OnlineTimeline(playerId, (packet) => {
         if (!socket.connected) return;
-        const edge = (["balloon", "needle", "shield", "power"] as const).some(
-          (key) => packet[key] && !previousActions[key],
-        );
+        const edge = hasActionTransition(packet, {
+          x: 0,
+          y: 0,
+          ...previousActions,
+        });
         previousActions = {
           balloon: packet.balloon,
           needle: !!packet.needle,
@@ -213,34 +215,27 @@ export function setupOnline(
       render();
     }
   });
-  document
-    .querySelector("#online-create")!
-    .addEventListener(
-      "click",
-      () =>
-        void admission("createRoom", {
-          nickname:
-            document.querySelector<HTMLInputElement>("#nickname")!.value,
-          durationMs: Number(
-            document.querySelector<HTMLSelectElement>("#online-duration")!
-              .value,
-          ),
-        }),
-    );
-  document
-    .querySelector("#online-join")!
-    .addEventListener(
-      "click",
-      () =>
-        void admission("joinRoom", {
-          nickname:
-            document.querySelector<HTMLInputElement>("#nickname")!.value,
-          code: document
-            .querySelector<HTMLInputElement>("#join-code")!
-            .value.trim()
-            .toUpperCase(),
-        }),
-    );
+  document.querySelector("#online-create")!.addEventListener(
+    "click",
+    () =>
+      void admission("createRoom", {
+        nickname: document.querySelector<HTMLInputElement>("#nickname")!.value,
+        durationMs: Number(
+          document.querySelector<HTMLSelectElement>("#online-duration")!.value,
+        ),
+      }),
+  );
+  document.querySelector("#online-join")!.addEventListener(
+    "click",
+    () =>
+      void admission("joinRoom", {
+        nickname: document.querySelector<HTMLInputElement>("#nickname")!.value,
+        code: document
+          .querySelector<HTMLInputElement>("#join-code")!
+          .value.trim()
+          .toUpperCase(),
+      }),
+  );
   document
     .querySelector("#online-ready")!
     .addEventListener("click", () => void ready());

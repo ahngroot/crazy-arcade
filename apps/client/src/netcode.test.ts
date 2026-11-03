@@ -6,7 +6,7 @@ import {
   type RoomView,
   type NetworkInput,
 } from "@bubble/shared";
-import { OnlineTimeline } from "./netcode";
+import { OnlineTimeline, hasActionTransition } from "./netcode";
 function view(): RoomView {
   return {
     code: "ABCDEFGH",
@@ -111,4 +111,63 @@ it("interpolates the other player between buffered snapshots and resets sequence
   t.receive(c);
   t.frame([EMPTY_INPUT, EMPTY_INPUT], 34, true);
   expect(sent.at(-1)?.sequence).toBe(1);
+});
+
+it("keeps prediction speed and input cadence consistent at 10 and 30 render FPS", () => {
+  const run = (delta: number, count: number) => {
+    const sent: NetworkInput[] = [];
+    const t = new OnlineTimeline(
+      "p1",
+      (packet) => sent.push(packet),
+      () => 0,
+    );
+    t.receive(view());
+    for (let i = 0; i < count; i++)
+      t.frame([{ ...EMPTY_INPUT, y: 1 }, EMPTY_INPUT], delta, true);
+    const packets = sent.length;
+    const stopped = t.frame([EMPTY_INPUT, EMPTY_INPUT], 200, true)!;
+    return { packets, y: stopped.players[0].position.y };
+  };
+  const slow = run(100, 10),
+    normal = run(1000 / 30, 30);
+  expect(slow.packets).toBe(30);
+  expect(slow.y).toBeCloseTo(normal.y, 1);
+});
+
+it("reliably transmits both press and release transitions, including optional item buttons", () => {
+  for (const action of ["balloon", "needle", "shield", "power"] as const) {
+    const pressed = { ...EMPTY_INPUT, [action]: true };
+    expect(hasActionTransition(pressed, EMPTY_INPUT)).toBe(true);
+    expect(hasActionTransition(EMPTY_INPUT, pressed)).toBe(true);
+    expect(hasActionTransition(pressed, pressed)).toBe(false);
+  }
+  expect(hasActionTransition({ ...EMPTY_INPUT, y: 1 }, EMPTY_INPUT)).toBe(
+    false,
+  );
+});
+
+it("caps catch-up after a long frame and keeps every received snapshot immutable during prediction and replay", () => {
+  const sent: NetworkInput[] = [];
+  const t = new OnlineTimeline(
+    "p1",
+    (packet) => sent.push(packet),
+    () => 0,
+  );
+  const snapshot = view(),
+    before = structuredClone(snapshot);
+  function freeze(value: unknown) {
+    if (value && typeof value === "object") {
+      Object.values(value).forEach(freeze);
+      Object.freeze(value);
+    }
+  }
+  freeze(snapshot);
+  t.receive(snapshot);
+  t.frame([{ ...EMPTY_INPUT, y: 1 }, EMPTY_INPUT], 10000, true);
+  expect(sent.length).toBeLessThanOrEqual(
+    Math.ceil(C.maxFrameMs / (1000 / C.simulationHz)),
+  );
+  t.receive(snapshot);
+  t.frame([{ ...EMPTY_INPUT, x: 1 }, EMPTY_INPUT], 34, true);
+  expect(snapshot).toEqual(before);
 });

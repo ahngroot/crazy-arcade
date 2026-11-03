@@ -39,6 +39,47 @@ const packet = (sequence: number, roundId = 1) => ({
   power: false,
 });
 describe("server room lifecycle", () => {
+  it("releases sessions, socket bindings, rooms and expired request buckets across repeated create/leave cycles", () => {
+    const h = setup();
+    for (let i = 0; i < 40; i++) {
+      const result = h.service.create(`socket${i}`, `ip${i}`, {
+        nickname: "A",
+        durationMs: 30000,
+      });
+      if (!result.ok) throw Error(result.error);
+      h.service.leave(`socket${i}`);
+      expect(
+        h.service.resume(`resume${i}`, `ip${i}`, { token: result.token }).ok,
+      ).toBe(false);
+    }
+    expect(h.service.diagnostics()).toMatchObject({
+      bindings: 0,
+      sessions: 0,
+      rooms: 40,
+    });
+    h.advance(C.emptyRoomTtlMs + 1000);
+    expect(h.service.diagnostics()).toEqual({
+      rooms: 0,
+      bindings: 0,
+      sessions: 0,
+      rateLimitBuckets: 0,
+    });
+  });
+  it("clears an old result when a new opponent joins after a rematch disconnect expires", () => {
+    const h = pair();
+    start(h);
+    h.advance(30_100);
+    h.service.ready("a", true);
+    h.service.disconnect("b");
+    h.advance(C.reconnectGraceMs + 100);
+    const join = h.service.join("c", "ip", {
+      nickname: "New",
+      code: h.a.room.code,
+    });
+    expect(join.ok).toBe(true);
+    expect(h.service.current("a")?.phase).toBe("WAITING");
+    expect(h.service.current("a")?.game).toBeNull();
+  });
   it("requires two ready members, counts down and preserves room isolation", () => {
     const h = setup(),
       a = h.service.create("a", "ip", { nickname: "A", durationMs: 30_000 });

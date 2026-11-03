@@ -276,7 +276,12 @@ function moveMonsters(s: PracticeState) {
       m.target = nextTarget(s, m);
     }
     if (!m.target) continue;
-    if (!walkable(s, m.team, m.target)) m.target = { ...m.home };
+    if (!walkable(s, m.team, m.target)) {
+      // A balloon can close both ends while a monster is between cell centers.
+      // Keep the path and wait until one end opens instead of entering a balloon.
+      if (!walkable(s, m.team, m.home)) continue;
+      m.target = { ...m.home };
+    }
     const dx = m.target.x - m.position.x,
       dy = m.target.y - m.position.y,
       distance = Math.hypot(dx, dy);

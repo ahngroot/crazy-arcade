@@ -162,7 +162,7 @@ export class RoomService {
       return fail("방이 가득 찼습니다. 최대 2명이며 재접속 자리도 예약됩니다.");
     if (room.phase === "PLAYING" || room.phase === "COUNTDOWN")
       return fail("경기가 이미 진행 중입니다.");
-    if (room.phase === "FINISHED") {
+    if (room.phase === "FINISHED" || room.game?.round?.phase === "FINISHED") {
       room.game = null;
       room.seats.forEach((s) => (s.ready = false));
       room.reason = null;
@@ -425,6 +425,15 @@ export class RoomService {
   current(socketId: string) {
     const binding = this.bindings.get(socketId);
     return binding ? this.view(binding.room) : null;
+  }
+  /** Counts only: benchmark/test diagnostics must never expose credentials. */
+  diagnostics() {
+    return {
+      rooms: this.rooms.size,
+      bindings: this.bindings.size,
+      sessions: this.sessions.size,
+      rateLimitBuckets: this.limits.size,
+    };
   }
   broadcasts() {
     return [...this.bindings].map(([socketId, { room }]) => ({

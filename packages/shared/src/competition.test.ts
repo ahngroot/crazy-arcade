@@ -10,12 +10,68 @@ import {
   spawnInterval,
   collectItem,
   effectiveStats,
+  canOccupy,
   GAME_CONFIG as C,
   EMPTY_INPUT,
   type PracticeState,
   type MonsterKind,
 } from "./index";
 const idle = [EMPTY_INPUT, EMPTY_INPUT];
+
+it.each([17, 2701, 9137])(
+  "keeps collision, entity and scoring invariants through a full seeded round (%i)",
+  (seed) => {
+    const state = createCompetition(seed);
+    let rng = seed;
+    let previousScores = [0, 0];
+    const next = () => {
+      rng = (Math.imul(rng, 1664525) + 1013904223) >>> 0;
+      return rng / 4294967296;
+    };
+    for (let i = 0; i < 1800; i++) {
+      const inputs = state.players.map(() => ({
+        x: Math.floor(next() * 3) - 1,
+        y: Math.floor(next() * 3) - 1,
+        balloon: next() < 0.25,
+        needle: next() < 0.05,
+        shield: next() < 0.025,
+        power: next() < 0.025,
+      }));
+      stepPractice(state, inputs, 100);
+      for (const [index, p] of state.players.entries()) {
+        expect(
+          Number.isFinite(p.position.x) && Number.isFinite(p.position.y),
+        ).toBe(true);
+        expect(canOccupy(state, p, p.position.x, p.position.y)).toBe(true);
+        expect(p.score).toBeGreaterThanOrEqual(previousScores[index]);
+        previousScores[index] = p.score;
+      }
+      const ids = [
+        ...state.balloons,
+        ...state.blasts,
+        ...state.items,
+        ...state.round!.monsters,
+      ].map((e) => e.id);
+      expect(new Set(ids).size).toBe(ids.length);
+      for (const team of ["red", "green"]) {
+        expect(
+          state.round!.monsters.filter((m) => m.team === team).length,
+        ).toBeLessThanOrEqual(C.maxMonstersPerTeam);
+        expect(
+          state
+            .round!.pending.filter((m) => m.team === team)
+            .reduce((total, m) => total + m.count, 0),
+        ).toBeLessThanOrEqual(C.maxSpawnQueuePerTeam);
+      }
+      if (state.round!.phase === "PLAYING")
+        expect(state.blasts.every((b) => b.expiresAt > state.time)).toBe(true);
+    }
+    expect(state.round!.phase).toBe("FINISHED");
+    const ended = structuredClone(state);
+    stepPractice(state, idle, 1000);
+    expect(state).toEqual(ended);
+  },
+);
 function arena(duration: number = C.roundMs) {
   const s = createCompetition(1, duration);
   s.round!.monsters = [];
@@ -186,6 +242,29 @@ describe("competition kills and population", () => {
 });
 
 describe("AI and contact", () => {
+  it("waits instead of reversing into a balloon when both ends of its current path are blocked", () => {
+    const s = arena(),
+      m = monster(s, "normal", 3, 5);
+    m.position = { x: 3.7, y: 5.5 };
+    m.home = { x: 3.5, y: 5.5 };
+    m.target = { x: 4.5, y: 5.5 };
+    for (const x of [3, 4])
+      s.balloons.push({
+        id: s.nextId++,
+        owner: "p1",
+        x,
+        y: 5,
+        range: 1,
+        explodesAt: 99999,
+        passThrough: [],
+      });
+    const before = { ...m.position };
+    stepPractice(s, idle, C.fixedStepMs);
+    expect(m.position).toEqual(before);
+    s.balloons = s.balloons.filter((b) => b.x !== 4);
+    stepPractice(s, idle, C.fixedStepMs);
+    expect(m.position.x).toBeGreaterThan(before.x);
+  });
   it("normals are harmless but a chaser causes immediate respawn without ending the round", () => {
     const s = arena(),
       p = s.players[0];
