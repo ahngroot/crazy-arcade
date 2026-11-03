@@ -49,4 +49,4 @@
 | practice-trapped.png / competition-start.png / online-restored.png | 실제 플레이 및 온라인 복구 화면                                     |
 | original-sound-preview.wav                                         | 동일 합성기로 만든 음악과 11종 효과음 미리듣기, 18초, 음량 65% 기준 |
 
-전체 게임의 장시간 성능·다양한 실제 장치/Windows 브라우저·인터넷 회선 품질 검증은 다음 QA 단계에서 진행한다.
+6단계 자동 QA와 성능 측정 결과는 [qa.md](qa.md)를 참고한다. 장시간 운영·다양한 실제 장치/Windows 브라우저·인터넷 회선 품질은 별도 검증이 남아 있다.

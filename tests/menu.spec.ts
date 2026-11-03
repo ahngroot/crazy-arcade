@@ -10,7 +10,7 @@ test("menu renders, connects and opens practice and online guidance", async ({
   );
   await expect(page.locator("#arena")).toHaveAttribute("data-ready", "true");
   await expect(page.locator("#arena canvas")).toBeVisible();
-  await expect(page.locator("#connection")).toHaveText("개발 서버 연결됨");
+  await expect(page.locator("#connection")).toHaveText("게임 서버 연결됨");
   await page.screenshot({
     path: "test-results/menu-desktop.png",
     fullPage: true,

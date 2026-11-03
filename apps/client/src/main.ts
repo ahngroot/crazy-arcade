@@ -18,7 +18,7 @@ const localSpecial =
 
 document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
   <div class="shell">
-    <header class="topbar"><a class="brand" href="/" aria-label="버블 크리터 홈"><span class="brand-icon">b.</span><span>BUBBLE CRITTER<small>작은 친구들, 커다란 한 판.</small></span></a><span class="build-tag">DEVELOPMENT <b>06 / 08</b></span></header>
+    <header class="topbar"><a class="brand" href="/" aria-label="버블 크리터 홈"><span class="brand-icon">b.</span><span>BUBBLE CRITTER<small>작은 친구들, 커다란 한 판.</small></span></a><span class="build-tag">LOCAL EDITION <b>PC WEB</b></span></header>
     <main>
       <div class="eyebrow"><span></span> THE LITTLE ARCADE CLUB</div>
       <section class="intro"><div><h1>작은 물방울로,<br />시작하는 큰 모험<span>.</span></h1><p>톡, 놓고 · 쏙, 피하고 · 팡, 터뜨려요.<br />둘이 함께할 새로운 아케이드, 버블 크리터.</p></div><div class="intro-note"><span>✳</span><p>A LITTLE SPLASH.<br />A LOT OF FUN.</p></div></section>
@@ -31,7 +31,7 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
           <button id="online" class="mode secondary"><span class="mode-icon">◎</span><span><strong>온라인 대전</strong><small>방 코드로 만나 각자의 브라우저에서 플레이</small></span><span class="arrow">↗</span></button>
           ${soundControls("menu-audio")}
           <div class="stage-note"><span>톡, 쏙, 팡! 작은 정원의 소리</span><p>소리를 켜면 정원만의 멜로디가 흘러요.<br />8자리 방 코드로 친구도 초대해 보세요.</p></div>
-          <div class="connection"><span id="connection-dot"></span><span id="connection" role="status">서버 연결 중…</span><span>DEV 0.6</span></div>
+          <div class="connection"><span id="connection-dot"></span><span id="connection" role="status">서버 연결 중…</span><span>PC WEB</span></div>
         </aside>
       </section>
       <section class="bottom-grid"><div><span class="detail-icon">⌘</span><div><h3>간단한 조작, 즐거운 대결</h3><p>이동 <kbd>W A S D</kbd> 물풍선 <kbd>SPACE</kbd><small>로컬 P2는 방향키 이동 · Enter 물풍선</small></p></div></div><div><span class="detail-icon">❋</span><div><h3>우리만의 작은 친구들</h3><p>직접 만든 캐릭터와 밝은 정원.<br />새로운 버블 세계를 함께 만들어가요.</p></div></div><div><span class="detail-icon">↗</span><div><h3>두 사람을 위한 아케이드</h3><p>방 코드로 만나는 1:1 대전.<br />온라인은 두 사람이 READY하면 시작해요.</p></div></div></section>
@@ -57,14 +57,14 @@ arcadeAudio.bind();
 const socket: Socket<ServerEvents, ClientEvents> = io({ timeout: 5000 });
 function connection(ready: boolean) {
   document.querySelector("#connection")!.textContent = ready
-    ? "개발 서버 연결됨"
+    ? "게임 서버 연결됨"
     : "서버 연결 끊김 · 재연결 중";
   document
     .querySelector("#connection-dot")!
     .classList.toggle("connected", ready);
   document.querySelector("#online-status")!.textContent = ready
     ? "● 서버 연결됨 · 온라인 2인 대전"
-    : "○ 서버에 연결할 수 없습니다. 개발 서버 실행 상태를 확인하세요.";
+    : "○ 서버에 연결할 수 없습니다. 게임 서버 실행 상태를 확인하세요.";
 }
 socket.on("hello", (message) => connection(message.protocol === 1));
 socket.on("disconnect", () => connection(false));
