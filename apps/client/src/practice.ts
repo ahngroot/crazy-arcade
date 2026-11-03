@@ -1,11 +1,13 @@
 import Phaser from "phaser";
 import {
   createPractice,
+  createCompetition,
   stepPractice,
   GAME_CONFIG as C,
   type PracticeState,
   type PracticePlayer,
   type LocalInput,
+  type Monster,
 } from "@bubble/shared";
 
 const MOVEMENT_KEYS = new Set([
@@ -19,23 +21,37 @@ const MOVEMENT_KEYS = new Set([
   "ArrowRight",
   "Space",
   "Enter",
+  "KeyQ",
+  "KeyE",
+  "KeyR",
+  "KeyJ",
+  "KeyK",
+  "KeyL",
 ]);
 
 /** Owned by a single practice session; never attaches keyboard handlers to the menu. */
 class PracticeKeyboard {
   private keys = new Set<string>();
-  private pending = [false, false];
+  private pending = new Set<string>();
   private down = (event: KeyboardEvent) => {
     if (!MOVEMENT_KEYS.has(event.code)) return;
     if (
       event.target instanceof HTMLButtonElement &&
-      ["Space", "Enter"].includes(event.code)
+      [
+        "Space",
+        "Enter",
+        "KeyQ",
+        "KeyE",
+        "KeyR",
+        "KeyJ",
+        "KeyK",
+        "KeyL",
+      ].includes(event.code)
     )
       return;
     event.preventDefault();
     this.keys.add(event.code);
-    if (!event.repeat && event.code === "Space") this.pending[0] = true;
-    if (!event.repeat && event.code === "Enter") this.pending[1] = true;
+    if (!event.repeat) this.pending.add(event.code);
   };
   private up = (event: KeyboardEvent) => {
     if (MOVEMENT_KEYS.has(event.code)) {
@@ -45,10 +61,10 @@ class PracticeKeyboard {
   };
   clear = () => {
     this.keys.clear();
-    this.pending = [false, false];
+    this.pending.clear();
   };
   consumeActions() {
-    this.pending = [false, false];
+    this.pending.clear();
   }
   private visibility = () => {
     if (document.hidden) this.clear();
@@ -65,16 +81,24 @@ class PracticeKeyboard {
   }
   inputs(): LocalInput[] {
     const has = (code: string) => Number(this.keys.has(code));
+    const action = (code: string) =>
+      this.pending.has(code) || this.keys.has(code);
     return [
       {
         x: has("KeyD") - has("KeyA"),
         y: has("KeyS") - has("KeyW"),
-        balloon: this.pending[0] || this.keys.has("Space"),
+        balloon: action("Space"),
+        needle: action("KeyQ"),
+        shield: action("KeyE"),
+        power: action("KeyR"),
       },
       {
         x: has("ArrowRight") - has("ArrowLeft"),
         y: has("ArrowDown") - has("ArrowUp"),
-        balloon: this.pending[1] || this.keys.has("Enter"),
+        balloon: action("Enter"),
+        needle: action("KeyJ"),
+        shield: action("KeyK"),
+        power: action("KeyL"),
       },
     ];
   }
@@ -172,6 +196,72 @@ function drawPlayer(
     g.lineBetween(x - 6, y - 13, x - 3, y - 10);
     g.lineBetween(x + 6, y - 13, x + 3, y - 10);
   }
+  if (p.shieldUntil > time) {
+    g.lineStyle(2, 0x9bddff, 0.8);
+    g.strokeCircle(x, y - 7, 26);
+  }
+  if (p.powerUntil > time) {
+    g.lineStyle(2, 0xffce53, 0.9);
+    g.strokeEllipse(x, y + 10, 36 + Math.sin(time / 90) * 3, 12);
+  }
+}
+
+function drawMonster(g: Phaser.GameObjects.Graphics, m: Monster, time: number) {
+  const x = m.position.x * C.tileSize,
+    y = m.position.y * C.tileSize,
+    bob = Math.sin(time / 130 + m.id) * 2;
+  const color =
+    m.kind === "chaser" ? 0xa17aca : m.kind === "golden" ? 0xf8c94e : 0xb6d77c;
+  g.fillStyle(0x264b3d, 0.18);
+  g.fillEllipse(x, y + 9, 25, 8);
+  if (m.kind === "golden") {
+    g.lineStyle(2, 0xffe797, 0.65);
+    g.strokeCircle(x, y - 4, 19 + Math.sin(time / 90) * 2);
+  }
+  g.lineStyle(2, 0x49643e);
+  g.fillStyle(color);
+  g.fillRoundedRect(x - 13, y - 17 + bob, 26, 27, 10);
+  g.strokeRoundedRect(x - 13, y - 17 + bob, 26, 27, 10);
+  if (m.kind === "chaser") {
+    g.fillTriangle(x - 13, y - 8 + bob, x - 20, y - 6 + bob, x - 13, y + bob);
+    g.fillTriangle(x + 13, y - 8 + bob, x + 20, y - 6 + bob, x + 13, y + bob);
+    g.fillTriangle(
+      x - 9,
+      y - 15 + bob,
+      x - 8,
+      y - 23 + bob,
+      x - 1,
+      y - 15 + bob,
+    );
+    g.fillTriangle(
+      x + 2,
+      y - 15 + bob,
+      x + 9,
+      y - 23 + bob,
+      x + 10,
+      y - 15 + bob,
+    );
+  } else {
+    g.lineStyle(2, 0x648753);
+    g.lineBetween(x, y - 17 + bob, x + 2, y - 23 + bob);
+    g.fillStyle(0x79a263);
+    g.fillEllipse(x + 5, y - 23 + bob, 9, 5);
+  }
+  g.fillStyle(0x2f443c);
+  g.fillEllipse(x - 5, y - 4 + bob, 3, 5);
+  g.fillEllipse(x + 5, y - 4 + bob, 3, 5);
+  if (m.kind === "chaser") {
+    g.lineStyle(2, 0x463450);
+    g.lineBetween(x - 8, y - 10 + bob, x - 3, y - 7 + bob);
+    g.lineBetween(x + 8, y - 10 + bob, x + 3, y - 7 + bob);
+  }
+  g.lineStyle(1.5, 0x48613b);
+  g.lineBetween(x - 2, y + 2 + bob, x + 2, y + 2 + bob);
+  g.fillStyle(color);
+  g.fillEllipse(x - 7, y + 10 + bob, 9, 5);
+  g.fillEllipse(x + 7, y + 10 - bob, 9, 5);
+  g.fillStyle(0xffffff, 0.5);
+  g.fillEllipse(x - 5, y - 12 + bob, 7, 3);
 }
 
 export interface PracticeController {
@@ -182,9 +272,14 @@ export interface PracticeController {
 export function mountPractice(
   parent: HTMLElement,
   onState: (state: PracticeState) => void,
+  options: { competition?: boolean; durationMs?: number } = {},
 ): PracticeController {
   const keyboard = new PracticeKeyboard();
-  let state = createPractice(),
+  const newState = () =>
+    options.competition
+      ? createCompetition(C.competitionSeed, options.durationMs ?? C.roundMs)
+      : createPractice();
+  let state = newState(),
     stopped = false;
   class PracticeScene extends Phaser.Scene {
     private terrain!: Phaser.GameObjects.Graphics;
@@ -231,9 +326,19 @@ export function mountPractice(
           g.lineStyle(4, 0xe48a54, alpha);
           g.lineBetween(x - 7, y, x + 7, y);
           g.lineBetween(x, y - 7, x, y + 7);
-        } else {
+        } else if (item.kind === "speed") {
           g.fillStyle(0x85b879, alpha);
           g.fillTriangle(x - 6, y - 7, x + 7, y, x - 6, y + 7);
+        } else if (item.kind === "needle") {
+          g.lineStyle(3, 0xa98fc4, alpha);
+          g.lineBetween(x - 5, y + 7, x + 5, y - 7);
+          g.strokeCircle(x + 5, y - 7, 3);
+        } else if (item.kind === "shield") {
+          g.lineStyle(3, 0x74bdd6, alpha);
+          g.strokeCircle(x, y, 8);
+        } else {
+          g.fillStyle(0xf5bf45, alpha);
+          g.fillTriangle(x, y - 9, x - 7, y + 6, x + 7, y + 6);
         }
       }
       for (const b of state.balloons) {
@@ -279,10 +384,31 @@ export function mountPractice(
             );
           }
         }
-      for (const p of [...state.players].sort(
-        (a, b) => a.position.y - b.position.y,
-      ))
-        drawPlayer(g, p, state.time);
+      const characters = [
+        ...state.players.map((p) => ({
+          y: p.position.y,
+          draw: () => drawPlayer(g, p, state.time),
+        })),
+        ...(state.round?.monsters ?? []).map((m) => ({
+          y: m.position.y,
+          draw: () => drawMonster(g, m, state.time),
+        })),
+      ];
+      characters.sort((a, b) => a.y - b.y).forEach((actor) => actor.draw());
+      for (const event of state.round?.events ?? []) {
+        const progress =
+          1 - (event.until - state.time) / (event.kind === "kill" ? 500 : 1000);
+        g.lineStyle(
+          2,
+          event.kind === "kill" ? 0x8acbde : 0xffd061,
+          1 - progress,
+        );
+        g.strokeCircle(
+          event.position.x * t,
+          event.position.y * t,
+          8 + progress * 25,
+        );
+      }
       onState(state);
     }
     resetTerrain() {
@@ -315,7 +441,7 @@ export function mountPractice(
     },
     reset() {
       keyboard.clear();
-      state = createPractice();
+      state = newState();
       scene.resetTerrain();
       parent.focus();
       onState(state);

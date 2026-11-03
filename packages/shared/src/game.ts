@@ -5,13 +5,22 @@ import {
   type Tile,
   type Team,
 } from "./index.js";
+import {
+  advanceCompetition,
+  finishCompetition,
+  type CompetitionRound,
+} from "./competition.js";
 
 export type Facing = "up" | "down" | "left" | "right";
-export type ItemKind = "balloon" | "range" | "speed";
+export type ItemKind =
+  "balloon" | "range" | "speed" | "needle" | "shield" | "power";
 export interface LocalInput {
   x: number;
   y: number;
   balloon: boolean;
+  needle?: boolean;
+  shield?: boolean;
+  power?: boolean;
 }
 export interface PracticePlayer {
   id: string;
@@ -28,6 +37,13 @@ export interface PracticePlayer {
   deaths: number;
   moving: boolean;
   bombDown: boolean;
+  score: number;
+  combo: number;
+  lastKillAt: number;
+  inventory: Record<"needle" | "shield" | "power", number>;
+  itemDown: Record<"needle" | "shield" | "power", boolean>;
+  shieldUntil: number;
+  powerUntil: number;
 }
 export interface Balloon {
   id: number;
@@ -63,6 +79,7 @@ export interface PracticeState {
   balloons: Balloon[];
   blasts: Blast[];
   items: Item[];
+  round?: CompetitionRound;
 }
 export const EMPTY_INPUT: LocalInput = Object.freeze({
   x: 0,
@@ -97,23 +114,34 @@ export function createPractice(seed = 2701): PracticeState {
       deaths: 0,
       moving: false,
       bombDown: false,
+      score: 0,
+      combo: 0,
+      lastKillAt: -C.comboWindowMs - 1,
+      inventory: { needle: 0, shield: 0, power: 0 },
+      itemDown: { needle: false, shield: false, power: false },
+      shieldUntil: 0,
+      powerUntil: 0,
     })),
   };
 }
 
-function random(s: PracticeState) {
+export function random(s: PracticeState) {
   s.seed = (Math.imul(s.seed, 1664525) + 1013904223) >>> 0;
   return s.seed / 4294967296;
 }
 const key = (x: number, y: number) => `${x},${y}`;
 const sameCell = (a: Position, b: Position) =>
   Math.floor(a.x) === Math.floor(b.x) && Math.floor(a.y) === Math.floor(b.y);
-export function overlapsCell(position: Position, cell: Position) {
+export function overlapsCell(
+  position: Position,
+  cell: Position,
+  radius: number = C.playerRadius,
+) {
   return (
-    position.x + C.playerRadius > cell.x &&
-    position.x - C.playerRadius < cell.x + 1 &&
-    position.y + C.playerRadius > cell.y &&
-    position.y - C.playerRadius < cell.y + 1
+    position.x + radius > cell.x &&
+    position.x - radius < cell.x + 1 &&
+    position.y + radius > cell.y &&
+    position.y - radius < cell.y + 1
   );
 }
 
@@ -135,6 +163,40 @@ export function canOccupy(
         return false;
     }
   return true;
+}
+
+export function effectiveStats(s: PracticeState, p: PracticePlayer) {
+  const power = p.powerUntil > s.time;
+  return {
+    speed: p.speed + (power ? C.powerSpeedBonus : 0),
+    range: p.range + (power ? C.powerRangeBonus : 0),
+    capacity: p.capacity + (power ? C.powerCapacityBonus : 0),
+  };
+}
+
+function useItems(s: PracticeState, p: PracticePlayer, input: LocalInput) {
+  for (const kind of ["needle", "shield", "power"] as const) {
+    if (input[kind] && !p.itemDown[kind] && p.inventory[kind] > 0) {
+      if (kind === "needle" && p.status === "trapped") {
+        p.inventory.needle--;
+        p.status = "active";
+        p.invulnerableUntil = s.time + C.needleProtectionMs;
+      } else if (kind !== "needle" && p.status === "active") {
+        p.inventory[kind]--;
+        p[`${kind}Until`] =
+          s.time + (kind === "shield" ? C.shieldMs : C.powerMs);
+      }
+    }
+    p.itemDown[kind] = Boolean(input[kind]);
+  }
+}
+
+export function collectItem(p: PracticePlayer, kind: ItemKind) {
+  if (kind === "balloon") p.capacity = Math.min(C.maxBalloons, p.capacity + 1);
+  else if (kind === "range") p.range = Math.min(C.maxRange, p.range + 1);
+  else if (kind === "speed")
+    p.speed = Math.min(C.maxSpeed, p.speed + C.speedIncrement);
+  else p.inventory[kind] = Math.min(C.inventoryLimit, p.inventory[kind] + 1);
 }
 
 function move(
@@ -159,7 +221,7 @@ function move(
         : y > 0
           ? "down"
           : "up";
-  const distance = (p.speed * dt) / 1000;
+  const distance = (effectiveStats(s, p).speed * dt) / 1000;
   const oldX = p.position.x,
     oldY = p.position.y;
   const dx = x * distance,
@@ -196,9 +258,11 @@ function move(
 }
 
 export function placeBalloon(s: PracticeState, p: PracticePlayer): boolean {
+  if (s.round?.phase === "FINISHED") return false;
   if (
     p.status !== "active" ||
-    s.balloons.filter((b) => b.owner === p.id).length >= p.capacity
+    s.balloons.filter((b) => b.owner === p.id).length >=
+      effectiveStats(s, p).capacity
   )
     return false;
   const x = Math.floor(p.position.x),
@@ -213,7 +277,7 @@ export function placeBalloon(s: PracticeState, p: PracticePlayer): boolean {
     owner: p.id,
     x,
     y,
-    range: p.range,
+    range: effectiveStats(s, p).range,
     explodesAt: s.time + C.balloonFuseMs,
     passThrough: s.players
       .filter(
@@ -294,7 +358,7 @@ function explode(s: PracticeState) {
   }
 }
 
-function inBlast(s: PracticeState, position: Position) {
+export function inBlast(s: PracticeState, position: Position) {
   return s.blasts.some((b) =>
     b.cells.some((cell) => overlapsCell(position, cell)),
   );
@@ -316,6 +380,11 @@ function respawn(s: PracticeState, p: PracticePlayer) {
     (pos) =>
       canOccupy(s, p, pos.x, pos.y) &&
       !inBlast(s, pos) &&
+      !s.round?.monsters.some(
+        (m) =>
+          Math.hypot(m.position.x - pos.x, m.position.y - pos.y) <
+          C.monsterSpawnSafeDistance,
+      ) &&
       !s.players.some(
         (other) =>
           other !== p &&
@@ -335,10 +404,16 @@ function tick(s: PracticeState, inputs: readonly LocalInput[]) {
   const dt = C.fixedStepMs;
   s.tick++;
   s.time = s.tick * dt;
+  if (s.round && s.time >= s.round.durationMs) {
+    s.time = s.round.durationMs;
+    finishCompetition(s);
+    return;
+  }
   s.blasts = s.blasts.filter((b) => b.expiresAt > s.time);
   for (const [index, p] of s.players.entries()) {
     p.moving = false;
     const input = inputs[index] ?? EMPTY_INPUT;
+    useItems(s, p, input);
     if (p.status === "trapped" && s.time >= p.statusUntil) {
       p.status = "respawning";
       p.statusUntil = s.time + C.respawnMs;
@@ -356,9 +431,13 @@ function tick(s: PracticeState, inputs: readonly LocalInput[]) {
     p.bombDown = Boolean(input.balloon);
   }
   explode(s);
+  if (s.round) advanceCompetition(s);
   for (const p of s.players) {
     if (p.status !== "active") continue;
-    if (s.time >= p.invulnerableUntil && inBlast(s, p.position)) {
+    if (
+      s.time >= Math.max(p.invulnerableUntil, p.shieldUntil) &&
+      inBlast(s, p.position)
+    ) {
       p.status = "trapped";
       p.statusUntil = s.time + C.trappedMs;
       p.moving = false;
@@ -366,11 +445,7 @@ function tick(s: PracticeState, inputs: readonly LocalInput[]) {
     }
     s.items = s.items.filter((item) => {
       if (item.availableAt > s.time || !sameCell(p.position, item)) return true;
-      if (item.kind === "balloon")
-        p.capacity = Math.min(C.maxBalloons, p.capacity + 1);
-      if (item.kind === "range") p.range = Math.min(C.maxRange, p.range + 1);
-      if (item.kind === "speed")
-        p.speed = Math.min(C.maxSpeed, p.speed + C.speedIncrement);
+      collectItem(p, item.kind);
       return false;
     });
   }
@@ -383,9 +458,14 @@ export function stepPractice(
   elapsedMs: number,
 ) {
   if (!Number.isFinite(elapsedMs) || elapsedMs <= 0) return;
+  if (s.round?.phase === "FINISHED") return;
   s.accumulator += elapsedMs;
   while (s.accumulator + 1e-7 >= C.fixedStepMs) {
     tick(s, inputs);
     s.accumulator -= C.fixedStepMs;
+    if (s.round && s.time >= s.round.durationMs) {
+      s.accumulator = 0;
+      break;
+    }
   }
 }

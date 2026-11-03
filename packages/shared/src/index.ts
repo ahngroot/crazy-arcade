@@ -25,6 +25,36 @@ export const GAME_CONFIG = Object.freeze({
   comboWindowMs: 3_000,
   goldenCombo: 8,
   chaserThreshold: 4,
+  monsterInitialPerTeam: 2,
+  monsterSpeed: 0.85,
+  chaserSpeed: 1.35,
+  goldenSpeed: 1.1,
+  monsterRadius: 0.23,
+  monsterSpawnProtectionMs: 600,
+  monsterSpawnSafeDistance: 1.7,
+  monsterSpawnCheckMs: 250,
+  monsterEarlyIntervalMs: 7000,
+  monsterMiddleIntervalMs: 4000,
+  monsterLateIntervalMs: 1400,
+  monsterMiddleAtMs: 60_000,
+  rushWarningMs: 30_000,
+  finalWarningMs: 15_000,
+  maxMonstersPerTeam: 22,
+  maxSpawnQueuePerTeam: 32,
+  maxChasersPerTeam: 3,
+  normalScore: 1,
+  chaserScore: 3,
+  goldenScore: 10,
+  comboBonus: 1,
+  goldenRewardItem: true,
+  inventoryLimit: 3,
+  shieldMs: 4000,
+  needleProtectionMs: 900,
+  powerMs: 6000,
+  powerSpeedBonus: 1.5,
+  powerRangeBonus: 2,
+  powerCapacityBonus: 2,
+  competitionSeed: 2701,
   simulationHz: 30,
   snapshotHz: 20,
   reconnectGraceMs: 30_000,
@@ -39,6 +69,7 @@ export interface Position {
 }
 
 export * from "./game.js";
+export * from "./competition.js";
 export interface PlayerState {
   id: string;
   nickname: string;

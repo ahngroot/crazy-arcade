@@ -6,6 +6,163 @@
   font-weight: 400;
   font-size: 14px;
 }
+[hidden] {
+  display: none !important;
+}
+.duration-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #697e62;
+  margin: 0 0 16px;
+}
+.duration-label select {
+  font: inherit;
+  background: #f9fbf2;
+  border: 1px solid #cbd9c2;
+  color: #36563e;
+  border-radius: 7px;
+  padding: 6px;
+}
+#round-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-radius: 12px;
+  background: #e7eddc;
+  border: 1px solid #cbd7c0;
+  padding: 12px 24px;
+  margin-bottom: 10px;
+}
+#round-bar > span {
+  font-size: 12px;
+  letter-spacing: 1px;
+  color: #aa6554;
+}
+#round-bar > span:last-child {
+  color: #428065;
+}
+#round-bar b {
+  font-size: 25px;
+  margin: 0 10px;
+}
+#round-bar > div {
+  text-align: center;
+}
+#round-clock {
+  font-size: 28px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+#round-warning {
+  display: block;
+  font-size: 10px;
+  color: #6a7e5c;
+  margin-top: 4px;
+}
+#round-bar[data-warning="rush"] {
+  background: #fff0cc;
+  border-color: #e8c67d;
+}
+#round-bar[data-warning="final"] {
+  background: #ffe1d5;
+  border-color: #e59d8c;
+}
+#round-bar[data-warning="final"] #round-clock {
+  color: #b64b38;
+}
+#special-controls {
+  font-size: 10px;
+  line-height: 1.8;
+  margin: 8px 0 14px;
+}
+.competition-stats {
+  margin-top: 12px;
+  border-top: 1px solid #d9d6c3;
+  padding-top: 12px;
+}
+.competition-stats [data-stat="combo"] {
+  color: #ac7339;
+}
+.competition-stats .inventory {
+  font-size: 10px;
+  line-height: 1.9;
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px 8px;
+}
+.competition-stats .inventory b {
+  color: #8d6caa;
+}
+.competition-stats [data-stat="buffs"] {
+  font-size: 10px;
+  margin: 8px 0 0;
+  color: #87699f;
+}
+.competition-stage {
+  position: relative;
+  min-width: 0;
+}
+#result-panel {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  background: #f8f9eae8;
+  border: 2px solid #b4c49f;
+  border-radius: 12px;
+  text-align: center;
+  padding: 15px;
+}
+#result-panel > span {
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: #81926c;
+}
+#result-panel h3 {
+  font-size: 32px;
+  margin: 20px 0 8px;
+}
+#result-panel #result-score {
+  font-size: 20px;
+  font-weight: 700;
+  color: #4c6544;
+}
+.competition-mode .competition-stage {
+  width: 100%;
+  max-width: calc(52vh * 15 / 13);
+  justify-self: center;
+}
+.competition-mode .player-panel {
+  padding: 10px;
+}
+.competition-mode .player-panel dl {
+  font-size: 10px;
+  gap: 4px;
+}
+.competition-mode .player-panel .player-status {
+  margin: 4px 0;
+  min-height: 16px;
+  line-height: 1.4;
+}
+.competition-mode .competition-stats {
+  margin-top: 8px;
+  padding-top: 8px;
+}
+.competition-mode .competition-stats [data-stat="buffs"]:empty {
+  display: none;
+}
+.competition-mode .practice-actions {
+  position: sticky;
+  bottom: 0;
+  background: #f7f8ef;
+  padding: 10px 0 0;
+  z-index: 2;
+}
 * {
   box-sizing: border-box;
 }
