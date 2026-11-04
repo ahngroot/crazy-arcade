@@ -14,13 +14,12 @@ import {
 export type Facing = "up" | "down" | "left" | "right";
 export type ItemKind =
   "balloon" | "range" | "speed" | "needle" | "shield" | "power";
+export type UsableItemKind = Extract<ItemKind, "needle" | "shield" | "power">;
 export interface LocalInput {
   x: number;
   y: number;
   balloon: boolean;
-  needle?: boolean;
-  shield?: boolean;
-  power?: boolean;
+  useItem?: boolean;
 }
 export interface PracticePlayer {
   id: string;
@@ -40,8 +39,9 @@ export interface PracticePlayer {
   score: number;
   combo: number;
   lastKillAt: number;
-  inventory: Record<"needle" | "shield" | "power", number>;
-  itemDown: Record<"needle" | "shield" | "power", boolean>;
+  /** Oldest acquired item first. One entry occupies one of the two slots. */
+  inventory: UsableItemKind[];
+  itemDown: boolean;
   shieldUntil: number;
   powerUntil: number;
 }
@@ -117,8 +117,8 @@ export function createPractice(seed = 2701): PracticeState {
       score: 0,
       combo: 0,
       lastKillAt: -C.comboWindowMs - 1,
-      inventory: { needle: 0, shield: 0, power: 0 },
-      itemDown: { needle: false, shield: false, power: false },
+      inventory: [],
+      itemDown: false,
       shieldUntil: 0,
       powerUntil: 0,
     })),
@@ -175,28 +175,31 @@ export function effectiveStats(s: PracticeState, p: PracticePlayer) {
 }
 
 function useItems(s: PracticeState, p: PracticePlayer, input: LocalInput) {
-  for (const kind of ["needle", "shield", "power"] as const) {
-    if (input[kind] && !p.itemDown[kind] && p.inventory[kind] > 0) {
-      if (kind === "needle" && p.status === "trapped") {
-        p.inventory.needle--;
-        p.status = "active";
-        p.invulnerableUntil = s.time + C.needleProtectionMs;
-      } else if (kind !== "needle" && p.status === "active") {
-        p.inventory[kind]--;
-        p[`${kind}Until`] =
-          s.time + (kind === "shield" ? C.shieldMs : C.powerMs);
-      }
-    }
-    p.itemDown[kind] = Boolean(input[kind]);
+  const pressed = Boolean(input.useItem);
+  const freshPress = pressed && !p.itemDown;
+  p.itemDown = pressed;
+  const kind = p.inventory[0];
+  if (!freshPress || !kind) return;
+  if (kind === "needle" && p.status === "trapped") {
+    p.inventory.shift();
+    p.status = "active";
+    p.invulnerableUntil = s.time + C.needleProtectionMs;
+  } else if (kind !== "needle" && p.status === "active") {
+    p.inventory.shift();
+    p[`${kind}Until`] = s.time + (kind === "shield" ? C.shieldMs : C.powerMs);
   }
 }
 
-export function collectItem(p: PracticePlayer, kind: ItemKind) {
+export function collectItem(p: PracticePlayer, kind: ItemKind): boolean {
   if (kind === "balloon") p.capacity = Math.min(C.maxBalloons, p.capacity + 1);
   else if (kind === "range") p.range = Math.min(C.maxRange, p.range + 1);
   else if (kind === "speed")
     p.speed = Math.min(C.maxSpeed, p.speed + C.speedIncrement);
-  else p.inventory[kind] = Math.min(C.inventoryLimit, p.inventory[kind] + 1);
+  else {
+    if (p.inventory.length >= C.inventoryLimit) return false;
+    p.inventory.push(kind);
+  }
+  return true;
 }
 
 export function movePlayer(
@@ -445,8 +448,7 @@ function tick(s: PracticeState, inputs: readonly LocalInput[]) {
     }
     s.items = s.items.filter((item) => {
       if (item.availableAt > s.time || !sameCell(p.position, item)) return true;
-      collectItem(p, item.kind);
-      return false;
+      return !collectItem(p, item.kind);
     });
   }
 }

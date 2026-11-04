@@ -1199,13 +1199,13 @@ dialog p {
 }
 .competition-stats .inventory {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 6px;
   margin-top: 8px;
 }
 .item-slot {
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: 1fr;
   position: relative;
   align-items: center;
   border: 1px solid #d8cba7;
@@ -1213,6 +1213,28 @@ dialog p {
   background: #fffcdf;
   padding: 3px 4px;
   gap: 0 2px;
+  text-align: center;
+  min-height: 68px;
+}
+.slot-icon {
+  min-height: 26px;
+}
+.item-slot[data-next="true"] {
+  border-color: #438a73;
+  box-shadow: 0 0 0 1px #438a7333;
+}
+.inventory-caption,
+.inventory-help {
+  font-size: 10px;
+  margin: 6px 0;
+}
+.inventory-caption {
+  display: flex;
+  justify-content: space-between;
+}
+.inventory-help {
+  color: #507661;
+  line-height: 1.5;
 }
 .item-slot svg {
   width: 25px;

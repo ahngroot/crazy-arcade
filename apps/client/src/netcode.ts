@@ -7,7 +7,7 @@ import {
   type RoomView,
 } from "@bubble/shared";
 
-const actionKeys = ["balloon", "needle", "shield", "power"] as const;
+const actionKeys = ["balloon", "useItem"] as const;
 /** Releases must arrive too, otherwise a subsequent press can remain latched on the server. */
 export function hasActionTransition(current: LocalInput, previous: LocalInput) {
   return actionKeys.some(
@@ -27,11 +27,11 @@ export class OnlineTimeline {
   private predicted: PracticeState | null = null;
   private sequence = 0;
   private elapsed = 0;
+  private itemEdges: boolean[] = [];
+  private lastItemInput = false;
   private actionLatch = {
     balloon: false,
-    needle: false,
-    shield: false,
-    power: false,
+    useItem: false,
   };
   private visual: { x: number; y: number } | null = null;
   constructor(
@@ -44,11 +44,11 @@ export class OnlineTimeline {
     this.pending = [];
     this.actionLatch = {
       balloon: false,
-      needle: false,
-      shield: false,
-      power: false,
+      useItem: false,
     };
     this.elapsed = 0;
+    this.itemEdges = [];
+    this.lastItemInput = false;
     this.predicted = null;
     this.visual = null;
     this.samples = [];
@@ -114,32 +114,36 @@ export class OnlineTimeline {
       x: Math.sign((inputs[0]?.x ?? 0) + (inputs[1]?.x ?? 0)),
       y: Math.sign((inputs[0]?.y ?? 0) + (inputs[1]?.y ?? 0)),
       balloon: false,
-      needle: false,
-      shield: false,
-      power: false,
+      useItem: false,
     };
-    for (const key of ["balloon", "needle", "shield", "power"] as const) {
+    for (const key of ["balloon", "useItem"] as const) {
       combined[key] = Boolean(inputs[0]?.[key] || inputs[1]?.[key]);
       this.actionLatch[key] ||= combined[key]!;
     }
     const running = connected && view.phase === "PLAYING" && !view.paused;
     if (running) {
+      if (Boolean(combined.useItem) !== this.lastItemInput) {
+        if (this.itemEdges.length < C.maxPendingInputs)
+          this.itemEdges.push(Boolean(combined.useItem));
+        this.lastItemInput = Boolean(combined.useItem);
+      }
       this.elapsed += Math.min(delta, C.maxFrameMs);
       const dt = 1000 / C.simulationHz;
       while (this.elapsed + 1e-7 >= dt) {
         this.elapsed = Math.max(0, this.elapsed - dt);
         const packet: NetworkInput = {
           ...combined,
+          useItem: Boolean(combined.useItem),
           roundId: view.roundId,
           sequence: ++this.sequence,
         };
-        for (const key of ["balloon", "needle", "shield", "power"] as const)
+        for (const key of ["balloon", "useItem"] as const)
           packet[key] = Boolean(combined[key] || this.actionLatch[key]);
+        // Preserve a release between quick Ctrl presses even when rendering is faster than sending.
+        packet.useItem = this.itemEdges.shift() ?? Boolean(combined.useItem);
         this.actionLatch = {
           balloon: false,
-          needle: false,
-          shield: false,
-          power: false,
+          useItem: false,
         };
         this.send(packet);
         this.pending.push({ packet, dt });
@@ -148,11 +152,11 @@ export class OnlineTimeline {
       }
     } else {
       this.elapsed = 0;
+      this.itemEdges = [];
+      this.lastItemInput = false;
       this.actionLatch = {
         balloon: false,
-        needle: false,
-        shield: false,
-        power: false,
+        useItem: false,
       };
     }
     const target = this.now() - C.interpolationMs;

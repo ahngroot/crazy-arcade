@@ -33,9 +33,7 @@ it.each([17, 2701, 9137])(
         x: Math.floor(next() * 3) - 1,
         y: Math.floor(next() * 3) - 1,
         balloon: next() < 0.25,
-        needle: next() < 0.05,
-        shield: next() < 0.025,
-        power: next() < 0.025,
+        useItem: next() < 0.1,
       }));
       stepPractice(state, inputs, 100);
       for (const [index, p] of state.players.entries()) {
@@ -332,6 +330,7 @@ describe("special items and round lifecycle", () => {
   it("uses a needle only while trapped and protects against immediate retrapping", () => {
     const s = arena(),
       p = s.players[0];
+    p.inventory = ["needle"];
     p.status = "trapped";
     p.statusUntil = 9999;
     s.blasts.push({
@@ -340,9 +339,9 @@ describe("special items and round lifecycle", () => {
       cells: [{ x: 1, y: 1 }],
       expiresAt: 1000,
     });
-    stepPractice(s, [{ ...EMPTY_INPUT, needle: true }, EMPTY_INPUT], 100);
+    stepPractice(s, [{ ...EMPTY_INPUT, useItem: true }, EMPTY_INPUT], 100);
     expect(p.status).toBe("active");
-    expect(p.inventory.needle).toBe(0);
+    expect(p.inventory).toEqual([]);
     expect(p.deaths).toBe(0);
   });
   it("shields from contact and water, expires and consumes once per press", () => {
@@ -350,9 +349,9 @@ describe("special items and round lifecycle", () => {
       p = s.players[0];
     const m = monster(s, "chaser");
     p.position = { ...m.position };
-    p.inventory.shield = 2;
-    stepPractice(s, [{ ...EMPTY_INPUT, shield: true }, EMPTY_INPUT], 100);
-    expect(p.inventory.shield).toBe(1);
+    p.inventory = ["shield", "shield"];
+    stepPractice(s, [{ ...EMPTY_INPUT, useItem: true }, EMPTY_INPUT], 100);
+    expect(p.inventory).toEqual(["shield"]);
     expect(p.status).toBe("active");
     // Keep this chaser outside the water used to test the player's shield.
     m.position = { x: 5.5, y: 9.5 };
@@ -364,9 +363,9 @@ describe("special items and round lifecycle", () => {
       cells: [{ x: Math.floor(p.position.x), y: Math.floor(p.position.y) }],
       expiresAt: s.time + 500,
     });
-    stepPractice(s, [{ ...EMPTY_INPUT, shield: true }, EMPTY_INPUT], 100);
+    stepPractice(s, [{ ...EMPTY_INPUT, useItem: true }, EMPTY_INPUT], 100);
     expect(p.status).toBe("active");
-    expect(p.inventory.shield).toBe(1);
+    expect(p.inventory).toEqual(["shield"]);
     s.time = p.shieldUntil;
     m.position = { ...p.position };
     resolveMonsterContact(s);
@@ -375,13 +374,14 @@ describe("special items and round lifecycle", () => {
   it("temporarily powers stats without mutating permanent upgrades and caps inventory", () => {
     const s = arena(),
       p = s.players[0];
-    stepPractice(s, [{ ...EMPTY_INPUT, power: true }, EMPTY_INPUT], 100);
+    p.inventory = ["power"];
+    stepPractice(s, [{ ...EMPTY_INPUT, useItem: true }, EMPTY_INPUT], 100);
     expect(effectiveStats(s, p).range).toBe(p.range + C.powerRangeBonus);
     expect(p.range).toBe(1);
     s.time = p.powerUntil;
     expect(effectiveStats(s, p).range).toBe(p.range);
     for (let i = 0; i < 10; i++) collectItem(p, "power");
-    expect(p.inventory.power).toBe(C.inventoryLimit);
+    expect(p.inventory).toEqual(["power", "power"]);
   });
   it("increases spawn frequency and shows separate 30 and 15 second warnings", () => {
     const s = arena();

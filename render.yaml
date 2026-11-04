@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: bubble-critter-duel
+    name: crazy-myangcade
     runtime: node
     plan: free
     buildCommand: npm ci --include=dev && npm run build

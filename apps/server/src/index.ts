@@ -9,7 +9,7 @@ const clientDirectory = fileURLToPath(
 );
 const { http, io } = createApp(clientDirectory);
 http.listen(port, "0.0.0.0", () =>
-  console.log(`Bubble Critter server listening on port ${port}`),
+  console.log(`crazy myangcade server listening on port ${port}`),
 );
 for (const signal of ["SIGINT", "SIGTERM"] as const)
   process.once(signal, () => io.close());

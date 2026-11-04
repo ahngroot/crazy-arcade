@@ -44,11 +44,9 @@ interface Room {
 }
 const idle = (): LocalInput => ({
   ...EMPTY_INPUT,
-  needle: false,
-  shield: false,
-  power: false,
+  useItem: false,
 });
-const actions = ["balloon", "needle", "shield", "power"] as const;
+const actions = ["balloon", "useItem"] as const;
 const fail = (error: string): { ok: false; error: string } => ({
   ok: false,
   error,
@@ -269,9 +267,7 @@ export class RoomService {
       x: input.x,
       y: input.y,
       balloon: input.balloon,
-      needle: input.needle,
-      shield: input.shield,
-      power: input.power,
+      useItem: input.useItem,
     };
     seat.sequence = input.sequence;
     seat.lastInputAt = now;
@@ -383,8 +379,7 @@ export class RoomService {
         // A release and a fresh press may both arrive between scheduler ticks.
         // Preserve the validated rising edge without auto-repeating held buttons.
         if (seat.actions.balloon) player.bombDown = false;
-        for (const key of ["needle", "shield", "power"] as const)
-          if (seat.actions[key]) player.itemDown[key] = false;
+        if (seat.actions.useItem) player.itemDown = false;
         inputs[seat.id === "p1" ? 0 : 1] = input;
         seat.ack = seat.sequence;
         seat.actions = idle();

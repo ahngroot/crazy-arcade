@@ -14,7 +14,7 @@ test("default competition is 180 seconds and stays separate from unlimited pract
   await expect(
     page.locator("[data-player=p1] [data-stat=monsters]"),
   ).toContainText("2 (대기 0)");
-  await expect(page.locator("#special-controls")).toContainText("바늘 Q");
+  await expect(page.locator("#special-controls")).toContainText("Ctrl");
   await page.screenshot({
     path: "test-results/competition-start.png",
     fullPage: true,
@@ -45,26 +45,50 @@ test("two players use specials and balloons, finish a short round and rematch", 
     "data-ready",
     "true",
   );
-  await page.keyboard.down("e");
-  await page.keyboard.down("k");
-  await expect(page.locator("[data-player=p1] [data-stat=shield]")).toHaveText(
-    "0",
-  );
-  await expect(page.locator("[data-player=p2] [data-stat=shield]")).toHaveText(
-    "0",
-  );
-  await page.keyboard.up("e");
-  await page.keyboard.up("k");
-  await page.keyboard.down("r");
-  await page.keyboard.down("l");
+  for (const id of ["p1", "p2"]) {
+    await expect(
+      page.locator(`[data-player=${id}] [data-stat=inventory-count]`),
+    ).toHaveText("2 / 2");
+    await expect(
+      page.locator(`[data-player=${id}] [data-slot="0"]`),
+    ).toHaveAttribute("data-kind", "shield");
+  }
+  await page.keyboard.down("ControlLeft");
+  await expect(
+    page.locator("[data-player=p1] [data-stat=inventory-count]"),
+  ).toHaveText("1 / 2");
+  await expect(
+    page.locator("[data-player=p2] [data-stat=inventory-count]"),
+  ).toHaveText("2 / 2");
+  await page.keyboard.down("ControlRight");
+  for (const id of ["p1", "p2"]) {
+    await expect(
+      page.locator(`[data-player=${id}] [data-stat=inventory-count]`),
+    ).toHaveText("1 / 2");
+    await expect(
+      page.locator(`[data-player=${id}] [data-slot="0"]`),
+    ).toHaveAttribute("data-kind", "power");
+  }
+  await page.waitForTimeout(120);
+  await expect(
+    page.locator("[data-player=p1] [data-stat=inventory-count]"),
+  ).toHaveText("1 / 2");
+  await page.screenshot({
+    path: "test-results/items-ctrl.png",
+    fullPage: true,
+  });
+  await page.keyboard.up("ControlLeft");
+  await page.keyboard.up("ControlRight");
+  await page.keyboard.down("ControlLeft");
+  await page.keyboard.down("ControlRight");
   await expect(page.locator("[data-player=p1] [data-stat=range]")).toHaveText(
     "3칸",
   );
-  await expect(page.locator("[data-player=p2] [data-stat=power]")).toHaveText(
-    "0",
-  );
-  await page.keyboard.up("r");
-  await page.keyboard.up("l");
+  await expect(
+    page.locator("[data-player=p2] [data-stat=inventory-count]"),
+  ).toHaveText("0 / 2");
+  await page.keyboard.up("ControlLeft");
+  await page.keyboard.up("ControlRight");
   await page.keyboard.down("Space");
   await page.keyboard.down("Enter");
   await expect(page.locator("[data-player=p1] [data-stat=balloon]")).toHaveText(
@@ -112,9 +136,9 @@ test("two players use specials and balloons, finish a short round and rematch", 
   await page.getByRole("button", { name: "재대결", exact: true }).click();
   await expect(page.locator("#result-panel")).toBeHidden();
   await expect(page.locator("#red-score")).toHaveText("0");
-  await expect(page.locator("[data-player=p1] [data-stat=shield]")).toHaveText(
-    "1",
-  );
+  await expect(
+    page.locator("[data-player=p1] [data-stat=inventory-count]"),
+  ).toHaveText("2 / 2");
   await expect(page.locator("#round-clock")).toHaveText(/00:30|00:29/);
   expect(errors).toEqual([]);
 });

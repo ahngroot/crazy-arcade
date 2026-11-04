@@ -107,9 +107,9 @@ it("announces distinct 30- and 15-second warnings without repeating the cue", ()
 it("keeps an upgrade cue when an inventory item is consumed in the same frame", () => {
   const s = createPractice(),
     tracker = new PresentationTracker();
-  s.players[0].inventory.power = 1;
+  s.players[0].inventory = ["power"];
   tracker.observe(s);
   s.players[0].capacity++;
-  s.players[0].inventory.power--;
+  s.players[0].inventory.shift();
   expect(tracker.observe(s).some((e) => e.kind === "pickup")).toBe(true);
 });

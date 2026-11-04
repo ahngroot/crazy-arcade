@@ -74,9 +74,7 @@ it("real sockets enforce 2 seats, share server snapshots, recover identity and r
     x: 0,
     y: 0,
     balloon: true,
-    needle: false,
-    shield: false,
-    power: false,
+    useItem: false,
   });
   b.emit("input", {
     sequence: 1,
@@ -84,9 +82,7 @@ it("real sockets enforce 2 seats, share server snapshots, recover identity and r
     x: 0,
     y: 0,
     balloon: true,
-    needle: false,
-    shield: false,
-    power: false,
+    useItem: false,
   });
   await new Promise((resolve) => setTimeout(resolve, 15));
   now += 40;

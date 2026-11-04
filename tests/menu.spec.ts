@@ -5,8 +5,12 @@ test("menu renders, connects and opens practice and online guidance", async ({
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
   await page.goto("/");
+  await expect(page).toHaveTitle("크레이지 먕케이드 · crazy myangcade");
+  await expect(
+    page.getByRole("link", { name: "크레이지 먕케이드 홈" }),
+  ).toContainText("crazy myangcade");
   await expect(page.getByRole("heading", { level: 1 })).toContainText(
-    "작은 물방울로",
+    "먕케이드",
   );
   await expect(page.locator("#arena")).toHaveAttribute("data-ready", "true");
   await expect(page.locator("#arena canvas")).toBeVisible();

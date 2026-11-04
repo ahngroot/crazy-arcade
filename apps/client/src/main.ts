@@ -1,6 +1,10 @@
 import { io, type Socket } from "socket.io-client";
 import type { ClientEvents, ServerEvents } from "@bubble/shared";
-import { effectiveStats, type PracticeState } from "@bubble/shared";
+import {
+  effectiveStats,
+  GAME_CONFIG as C,
+  type PracticeState,
+} from "@bubble/shared";
 import type { PracticeController } from "./practice";
 import { setupOnline } from "./online";
 import { portraitSvg, itemSvg } from "./art";
@@ -10,18 +14,18 @@ import "./style.css";
 function soundControls(id: string) {
   return `<div class="sound-controls" id="${id}" role="group" aria-label="소리 설정"><button type="button" data-sound-toggle aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l6-5v16l-6-5H4Z" fill="currentColor"/><path d="M17 8q5 4 0 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span>SOUND OFF</span></button><label for="${id}-volume">음량</label><input type="range" id="${id}-volume" data-sound-volume aria-label="전체 음량" min="0" max="100" step="1" value="35"/><output data-sound-level>35%</output><small data-sound-status>소리 없이 플레이</small></div>`;
 }
-const extraStats = `<div class="competition-stats"><dl><dt>처치 점수</dt><dd data-stat="score"></dd><dt>콤보</dt><dd data-stat="combo"></dd><dt>몬스터</dt><dd data-stat="monsters"></dd></dl><div class="inventory"><span class="item-slot" title="바늘 · 갇힘 해제">${itemSvg("needle")}<small>바늘</small><b data-stat="needle"></b></span><span class="item-slot" title="보호막 · 잠시 무적">${itemSvg("shield")}<small>보호막</small><b data-stat="shield"></b></span><span class="item-slot" title="파워 새싹 · 일시 강화">${itemSvg("power")}<small>파워</small><b data-stat="power"></b></span></div><p data-stat="buffs"></p></div>`;
+const extraStats = `<div class="competition-stats"><dl><dt>처치 점수</dt><dd data-stat="score"></dd><dt>콤보</dt><dd data-stat="combo"></dd><dt>몬스터</dt><dd data-stat="monsters"></dd></dl><p class="inventory-caption">아이템 <b data-stat="inventory-count">0 / ${C.inventoryLimit}</b></p><div class="inventory" aria-label="획득 순서대로 사용하는 아이템">${Array.from({ length: C.inventoryLimit }, (_, i) => `<span class="item-slot" data-slot="${i}"><small class="slot-order">${i === 0 ? "1 · 다음" : "2"}</small><span class="slot-icon"></span><b class="slot-name">비어 있음</b></span>`).join("")}</div><p class="inventory-help" data-stat="item-help"></p><p data-stat="buffs"></p></div>`;
 const localHelp =
   "P1 빨강 WASD 이동 · Space 물풍선 / P2 초록 방향키 이동 · Enter 물풍선. 2.5초 뒤 팡! 물줄기에 닿으면 갇힌 뒤 재생성됩니다.";
 const localSpecial =
-  "P1 바늘 Q · 보호막 E · 파워 R / P2 바늘 J · 보호막 K · 파워 L. 초록 꼬물이는 안전해요. 보라 까칠이와 닿으면 탈락! 8연속 처치하면 황금 등장.";
+  "아이템 합계 최대 2개 · 획득 순서대로 사용. P1 왼쪽 Ctrl / P2 오른쪽 Ctrl. 바늘은 갇혔을 때 사용해요. 보라 까칠이는 위험해요!";
 
 document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
   <div class="shell">
-    <header class="topbar"><a class="brand" href="/" aria-label="버블 크리터 홈"><span class="brand-icon">b.</span><span>BUBBLE CRITTER<small>작은 친구들, 커다란 한 판.</small></span></a><span class="build-tag">LOCAL EDITION <b>PC WEB</b></span></header>
+    <header class="topbar"><a class="brand" href="/" aria-label="크레이지 먕케이드 홈"><span class="brand-icon">m.</span><span>crazy myangcade<small>크레이지 먕케이드</small></span></a><span class="build-tag">LOCAL EDITION <b>PC WEB</b></span></header>
     <main>
       <div class="eyebrow"><span></span> THE LITTLE ARCADE CLUB</div>
-      <section class="intro"><div><h1>작은 물방울로,<br />시작하는 큰 모험<span>.</span></h1><p>톡, 놓고 · 쏙, 피하고 · 팡, 터뜨려요.<br />둘이 함께할 새로운 아케이드, 버블 크리터.</p></div><div class="intro-note"><span>✳</span><p>A LITTLE SPLASH.<br />A LOT OF FUN.</p></div></section>
+      <section class="intro"><div><h1>크레이지<br />먕케이드<span>.</span></h1><p>톡, 놓고 · 쏙, 피하고 · 팡, 터뜨려요.<br />둘이 함께할 새로운 아케이드, crazy myangcade.</p></div><div class="intro-note"><span>✳</span><p>A LITTLE SPLASH.<br />A LOT OF FUN.</p></div></section>
       <section class="game-layout" aria-label="게임 시작">
         <div class="arena-card"><div class="arena-top"><span><i></i> CLOVER GARDEN</span><span>맵 미리보기 <b>01</b></span></div><div class="arena-wrap"><div id="arena" role="img" aria-label="빨강과 초록 진영, 캐릭터와 물풍선이 있는 대칭형 정원 맵"></div><div class="preview-label">PHASER 4 · LIVE PREVIEW</div></div><div class="arena-bottom"><span><i class="red-dot"></i> RED TEAM</span><span>작은 정원에서 만나요</span><span><i class="green-dot"></i> GREEN TEAM</span></div></div>
         <aside class="menu-card"><span class="section-number">LET’S GET STARTED</span><h2>어떻게 시작할까요?</h2><p class="menu-caption">첫 번째 정원을 둘러보세요.</p>
@@ -35,13 +39,13 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
         </aside>
       </section>
       <section class="bottom-grid"><div><span class="detail-icon">⌘</span><div><h3>간단한 조작, 즐거운 대결</h3><p>이동 <kbd>W A S D</kbd> 물풍선 <kbd>SPACE</kbd><small>로컬 P2는 방향키 이동 · Enter 물풍선</small></p></div></div><div><span class="detail-icon">❋</span><div><h3>우리만의 작은 친구들</h3><p>직접 만든 캐릭터와 밝은 정원.<br />새로운 버블 세계를 함께 만들어가요.</p></div></div><div><span class="detail-icon">↗</span><div><h3>두 사람을 위한 아케이드</h3><p>방 코드로 만나는 1:1 대전.<br />온라인은 두 사람이 READY하면 시작해요.</p></div></div></section>
-    </main><footer><span>BUBBLE CRITTER DUEL © 2026</span><span>독자 리소스로 만드는 비공식 아케이드 프로젝트</span></footer>
+    </main><footer><span>crazy myangcade © 2026</span><span>독자 리소스로 만드는 비공식 아케이드 프로젝트</span></footer>
   </div>
   <dialog id="practice-dialog" aria-labelledby="practice-title"><div class="dialog-header"><div><span class="section-number">PRACTICE · LOCAL DUO</span><h2 id="practice-title">둘이 노는 클로버 정원</h2></div><div class="game-header-tools">${soundControls("game-audio")}<button class="close" aria-label="연습 화면 닫기">×</button></div></div>
     <p class="practice-help"><b>P1 빨강</b> WASD 이동 · Space 물풍선　 /　 <b>P2 초록</b> 방향키 이동 · Enter 물풍선<br />2.5초 뒤 팡! 상자를 부수고 아이템을 모으세요. 물줄기에 닿으면 갇힌 뒤 재생성됩니다.</p>
     <p id="network-message" role="status" hidden></p>
     <div id="round-bar" hidden><span>RED <b id="red-score">0</b></span><div><time id="round-clock">03:00</time><small id="round-warning" role="status"></small></div><span><b id="green-score">0</b> GREEN</span></div>
-    <p id="special-controls" hidden>P1 바늘 Q · 보호막 E · 파워 R　 /　 P2 바늘 J · 보호막 K · 파워 L<br />초록 꼬물이는 안전해요. 보라 까칠이와 닿으면 탈락! 8연속 처치하면 황금 등장.</p>
+    <p id="special-controls" hidden>아이템 합계 최대 2개 · 획득 순서대로 사용. P1 왼쪽 Ctrl / P2 오른쪽 Ctrl. 바늘은 갇혔을 때 사용해요.</p>
     <div class="practice-layout"><div class="competition-stage"><div id="practice-arena" aria-label="로컬 2인 게임 경기장"></div><section id="result-panel" aria-label="경기 결과" hidden><span>ROUND COMPLETE</span><div class="result-friends"><span class="portrait result-red">${portraitSvg("red")}</span><svg class="result-trophy" viewBox="0 0 64 64" aria-hidden="true"><path d="M20 13H9v11q0 14 17 14m18-25h11v11q0 14-17 14" fill="none" stroke="#d6aa4f" stroke-width="4"/><path d="M17 7h30v19q0 15-15 17-15-2-15-17Z" fill="#ffdb79" stroke="#af8d4c" stroke-width="2"/><path d="M32 43v11M22 57h20" fill="none" stroke="#af8d4c" stroke-width="5" stroke-linecap="round"/><path d="m32 14 3 6 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1Z" fill="#fff8d9"/></svg><span class="portrait result-green">${portraitSvg("green")}</span></div><h3 id="result-title"></h3><p id="result-score"></p><p>아래 재대결 버튼으로 다시 시작해요.</p></section></div><aside class="practice-hud" aria-label="플레이어 능력치">
       <div class="player-panel red-panel" data-player="p1"><div class="player-profile"><span class="portrait">${portraitSvg("red")}</span><div><h3>P1 · RED</h3><span class="profile-name">루비</span><p class="player-status" role="status"></p></div></div><dl><dt>물풍선</dt><dd data-stat="balloon"></dd><dt>물줄기</dt><dd data-stat="range"></dd><dt>이동속도</dt><dd data-stat="speed"></dd><dt>재생성</dt><dd data-stat="deaths"></dd></dl>${extraStats}</div>
       <div class="player-panel green-panel" data-player="p2"><div class="player-profile"><span class="portrait">${portraitSvg("green")}</span><div><h3>P2 · GREEN</h3><span class="profile-name">모모</span><p class="player-status" role="status"></p></div></div><dl><dt>물풍선</dt><dd data-stat="balloon"></dd><dt>물줄기</dt><dd data-stat="range"></dd><dt>이동속도</dt><dd data-stat="speed"></dd><dt>재생성</dt><dd data-stat="deaths"></dd></dl>${extraStats}</div>
@@ -160,9 +164,13 @@ function updatePracticeHud(state: PracticeState) {
       score: String(player.score),
       combo: player.combo >= 2 ? `${player.combo} COMBO!` : "—",
       monsters: `${r?.monsters.filter((m) => m.team === player.team).length ?? 0} (대기 ${r?.pending.filter((p) => p.team === player.team).reduce((n, p) => n + p.count, 0) ?? 0})`,
-      needle: String(player.inventory.needle),
-      shield: String(player.inventory.shield),
-      power: String(player.inventory.power),
+      "inventory-count": `${player.inventory.length} / ${C.inventoryLimit}`,
+      "item-help":
+        player.inventory[0] === "needle"
+          ? "바늘 · 갇혔을 때 Ctrl"
+          : onlineGame
+            ? "Ctrl · 다음 아이템 사용"
+            : `${player.id === "p1" ? "왼쪽" : "오른쪽"} Ctrl · 다음 아이템 사용`,
       buffs: [
         player.shieldUntil > state.time
           ? `보호막 ${Math.ceil((player.shieldUntil - state.time) / 1000)}초`
@@ -193,8 +201,20 @@ function updatePracticeHud(state: PracticeState) {
             { duration: 260 },
           );
       }
-      if (["needle", "shield", "power"].includes(name))
-        (node.parentElement as HTMLElement).dataset.amount = value;
+    }
+    for (const [i, slot] of [
+      ...panel.querySelectorAll<HTMLElement>("[data-slot]"),
+    ].entries()) {
+      const kind = player.inventory[i];
+      if (slot.dataset.kind !== (kind ?? "")) {
+        slot.querySelector(".slot-icon")!.innerHTML = kind ? itemSvg(kind) : "";
+        slot.querySelector(".slot-name")!.textContent = kind
+          ? { needle: "바늘", shield: "보호막", power: "파워" }[kind]
+          : "비어 있음";
+        slot.dataset.kind = kind ?? "";
+        slot.dataset.amount = kind ? "1" : "0";
+        slot.dataset.next = String(i === 0 && !!kind);
+      }
     }
   }
 }
@@ -241,9 +261,9 @@ const online = setupOnline(socket, {
     document.querySelector("#practice-dialog .section-number")!.textContent =
       "ONLINE · CRITTER DUEL";
     document.querySelector(".practice-help")!.textContent =
-      "내 캐릭터 이동 WASD / 방향키 · 물풍선 Space / Enter · 바늘 Q/J · 보호막 E/K · 파워 R/L";
+      "내 캐릭터 이동 WASD / 방향키 · 물풍선 Space / Enter · 아이템 Ctrl · 최대 2개, 획득 순서대로 사용";
     document.querySelector("#special-controls")!.textContent =
-      "바늘 Q/J · 보호막 E/K · 파워 R/L. 각자 자신의 캐릭터를 조작해요. 초록 꼬물이는 안전하고 보라 까칠이는 위험해요!";
+      "왼쪽/오른쪽 Ctrl로 다음 아이템 1개 사용. 바늘은 갇혔을 때 사용해요. 각자 자신의 캐릭터만 조작합니다.";
     document.querySelector("#mode-note")!.textContent =
       "각자 자신의 캐릭터만 조작합니다. 서버에서 경기 상태를 판정합니다.";
     for (const element of document.querySelectorAll<HTMLElement>(

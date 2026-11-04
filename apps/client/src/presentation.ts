@@ -70,9 +70,9 @@ export class PresentationTracker {
               p.capacity,
               p.range,
               p.speed,
-              p.inventory.needle,
-              p.inventory.shield,
-              p.inventory.power,
+              ...(["needle", "shield", "power"] as const).map(
+                (kind) => p.inventory.filter((item) => item === kind).length,
+              ),
             ],
             buffs: p.shieldUntil + p.powerUntil,
           },

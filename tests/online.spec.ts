@@ -63,17 +63,35 @@ test("two independent browsers share a room, reconnect and rematch; a third is r
       "data-ready",
       "true",
     );
-    await page.keyboard.down("e");
-    await page.keyboard.down("r");
+    await page.keyboard.down("ControlRight");
+    await expect(
+      page.locator("[data-player=p1] [data-stat=inventory-count]"),
+    ).toHaveText("1 / 2");
+    await expect(
+      b.locator("[data-player=p2] [data-stat=inventory-count]"),
+    ).toHaveText("2 / 2");
+    await page.keyboard.up("ControlRight");
+    await page.keyboard.down("ControlRight");
+    await expect(page.locator("[data-player=p1] [data-stat=range]")).toHaveText(
+      "3칸",
+    );
+    await page.keyboard.up("ControlRight");
     await page.keyboard.down("Space");
     await expect(
       page.locator("[data-player=p1] [data-stat=balloon]"),
     ).toHaveText("1 / 3");
     await page.keyboard.up("Space");
-    await page.keyboard.up("r");
-    await page.keyboard.up("e");
-    await b.keyboard.down("e");
-    await b.keyboard.down("r");
+
+    await b.keyboard.down("ControlLeft");
+    await expect(
+      b.locator("[data-player=p2] [data-stat=inventory-count]"),
+    ).toHaveText("1 / 2");
+    await b.keyboard.up("ControlLeft");
+    await b.keyboard.down("ControlLeft");
+    await expect(b.locator("[data-player=p2] [data-stat=range]")).toHaveText(
+      "3칸",
+    );
+    await b.keyboard.up("ControlLeft");
     await b.keyboard.down("Space");
     await expect(b.locator("[data-player=p2] [data-stat=balloon]")).toHaveText(
       "1 / 3",
@@ -82,8 +100,7 @@ test("two independent browsers share a room, reconnect and rematch; a third is r
       "1 / 3",
     );
     await b.keyboard.up("Space");
-    await b.keyboard.up("r");
-    await b.keyboard.up("e");
+
     await b.keyboard.down("s");
     await expect
       .poll(async () =>

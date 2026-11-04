@@ -143,9 +143,7 @@ export function setupOnline(
       const reopen = inGame;
       let previousActions = {
         balloon: false,
-        needle: false,
-        shield: false,
-        power: false,
+        useItem: false,
       };
       timeline = new OnlineTimeline(playerId, (packet) => {
         if (!socket.connected) return;
@@ -156,9 +154,7 @@ export function setupOnline(
         });
         previousActions = {
           balloon: packet.balloon,
-          needle: !!packet.needle,
-          shield: !!packet.shield,
-          power: !!packet.power,
+          useItem: !!packet.useItem,
         };
         if (edge) socket.emit("input", packet);
         else socket.volatile.emit("input", packet);

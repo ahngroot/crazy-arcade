@@ -34,9 +34,7 @@ const packet = (sequence: number, roundId = 1) => ({
   x: 0,
   y: 1,
   balloon: false,
-  needle: false,
-  shield: false,
-  power: false,
+  useItem: false,
 });
 describe("server room lifecycle", () => {
   it("releases sessions, socket bindings, rooms and expired request buckets across repeated create/leave cycles", () => {
@@ -196,6 +194,30 @@ describe("server room lifecycle", () => {
   });
 });
 describe("validated authoritative inputs", () => {
+  it("uses FIFO items once per validated Ctrl edge, rejects duplicates and malformed actions, and isolates the other player", () => {
+    const h = pair();
+    start(h);
+    const game = h.service.current("a")!.game!;
+    expect(h.service.input("a", { ...packet(1), y: 0, useItem: 1 })).toBe(
+      false,
+    );
+    const { useItem: _, ...missing } = packet(1);
+    expect(h.service.input("a", missing)).toBe(false);
+    const first = { ...packet(1), y: 0, useItem: true };
+    expect(h.service.input("a", first)).toBe(true);
+    h.advance(40);
+    expect(game.players[0].inventory).toEqual(["power"]);
+    expect(game.players[1].inventory).toEqual(["shield", "power"]);
+    expect(h.service.input("a", first)).toBe(false);
+    h.service.input("a", { ...packet(2), y: 0, useItem: true });
+    h.advance(40);
+    expect(game.players[0].inventory).toEqual(["power"]);
+    h.service.input("a", { ...packet(3), y: 0, useItem: false });
+    h.service.input("a", { ...packet(4), y: 0, useItem: true });
+    h.advance(40);
+    expect(game.players[0].inventory).toEqual([]);
+    expect(game.players[0].powerUntil).toBeGreaterThan(game.time);
+  });
   it("ignores duplicate, stale epoch, excessive and non-finite input", () => {
     const h = pair();
     start(h);

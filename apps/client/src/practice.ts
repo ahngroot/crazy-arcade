@@ -21,52 +21,51 @@ const MOVEMENT_KEYS = new Set([
   "ArrowRight",
   "Space",
   "Enter",
-  "KeyQ",
-  "KeyE",
-  "KeyR",
-  "KeyJ",
-  "KeyK",
-  "KeyL",
+  "ControlLeft",
+  "ControlRight",
 ]);
 
 /** Owned by a single practice session; never attaches keyboard handlers to the menu. */
 class PracticeKeyboard {
   private keys = new Set<string>();
   private pending = new Set<string>();
+  private itemEdges: [boolean[], boolean[]] = [[], []];
+  private itemEdge(code: string, pressed: boolean) {
+    const index = code === "ControlLeft" ? 0 : code === "ControlRight" ? 1 : -1;
+    if (index === -1) return;
+    if (this.itemEdges[index].length < C.maxPendingInputs)
+      this.itemEdges[index].push(pressed);
+  }
   private down = (event: KeyboardEvent) => {
     if (!MOVEMENT_KEYS.has(event.code)) return;
     if (
       event.target instanceof HTMLInputElement ||
       event.target instanceof HTMLSelectElement ||
       (event.target instanceof HTMLButtonElement &&
-        [
-          "Space",
-          "Enter",
-          "KeyQ",
-          "KeyE",
-          "KeyR",
-          "KeyJ",
-          "KeyK",
-          "KeyL",
-        ].includes(event.code))
+        ["Space", "Enter", "ControlLeft", "ControlRight"].includes(event.code))
     )
       return;
     event.preventDefault();
+    if (!this.keys.has(event.code) && !event.repeat)
+      this.itemEdge(event.code, true);
     this.keys.add(event.code);
     if (!event.repeat) this.pending.add(event.code);
   };
   private up = (event: KeyboardEvent) => {
     if (MOVEMENT_KEYS.has(event.code)) {
       event.preventDefault();
+      if (this.keys.has(event.code)) this.itemEdge(event.code, false);
       this.keys.delete(event.code);
     }
   };
   clear = () => {
     this.keys.clear();
     this.pending.clear();
+    this.itemEdges = [[], []];
   };
   consumeActions() {
     this.pending.clear();
+    for (const edges of this.itemEdges) edges.shift();
   }
   private visibility = () => {
     if (document.hidden) this.clear();
@@ -95,17 +94,13 @@ class PracticeKeyboard {
         x: has("KeyD") - has("KeyA"),
         y: has("KeyS") - has("KeyW"),
         balloon: action("Space"),
-        needle: action("KeyQ"),
-        shield: action("KeyE"),
-        power: action("KeyR"),
+        useItem: this.itemEdges[0][0] ?? Boolean(has("ControlLeft")),
       },
       {
         x: has("ArrowRight") - has("ArrowLeft"),
         y: has("ArrowDown") - has("ArrowUp"),
         balloon: action("Enter"),
-        needle: action("KeyJ"),
-        shield: action("KeyK"),
-        power: action("KeyL"),
+        useItem: this.itemEdges[1][0] ?? Boolean(has("ControlRight")),
       },
     ];
   }

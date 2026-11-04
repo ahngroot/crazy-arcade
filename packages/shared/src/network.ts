@@ -1,6 +1,7 @@
 import type { LocalInput, PracticeState } from "./game.js";
 import type { RoomPhase, Team } from "./index.js";
 export interface NetworkInput extends LocalInput {
+  useItem: boolean;
   sequence: number;
   roundId: number;
 }

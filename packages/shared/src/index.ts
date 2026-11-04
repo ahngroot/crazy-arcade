@@ -47,7 +47,7 @@ export const GAME_CONFIG = Object.freeze({
   goldenScore: 10,
   comboBonus: 1,
   goldenRewardItem: true,
-  inventoryLimit: 3,
+  inventoryLimit: 2,
   shieldMs: 4000,
   needleProtectionMs: 900,
   powerMs: 6000,

@@ -50,12 +50,14 @@ it("predicts only movement, emits sequenced input, and never predicts balloons, 
   const snapshot = view();
   timeline.receive(snapshot);
   const result = timeline.frame(
-    [{ x: 0, y: 1, balloon: true }, EMPTY_INPUT],
+    [{ x: 0, y: 1, balloon: true, useItem: true }, EMPTY_INPUT],
     34,
     true,
   )!;
   expect(result.players[0].position.y).toBeGreaterThan(1.5);
   expect(result.balloons).toHaveLength(0);
+  expect(result.players[0].inventory).toEqual(["shield", "power"]);
+  expect(sent[0].useItem).toBe(true);
   expect(result.players[0].score).toBe(0);
   expect(sent[0]).toMatchObject({ sequence: 1, roundId: 1, balloon: true });
   expect(snapshot.game!.players[0].position.y).toBe(1.5);
@@ -135,7 +137,7 @@ it("keeps prediction speed and input cadence consistent at 10 and 30 render FPS"
 });
 
 it("reliably transmits both press and release transitions, including optional item buttons", () => {
-  for (const action of ["balloon", "needle", "shield", "power"] as const) {
+  for (const action of ["balloon", "useItem"] as const) {
     const pressed = { ...EMPTY_INPUT, [action]: true };
     expect(hasActionTransition(pressed, EMPTY_INPUT)).toBe(true);
     expect(hasActionTransition(EMPTY_INPUT, pressed)).toBe(true);
@@ -144,6 +146,27 @@ it("reliably transmits both press and release transitions, including optional it
   expect(hasActionTransition({ ...EMPTY_INPUT, y: 1 }, EMPTY_INPUT)).toBe(
     false,
   );
+});
+
+it("preserves fast Ctrl press-release-press transitions across 30Hz input sampling", () => {
+  const packets: NetworkInput[] = [];
+  const t = new OnlineTimeline(
+    "p1",
+    (p) => packets.push(p),
+    () => 0,
+  );
+  t.receive(view());
+  t.frame([{ ...EMPTY_INPUT, useItem: true }, EMPTY_INPUT], 10, true);
+  t.frame([EMPTY_INPUT, EMPTY_INPUT], 10, true);
+  t.frame([{ ...EMPTY_INPUT, useItem: true }, EMPTY_INPUT], 10, true);
+  t.frame([EMPTY_INPUT, EMPTY_INPUT], 10, true);
+  for (let i = 0; i < 4; i++) t.frame([EMPTY_INPUT, EMPTY_INPUT], 34, true);
+  expect(packets.slice(0, 4).map((p) => p.useItem)).toEqual([
+    true,
+    false,
+    true,
+    false,
+  ]);
 });
 
 it("caps catch-up after a long frame and keeps every received snapshot immutable during prediction and replay", () => {
