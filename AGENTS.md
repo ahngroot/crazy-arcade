@@ -3,6 +3,7 @@
 - 기존 체크아웃에서 작업한다. 클라우드 작업은 이미 격리되어 있으므로 사용자가 요청하지 않으면 worktree를 만들지 않는다.
 - 현재 게임 이름은 crazy myangcade / 크레이지 먕케이드다. 사용자 요청에 따라 사용 아이템은 합계 2개, 획득 순서대로 Ctrl로 하나씩 사용한다. 로컬 P1 왼쪽 Ctrl·P2 오른쪽 Ctrl, 온라인 양쪽 Ctrl을 지원한다. 능력치 강화는 획득 즉시 적용한다.
 - Render 설정은 준비만 되어 있다. 사용자는 로컬 플레이를 원하며 공개 배포는 별도 요청 없이 진행하지 않는다.
+- Windows 포터블 EXE는 `npm run package:windows`, 실행 검증은 `npm run test:portable`을 따른다. `docs/windows.md`에 사용법과 검증 범위를 기록한다. SEA의 Node 버전은 blob 생성 런타임과 같아야 하며 Windows 다운로드의 SHA-256을 검증한다. `release/`, `build/`, `.cache/`와 EXE/ZIP은 Git에 커밋하지 않고 CI artifact로 제공한다. Linux 실행 검증을 Windows 실기기 검증으로 표시하지 않는다.
 - 사용자의 합의에 따라 단계 완료 시 검증 후 커밋하고 `git push origin HEAD:main`으로 GitHub에 반영한다. 푸시 전에 원격 변경 여부를 확인하며, 강제 푸시하지 않는다. 공개 배포는 별도 단계다.
 - Node.js 24, npm workspaces, TypeScript strict, Phaser 4.2.1을 사용한다.
 - `packages/shared`에는 DOM/Phaser 의존성이 없는 규칙과 타입을 둔다. 클라이언트는 표시와 입력, 서버는 최종 경기 판정을 담당한다.

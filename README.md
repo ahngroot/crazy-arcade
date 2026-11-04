@@ -1,5 +1,15 @@
 # crazy myangcade · 크레이지 먕케이드
 
+## Windows EXE로 실행 (Node.js 설치 불필요)
+
+Windows 10/11 **64비트** 대상 포터블 테스트 빌드를 제공합니다. 배포 ZIP을 압축 해제하고 **`crazy-myangcade.exe`를 더블클릭**하세요. 기본 브라우저에 게임이 열립니다. 플레이하는 동안 서버 창을 켜 두고, 종료할 때는 창을 닫거나 Ctrl+C를 누르세요. 브라우저가 자동으로 열리지 않으면 서버 창의 `GAME_URL` 주소를 직접 여세요.
+
+GitHub에서 받을 때는 [Windows portable EXE 빌드](https://github.com/ahngroot/crazy-arcade/actions/workflows/windows-portable.yml)의 **성공한 실행 → Artifacts → crazy-myangcade-windows-x64**를 선택합니다. 로그인과 저장소 접근 권한이 필요할 수 있고, 보관 기간은 7일입니다. GitHub의 **Code → Download ZIP은 소스 코드**이며 실행 파일을 포함하지 않습니다.
+
+EXE에는 런타임과 화면·소리가 포함돼 있어 Node.js/npm·인터넷 연결 없이 실행할 수 있습니다. 같은 PC에서만 접속하며 공개 배포와는 별개입니다. [EXE 사용·제작·검증 범위](docs/windows.md)를 참고하세요.
+
+## 소스로 개발·실행
+
 브라우저에서 접속할 주소를 만들려면 [Render 배포 안내](docs/deploy.md)를 참고하세요. `render.yaml`을 준비했으며 실제 배포·주소 발급은 Render 계정 연결 후 진행합니다. 아래 단계별 공개 배포 보류 기록은 로컬 인수인계 시점의 상태입니다.
 
 `ahngroot/crazy-arcade`에서 개발하는 독자 리소스 기반 2인 아케이드 웹게임입니다. **8단계의 로컬 최종 점검·원작 비교표·실행/인수인계 정리**를 마쳤습니다. 사용자 요청에 따라 **7단계 공개 배포는 보류**했습니다. 같은 서버에 접속한 각자의 브라우저에서 방 코드로 만나 몬스터 처치 경쟁을 하며, 한 PC의 로컬 2인 대전과 무제한 연습도 지원합니다.
@@ -117,7 +127,7 @@ npm run test:e2e
 
 Node.js 24.19.0 환경에서 기존 물풍선 엔진과 새 몬스터 경쟁 규칙을 검증합니다. 테스트는 이동·충돌·연쇄·피격·재생성·아이템 외에도 처치 점수, 상대 전달, 콤보/황금, 추격 AI, 특수 아이템, 상한/대기열, 승패/무승부, 종료 후 상태 불변성과 시드 재현을 검사합니다. 180초 전체 경기는 로직 테스트로, 30초 경기의 시작→실제 키보드 입력→종료→재대결은 브라우저에서 확인합니다. 실제 Windows Chrome/Edge, 키보드별 동시 입력 제한과 외부 인터넷 접속은 아직 별도 검증이 필요합니다.
 
-최종 점검에서 의존성 새 설치, Vitest **83개**, Chromium Playwright **16개**, 타입 검사·빌드가 모두 통과했습니다. 연출 중복 방지·상태 불변성·그림 누락 대체·실제 오디오 파형·음량/음소거·미지원 대체 검사도 포함합니다. `test-results/original-art-gallery.png`와 18초 `original-sound-preview.wav`가 생성됩니다. 최종 실행 결과와 수동 확인 항목은 [인수인계 문서](docs/handoff.md)에 기록했습니다.
+최종 점검에서 의존성 새 설치, Vitest **90개**, Chromium Playwright **16개**, 타입 검사·빌드가 모두 통과했습니다. 연출 중복 방지·상태 불변성·그림 누락 대체·실제 오디오 파형·음량/음소거·미지원 대체 검사도 포함합니다. `test-results/original-art-gallery.png`와 18초 `original-sound-preview.wav`가 생성됩니다. 최종 실행 결과와 수동 확인 항목은 [인수인계 문서](docs/handoff.md)에 기록했습니다.
 
 빌드 결과물의 서버에서도 건강 검사, 게임 HTML 제공, 실제 WebSocket 방 생성과 두 번째 사용자 입장을 별도로 확인했습니다.
 

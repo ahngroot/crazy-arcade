@@ -11,6 +11,7 @@ import { RoomService } from "./rooms.js";
 export function createApp(
   clientDirectory?: string,
   clock: () => number = Date.now,
+  options: { serveClient?: boolean } = {},
 ) {
   const app = express();
   app.disable("x-powered-by");
@@ -19,6 +20,7 @@ export function createApp(
   const http = createServer(app);
   const rooms = new RoomService(clock);
   const io = new Server<ClientEvents, ServerEvents>(http, {
+    serveClient: options.serveClient ?? true,
     maxHttpBufferSize: 16_384,
     allowRequest: (request, callback) => {
       const origin = request.headers.origin;

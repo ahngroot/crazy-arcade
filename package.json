@@ -17,13 +17,19 @@
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run",
     "test:e2e": "npm run build && playwright test",
-    "benchmark": "node --expose-gc --import tsx scripts/benchmark.ts"
+    "benchmark": "node --expose-gc --import tsx scripts/benchmark.ts",
+    "package:windows": "npm run build && node --import tsx scripts/package-portable.ts windows",
+    "package:host": "npm run build && node --import tsx scripts/package-portable.ts host",
+    "test:portable": "node --import tsx scripts/smoke-portable.ts"
   },
   "devDependencies": {
     "@playwright/test": "1.64.1",
     "@types/express": "5.0.6",
     "@types/node": "26.6.6",
     "concurrently": "10.0.6",
+    "esbuild": "0.28.2",
+    "fflate": "0.8.3",
+    "postject": "1.0.0-alpha.6",
     "prettier": "3.9.10",
     "tsup": "9.0.0",
     "tsx": "4.23.15",
