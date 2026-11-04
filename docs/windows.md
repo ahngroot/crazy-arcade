@@ -73,4 +73,6 @@ PLAYWRIGHT_CHROMIUM_PATH=/usr/bin/chromium npm run test:portable -- release/craz
 
 타입 검사·제품 빌드·전체 테스트 90개가 통과했다. Windows EXE는 약 93MB, 배포 ZIP은 약 35MB다. PE import 검사에서 Windows 기본 시스템 DLL만 참조하며 별도 Node 설치 파일을 요구하지 않는 구성을 확인했다.
 
-Windows 러너에서 검증하도록 CI를 추가했다. 이 문서 작성 시점에는 Windows 실기기/러너 실행 결과를 확인하지 않았으므로, Linux 결과를 Windows 실행 통과로 표시하지 않는다.
+Windows 러너의 [첫 자동 빌드](https://github.com/ahngroot/crazy-arcade/actions/runs/41798446967)도 **성공**했다(소스 `1999cf3`, 약 2분 5초). Windows에서 실제 EXE를 생성하고 Node/PATH 없는 한글 폴더에서 실행해 내장 화면·2인 소켓·Ctrl 사용·브라우저 플레이를 검사한 후 artifact 2개를 업로드했다. 다운로드는 해당 실행의 `crazy-myangcade-windows-x64` artifact를 사용한다.
+
+이 결과는 자동 Windows 실행 검사이며, 사용자의 Windows PC에서 더블클릭·기본 브라우저 열기·키보드·미확인 앱 안내를 직접 확인한 것으로 표시하지 않는다.
