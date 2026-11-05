@@ -98,7 +98,7 @@ export class OnlineTimeline {
       movePlayer(s, p, input, Math.min(C.fixedStepMs, left));
   }
   frame(
-    inputs: LocalInput[],
+    input: LocalInput,
     delta: number,
     connected: boolean,
   ): PracticeState | null {
@@ -110,14 +110,8 @@ export class OnlineTimeline {
         ...current,
         players: current.players.map((p) => ({ ...p, moving: false })),
       };
-    const combined: LocalInput = {
-      x: Math.sign((inputs[0]?.x ?? 0) + (inputs[1]?.x ?? 0)),
-      y: Math.sign((inputs[0]?.y ?? 0) + (inputs[1]?.y ?? 0)),
-      balloon: false,
-      useItem: false,
-    };
+    const combined = input;
     for (const key of ["balloon", "useItem"] as const) {
-      combined[key] = Boolean(inputs[0]?.[key] || inputs[1]?.[key]);
       this.actionLatch[key] ||= combined[key]!;
     }
     const running = connected && view.phase === "PLAYING" && !view.paused;

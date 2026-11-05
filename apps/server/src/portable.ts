@@ -3,6 +3,7 @@ import type { Server } from "node:http";
 import type { AddressInfo } from "node:net";
 import { extname } from "node:path";
 import { spawn } from "node:child_process";
+import { networkInterfaces } from "node:os";
 
 /** Asset names are an exact allowlist; no extraction or filesystem paths are used. */
 export function embeddedClient(
@@ -33,11 +34,8 @@ export function embeddedClient(
   };
 }
 
-/** The portable build is local-only; the OS chooses a free port if 3001 is busy. */
-export async function listenLocal(
-  server: Server,
-  port = 3001,
-): Promise<string> {
+/** Serve both players from one host PC; the OS chooses a free port if 3001 is busy. */
+export async function listenGame(server: Server, port = 3001): Promise<string> {
   async function listen(value: number) {
     await new Promise<void>((resolve, reject) => {
       const fail = (error: Error) => {
@@ -50,7 +48,7 @@ export async function listenLocal(
       };
       server.once("error", fail);
       server.once("listening", ready);
-      server.listen(value, "127.0.0.1");
+      server.listen(value, "0.0.0.0");
     });
   }
   try {
@@ -63,8 +61,28 @@ export async function listenLocal(
   return `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
 }
 
+/** Share LAN interface addresses with the actual port, never a peer's localhost. */
+export function lanGameUrls(
+  localUrl: string,
+  interfaces = networkInterfaces(),
+): string[] {
+  const port = new URL(localUrl).port || "80";
+  return [
+    ...new Set(
+      Object.values(interfaces).flatMap((entries) =>
+        (entries ?? [])
+          .filter((entry) => !entry.internal && entry.family === "IPv4")
+          .filter(({ address }) =>
+            /^(10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/.test(address),
+          )
+          .map(({ address }) => `http://${address}:${port}`),
+      ),
+    ),
+  ];
+}
+
 export function launchBrowser(url: string, onError: (error: Error) => void) {
-  // URL is produced by listenLocal; never pass user-provided command text to a shell.
+  // URL is produced by listenGame; never pass user-provided command text to a shell.
   if (!/^http:\/\/127\.0\.0\.1:\d+$/.test(url))
     throw Error("Invalid local game address");
   const command =

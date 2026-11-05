@@ -4,7 +4,8 @@ import { createApp } from "./app";
 import {
   embeddedClient,
   launchBrowser,
-  listenLocal,
+  listenGame,
+  lanGameUrls,
   portableOptions,
 } from "./portable";
 
@@ -21,9 +22,11 @@ async function main() {
   );
   const server = createApp(undefined, Date.now, { serveClient: false });
   server.app.use(embeddedClient(assets));
-  const url = await listenLocal(server.http, options.port);
-  console.log("\ncrazy myangcade - local game\n");
+  const url = await listenGame(server.http, options.port);
+  console.log("\ncrazy myangcade - online duel\n");
   console.log(`GAME_URL=${url}`);
+  for (const address of lanGameUrls(url)) console.log(`FRIEND_URL=${address}`);
+  console.log("Share a FRIEND_URL with the other PC on the same network.");
   console.log(
     "\nKeep this window open while playing. Close it or press Ctrl+C to stop.\n",
   );

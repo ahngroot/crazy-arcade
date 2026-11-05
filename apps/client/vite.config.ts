@@ -5,6 +5,7 @@ export default defineConfig({
     strictPort: true,
     proxy: {
       "/health": "http://127.0.0.1:3001",
+      "/connection-info": "http://127.0.0.1:3001",
       "/socket.io": { target: "http://127.0.0.1:3001", ws: true },
     },
   },

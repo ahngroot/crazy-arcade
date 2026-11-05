@@ -50,7 +50,7 @@ it("predicts only movement, emits sequenced input, and never predicts balloons, 
   const snapshot = view();
   timeline.receive(snapshot);
   const result = timeline.frame(
-    [{ x: 0, y: 1, balloon: true, useItem: true }, EMPTY_INPUT],
+    { x: 0, y: 1, balloon: true, useItem: true },
     34,
     true,
   )!;
@@ -71,7 +71,7 @@ it("reconciles acknowledgements, rejects stale snapshots and stops sending when 
   );
   const a = view();
   t.receive(a);
-  t.frame([{ x: 0, y: 1, balloon: false }, EMPTY_INPUT], 34, true);
+  t.frame({ x: 0, y: 1, balloon: false }, 34, true);
   const b = view();
   b.tick = 2;
   b.players[0].ack = 1;
@@ -80,14 +80,14 @@ it("reconciles acknowledgements, rejects stale snapshots and stops sending when 
   expect(t.view?.tick).toBe(2);
   t.receive(a);
   expect(t.view?.tick).toBe(2);
-  t.frame([EMPTY_INPUT, EMPTY_INPUT], 100, false);
+  t.frame(EMPTY_INPUT, 100, false);
   expect(sent).toHaveLength(1);
   b.paused = true;
   t.receive(b);
-  t.frame([EMPTY_INPUT, EMPTY_INPUT], 100, true);
+  t.frame(EMPTY_INPUT, 100, true);
   expect(sent).toHaveLength(1);
   t.resetConnection();
-  expect(() => t.frame([EMPTY_INPUT, EMPTY_INPUT], 100, false)).not.toThrow();
+  expect(() => t.frame(EMPTY_INPUT, 100, false)).not.toThrow();
 });
 it("interpolates the other player between buffered snapshots and resets sequence each round", () => {
   let now = 0;
@@ -105,13 +105,13 @@ it("interpolates the other player between buffered snapshots and resets sequence
   b.game!.players[1].position.y = 2.5;
   t.receive(b);
   now = 150;
-  const result = t.frame([EMPTY_INPUT, EMPTY_INPUT], 34, true)!;
+  const result = t.frame(EMPTY_INPUT, 34, true)!;
   expect(result.players[1].position.y).toBeCloseTo(2);
   const c = view();
   c.roundId = 2;
   now = 200;
   t.receive(c);
-  t.frame([EMPTY_INPUT, EMPTY_INPUT], 34, true);
+  t.frame(EMPTY_INPUT, 34, true);
   expect(sent.at(-1)?.sequence).toBe(1);
 });
 
@@ -125,9 +125,9 @@ it("keeps prediction speed and input cadence consistent at 10 and 30 render FPS"
     );
     t.receive(view());
     for (let i = 0; i < count; i++)
-      t.frame([{ ...EMPTY_INPUT, y: 1 }, EMPTY_INPUT], delta, true);
+      t.frame({ ...EMPTY_INPUT, y: 1 }, delta, true);
     const packets = sent.length;
-    const stopped = t.frame([EMPTY_INPUT, EMPTY_INPUT], 200, true)!;
+    const stopped = t.frame(EMPTY_INPUT, 200, true)!;
     return { packets, y: stopped.players[0].position.y };
   };
   const slow = run(100, 10),
@@ -156,11 +156,11 @@ it("preserves fast Ctrl press-release-press transitions across 30Hz input sampli
     () => 0,
   );
   t.receive(view());
-  t.frame([{ ...EMPTY_INPUT, useItem: true }, EMPTY_INPUT], 10, true);
-  t.frame([EMPTY_INPUT, EMPTY_INPUT], 10, true);
-  t.frame([{ ...EMPTY_INPUT, useItem: true }, EMPTY_INPUT], 10, true);
-  t.frame([EMPTY_INPUT, EMPTY_INPUT], 10, true);
-  for (let i = 0; i < 4; i++) t.frame([EMPTY_INPUT, EMPTY_INPUT], 34, true);
+  t.frame({ ...EMPTY_INPUT, useItem: true }, 10, true);
+  t.frame(EMPTY_INPUT, 10, true);
+  t.frame({ ...EMPTY_INPUT, useItem: true }, 10, true);
+  t.frame(EMPTY_INPUT, 10, true);
+  for (let i = 0; i < 4; i++) t.frame(EMPTY_INPUT, 34, true);
   expect(packets.slice(0, 4).map((p) => p.useItem)).toEqual([
     true,
     false,
@@ -186,11 +186,11 @@ it("caps catch-up after a long frame and keeps every received snapshot immutable
   }
   freeze(snapshot);
   t.receive(snapshot);
-  t.frame([{ ...EMPTY_INPUT, y: 1 }, EMPTY_INPUT], 10000, true);
+  t.frame({ ...EMPTY_INPUT, y: 1 }, 10000, true);
   expect(sent.length).toBeLessThanOrEqual(
     Math.ceil(C.maxFrameMs / (1000 / C.simulationHz)),
   );
   t.receive(snapshot);
-  t.frame([{ ...EMPTY_INPUT, x: 1 }, EMPTY_INPUT], 34, true);
+  t.frame({ ...EMPTY_INPUT, x: 1 }, 34, true);
   expect(snapshot).toEqual(before);
 });

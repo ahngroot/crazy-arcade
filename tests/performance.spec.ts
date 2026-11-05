@@ -1,20 +1,21 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./fixtures";
 import { writeFile } from "node:fs/promises";
 
 test("records rendered frame timing and releases the game canvas across repeated sessions", async ({
   page,
+  duel,
 }, testInfo) => {
   test.setTimeout(45000);
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
   await page.goto("/");
   for (let i = 0; i < 3; i++) {
-    await page.getByRole("button", { name: /꼬물이 대전/ }).click();
-    await expect(page.locator("#practice-arena")).toHaveAttribute(
+    const opponent = await duel(page, { navigate: false });
+    await expect(page.locator("#game-arena")).toHaveAttribute(
       "data-ready",
       "true",
     );
-    await expect(page.locator("#practice-arena canvas")).toHaveCount(1);
+    await expect(page.locator("#game-arena canvas")).toHaveCount(1);
     if (i === 0) {
       const timing = await page.evaluate(
         () =>
@@ -40,9 +41,10 @@ test("records rendered frame timing and releases the game canvas across repeated
                 requestAnimationFrame(frame);
                 return;
               }
-              const canvas = document.querySelector<HTMLCanvasElement>(
-                "#practice-arena canvas",
-              )!;
+              const canvas =
+                document.querySelector<HTMLCanvasElement>(
+                  "#game-arena canvas",
+                )!;
               const gl =
                 canvas.getContext("webgl2") ?? canvas.getContext("webgl");
               const debug = gl?.getExtension("WEBGL_debug_renderer_info");
@@ -74,7 +76,8 @@ test("records rendered frame timing and releases the game canvas across repeated
     await page
       .getByRole("button", { name: "메뉴로 돌아가기", exact: true })
       .click();
-    await expect(page.locator("#practice-arena canvas")).toHaveCount(0);
+    await expect(page.locator("#game-arena canvas")).toHaveCount(0);
+    opponent.disconnect();
   }
   expect(errors).toEqual([]);
 });

@@ -107,7 +107,7 @@ function prediction() {
     packet.tick = i;
     const at = performance.now();
     t.receive(packet);
-    t.frame([EMPTY_INPUT, EMPTY_INPUT], 50, true);
+    t.frame(EMPTY_INPUT, 50, true);
     times.push(performance.now() - at);
   }
   return {

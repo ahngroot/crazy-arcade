@@ -78,7 +78,7 @@ it.each([60, 10])(
         }
       if (now + 1e-7 >= nextFrame) {
         const input = { ...EMPTY_INPUT, y: now - start < 1000 ? 1 : 0 };
-        result = t.frame([input, EMPTY_INPUT], 1000 / fps, true)!;
+        result = t.frame(input, 1000 / fps, true)!;
         nextFrame += 1000 / fps;
         maxError = Math.max(
           maxError,

@@ -33,17 +33,25 @@ test("two independent browsers share a room, reconnect and rematch; a third is r
       code,
     );
     await page.getByRole("button", { name: "초대 링크 복사" }).click();
-    expect(await page.evaluate(() => navigator.clipboard.readText())).toContain(
-      `room=${code}`,
+    const invitation = await page.evaluate(() =>
+      navigator.clipboard.readText(),
     );
-    await lobby(b, "Guest");
-    await b.getByLabel("방 코드", { exact: true }).fill(code!);
-    await b.getByRole("button", { name: "방 참가하기" }).click();
+    expect(invitation).toContain(`room=${code}`);
+    expect(new URL(invitation).hostname).not.toBe("127.0.0.1");
+    expect(new URL(invitation).port).toBe(new URL(page.url()).port);
+    const inviteUrl = new URL(invitation);
+    // Managed cloud browsers may forbid private-IP navigation. Keep that limit explicit.
+    if (process.env.PLAYWRIGHT_LOOPBACK_INVITES === "1")
+      inviteUrl.hostname = new URL(page.url()).hostname;
+    await b.goto(inviteUrl.href);
+    await b.getByLabel("닉네임", { exact: true }).fill("Guest");
+    await expect(b.getByLabel("방 코드", { exact: true })).toHaveValue(code!);
+    await b.getByRole("button", { name: "방 참가하기", exact: true }).click();
     await expect(page.locator("#room-players li")).toHaveCount(2);
     await expect(b.locator("#online-team")).toHaveText("내 팀 · GREEN");
     await lobby(c, "Third");
     await c.getByLabel("방 코드", { exact: true }).fill(code!);
-    await c.getByRole("button", { name: "방 참가하기" }).click();
+    await c.getByRole("button", { name: "방 참가하기", exact: true }).click();
     await expect(c.locator("#online-message")).toContainText("최대 2명");
     await c.getByRole("button", { name: "방 만들기", exact: true }).click();
     await expect(c.locator("#room-code")).not.toHaveText(code!);
@@ -55,11 +63,11 @@ test("two independent browsers share a room, reconnect and rematch; a third is r
     await expect(
       b.getByRole("heading", { name: "온라인 대전 · 초록 팀" }),
     ).toBeVisible({ timeout: 10000 });
-    await expect(page.locator("#practice-arena")).toHaveAttribute(
+    await expect(page.locator("#game-arena")).toHaveAttribute(
       "data-ready",
       "true",
     );
-    await expect(b.locator("#practice-arena")).toHaveAttribute(
+    await expect(b.locator("#game-arena")).toHaveAttribute(
       "data-ready",
       "true",
     );
@@ -101,15 +109,15 @@ test("two independent browsers share a room, reconnect and rematch; a third is r
     );
     await b.keyboard.up("Space");
 
-    await b.keyboard.down("s");
+    await b.keyboard.down("ArrowDown");
     await expect
       .poll(async () =>
         Number(await b.locator("[data-player=p2]").getAttribute("data-y")),
       )
       .toBeGreaterThan(2);
-    await b.keyboard.up("s");
+    await b.keyboard.up("ArrowDown");
     await expect(c.locator("#lobby-status")).toContainText("상대 입장");
-    await expect(c.locator("#practice-dialog")).not.toBeVisible();
+    await expect(c.locator("#game-dialog")).not.toBeVisible();
     const base = new URL(page.url()).origin;
     await page.goto("about:blank");
     await expect(b.locator("#network-message")).toContainText(
@@ -120,7 +128,7 @@ test("two independent browsers share a room, reconnect and rematch; a third is r
     await expect(
       page.getByRole("heading", { name: "온라인 대전 · 빨강 팀" }),
     ).toBeVisible({ timeout: 10000 });
-    await expect(page.locator("#practice-arena")).toHaveAttribute(
+    await expect(page.locator("#game-arena")).toHaveAttribute(
       "data-ready",
       "true",
     );

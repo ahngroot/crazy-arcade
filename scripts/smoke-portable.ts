@@ -72,6 +72,14 @@ try {
   const url = await waitFor(
     () => logs.match(/^GAME_URL=(http:\/\/127\.0\.0\.1:\d+)\r?$/m)?.[1],
   );
+  const info = (await (await fetch(`${url}/connection-info`)).json()) as {
+    lanUrls: string[];
+  };
+  const peerUrl =
+    process.env.PORTABLE_BROWSER_LOOPBACK === "1"
+      ? url
+      : (info.lanUrls[0] ?? url);
+  assert.equal((await fetch(`${peerUrl}/health`)).status, 200);
   const health = await fetch(`${url}/health`);
   assert.equal(health.status, 200);
   assert.equal((await health.json()).status, "ok");
@@ -151,8 +159,28 @@ try {
   await page.goto(url);
   await expect(page).toHaveTitle("크레이지 먕케이드 · crazy myangcade");
   await expect(page.locator("#connection")).toHaveText("게임 서버 연결됨");
-  await page.getByRole("button", { name: /꼬물이 대전/ }).click();
-  await expect(page.locator("#practice-arena")).toHaveAttribute(
+  await expect(page.locator("#competition,#practice")).toHaveCount(0);
+  await page.locator("#online").click();
+  await page.getByLabel("닉네임", { exact: true }).fill("Portable Host");
+  await page.locator("#online-create").click();
+  await expect(page.locator("#room-code")).toHaveText(/^[A-HJ-NP-Z2-9]{8}$/);
+  const code = await page.locator("#room-code").textContent();
+  const peer = await browser.newPage({
+    viewport: { width: 1440, height: 1000 },
+  });
+  peer.on("pageerror", (error) => errors.push(error.message));
+  await peer.goto(`${peerUrl}/?room=${code}`);
+  await peer.getByLabel("닉네임", { exact: true }).fill("Portable Guest");
+  await peer.locator("#online-join").click();
+  await expect(page.locator("#room-players li")).toHaveCount(2);
+  await page.locator("#online-ready").click();
+  await peer.locator("#online-ready").click();
+  await expect(peer.locator("#game-arena")).toHaveAttribute(
+    "data-ready",
+    "true",
+    { timeout: 15000 },
+  );
+  await expect(page.locator("#game-arena")).toHaveAttribute(
     "data-ready",
     "true",
   );
@@ -167,6 +195,32 @@ try {
   await expect(page.locator("[data-player=p1] [data-stat=range]")).toHaveText(
     "3칸",
   );
+  await peer.keyboard.press("ControlRight");
+  await expect(
+    peer.locator("[data-player=p2] [data-stat=inventory-count]"),
+  ).toHaveText("1 / 2");
+  await peer.keyboard.press("Space");
+  await expect(peer.locator("[data-player=p2] [data-stat=balloon]")).toHaveText(
+    "1 / 1",
+  );
+  await page.keyboard.down("ArrowDown");
+  await expect
+    .poll(async () =>
+      Number(await page.locator("[data-player=p1]").getAttribute("data-y")),
+    )
+    .toBeGreaterThan(2);
+  await page.keyboard.up("ArrowDown");
+  await expect(peer.locator("[data-player=p2]")).toHaveAttribute(
+    "data-y",
+    "1.500",
+  );
+  await peer.keyboard.down("ArrowDown");
+  await expect
+    .poll(async () =>
+      Number(await peer.locator("[data-player=p2]").getAttribute("data-y")),
+    )
+    .toBeGreaterThan(2);
+  await peer.keyboard.up("ArrowDown");
   mkdirSync("test-results/portable", { recursive: true });
   await page.screenshot({
     path: "test-results/portable/game.png",
@@ -183,7 +237,9 @@ try {
       websocketPlayers: 2,
       matchingScores: true,
       serverCtrlItem: true,
-      browserGame: true,
+      browserPlayers: 2,
+      lanConnection: peerUrl !== url,
+      arrowsSpaceCtrl: true,
       fifoCtrl: true,
     }),
   );

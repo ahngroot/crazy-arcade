@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-test("menu renders, connects and opens practice and online guidance", async ({
+test("menu exposes only online play and the single-player controls", async ({
   page,
 }) => {
   const errors: string[] = [];
@@ -19,13 +19,11 @@ test("menu renders, connects and opens practice and online guidance", async ({
     path: "test-results/menu-desktop.png",
     fullPage: true,
   });
-  for (let visit = 0; visit < 2; visit++) {
-    await page.getByRole("button", { name: /연습 모드/ }).click();
-    await expect(page.getByRole("dialog")).toContainText("Space 물풍선");
-    await expect(page.locator("#practice-arena canvas")).toHaveCount(1);
-    await page.getByRole("button", { name: "메뉴로 돌아가기" }).click();
-    await expect(page.locator("#practice-arena canvas")).toHaveCount(0);
-  }
+  await expect(
+    page.locator("#competition,#practice,#round-duration"),
+  ).toHaveCount(0);
+  await expect(page.locator(".bottom-grid")).toContainText("↑ ↓ ← →");
+  await expect(page.locator(".bottom-grid")).toContainText("CTRL");
   await page.getByRole("button", { name: /온라인 대전/ }).click();
   await expect(page.getByRole("dialog")).toContainText("방 만들기");
   await page.keyboard.press("Escape");
@@ -36,7 +34,7 @@ test("narrow screen has no horizontal overflow", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");
   await expect(page.locator("#arena")).toHaveAttribute("data-ready", "true");
-  await expect(page.getByRole("button", { name: /연습 모드/ })).toBeVisible();
+  await expect(page.getByRole("button", { name: /온라인 대전/ })).toBeVisible();
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= innerWidth,

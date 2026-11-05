@@ -17,6 +17,42 @@ export function setupOnline(
 ) {
   const dialog = document.querySelector<HTMLDialogElement>("#online-dialog")!;
   const message = document.querySelector<HTMLElement>("#online-message")!;
+  const addresses =
+    document.querySelector<HTMLSelectElement>("#server-address")!;
+  const loopback = ["localhost", "127.0.0.1", "[::1]"].includes(
+    location.hostname,
+  );
+  const shareAddresses = (async () => {
+    if (!loopback) return;
+    try {
+      const response = await fetch("/connection-info");
+      if (!response.ok) return;
+      const info: unknown = await response.json();
+      if (
+        !info ||
+        typeof info !== "object" ||
+        !("lanUrls" in info) ||
+        !Array.isArray(info.lanUrls)
+      )
+        return;
+      for (const value of info.lanUrls) {
+        if (typeof value !== "string") continue;
+        const url = new URL(value);
+        if (url.protocol !== "http:" || url.username || url.password) continue;
+        // A development proxy may use a different port than the game page.
+        url.port = location.port;
+        url.protocol = location.protocol;
+        const option = document.createElement("option");
+        option.value = url.origin;
+        option.textContent = url.origin;
+        addresses.append(option);
+      }
+      document.querySelector<HTMLElement>("#server-sharing")!.hidden =
+        !addresses.options.length;
+    } catch {
+      /* Source servers and public deployments use their page's address. */
+    }
+  })();
   let view: RoomView | null = null,
     timeline: OnlineTimeline | null = null,
     token: string | null = null,
@@ -250,13 +286,20 @@ export function setupOnline(
   ] as const)
     document.querySelector(`#${id}`)!.addEventListener("click", async () => {
       if (!view) return;
-      const url = new URL(location.href);
+      await shareAddresses;
+      const url = new URL(addresses.value || location.href);
       url.searchParams.set("room", view.code);
+      if (link && loopback && !addresses.value) {
+        message.textContent = `상대 PC에는 호스트 PC의 네트워크 주소를 공유하세요. localhost는 상대 PC에 연결됩니다. 방 코드: ${view.code}`;
+        return;
+      }
       try {
         await navigator.clipboard.writeText(link ? url.href : view.code);
         message.textContent = "복사했습니다.";
       } catch {
-        message.textContent = `복사가 제한되어 있습니다. 방 코드를 직접 공유하세요: ${view.code}`;
+        message.textContent = link
+          ? `초대 주소를 직접 복사하세요: ${url.href}`
+          : `방 코드를 직접 공유하세요: ${view.code}`;
       }
     });
   const invite = new URL(location.href).searchParams.get("room");

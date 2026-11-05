@@ -1,8 +1,9 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./fixtures";
 import { writeFile, mkdir } from "node:fs/promises";
 
 test("audio starts on explicit interaction, plays game cues, respects volume/mute and persists preferences", async ({
   page,
+  duel,
 }) => {
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
@@ -26,8 +27,8 @@ test("audio starts on explicit interaction, plays game cues, respects volume/mut
       input.dispatchEvent(new Event("input", { bubbles: true }));
     });
   await expect(page.locator("#menu-audio output")).toHaveText("65%");
-  await page.getByRole("button", { name: /연습 모드/ }).click();
-  await expect(page.locator("#practice-arena")).toHaveAttribute(
+  await duel(page, { navigate: false });
+  await expect(page.locator("#game-arena")).toHaveAttribute(
     "data-ready",
     "true",
   );
@@ -40,7 +41,7 @@ test("audio starts on explicit interaction, plays game cues, respects volume/mut
   await page.keyboard.press("ArrowRight");
   await expect(page.locator("#game-audio output")).toHaveText("66%");
   await expect(page.locator("[data-player=p1]")).toHaveAttribute("data-x", x!);
-  await page.locator("#practice-arena").focus();
+  await page.locator("#game-arena").focus();
   await page.keyboard.down("Space");
   await expect
     .poll(
@@ -190,6 +191,7 @@ test("all original cues and the full music loop produce finite, non-clipping PCM
 
 test("unsupported audio is clearly indicated while the game remains playable", async ({
   page,
+  duel,
 }) => {
   await page.addInitScript(() =>
     Object.defineProperty(window, "AudioContext", {
@@ -202,16 +204,16 @@ test("unsupported audio is clearly indicated while the game remains playable", a
   await expect(page.locator("#menu-audio [data-sound-status]")).toContainText(
     "지원하지 않아요",
   );
-  await page.getByRole("button", { name: /연습 모드/ }).click();
-  await expect(page.locator("#practice-arena")).toHaveAttribute(
+  await duel(page, { navigate: false });
+  await expect(page.locator("#game-arena")).toHaveAttribute(
     "data-ready",
     "true",
   );
-  await page.keyboard.down("s");
+  await page.keyboard.down("ArrowDown");
   await expect
     .poll(async () =>
       Number(await page.locator("[data-player=p1]").getAttribute("data-y")),
     )
     .toBeGreaterThan(2);
-  await page.keyboard.up("s");
+  await page.keyboard.up("ArrowDown");
 });

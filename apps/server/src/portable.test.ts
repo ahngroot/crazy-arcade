@@ -1,12 +1,57 @@
 import { afterEach, expect, it } from "vitest";
 import { createServer } from "node:http";
+import { networkInterfaces } from "node:os";
 import express from "express";
-import { embeddedClient, listenLocal, portableOptions } from "./portable";
+import {
+  embeddedClient,
+  listenGame,
+  portableOptions,
+  lanGameUrls,
+} from "./portable";
 const servers: ReturnType<typeof createServer>[] = [];
 afterEach(async () => {
   for (const server of servers.splice(0))
     if (server.listening)
       await new Promise<void>((done) => server.close(() => done()));
+});
+
+it("binds all IPv4 interfaces and advertises the actual port", async () => {
+  const app = express();
+  app.use(
+    embeddedClient(new Map([["/index.html", Buffer.from("online duel")]])),
+  );
+  const server = createServer(app);
+  servers.push(server);
+  const local = await listenGame(server, 0);
+  expect(server.address()).toMatchObject({ address: "0.0.0.0" });
+  const urls = lanGameUrls(local);
+  expect(await (await fetch(local)).text()).toBe("online duel");
+  for (const url of urls) {
+    expect(new URL(url).port).toBe(new URL(local).port);
+  }
+});
+
+it("offers unique private IPv4 addresses, excluding loopback and public interfaces", () => {
+  const adapter = (address: string, internal = false) =>
+    ({
+      address,
+      internal,
+      family: "IPv4",
+      netmask: "255.255.255.0",
+      mac: "00:00:00:00:00:00",
+      cidr: null,
+    }) as const;
+  const interfaces: ReturnType<typeof networkInterfaces> = {
+    lo: [adapter("127.0.0.1", true)],
+    wifi: [adapter("192.168.1.8"), adapter("192.168.1.8")],
+    lan: [adapter("10.0.0.8"), adapter("172.16.0.8")],
+    public: [adapter("203.0.113.8")],
+  };
+  expect(lanGameUrls("http://127.0.0.1:49152", interfaces)).toEqual([
+    "http://192.168.1.8:49152",
+    "http://10.0.0.8:49152",
+    "http://172.16.0.8:49152",
+  ]);
 });
 
 it("serves only embedded files with correct MIME, HEAD support and no filesystem fallback", async () => {
@@ -21,8 +66,8 @@ it("serves only embedded files with correct MIME, HEAD support and no filesystem
   );
   const server = createServer(app);
   servers.push(server);
-  const url = await listenLocal(server, 0);
-  expect(server.address()).toMatchObject({ address: "127.0.0.1" });
+  const url = await listenGame(server, 0);
+  expect(server.address()).toMatchObject({ address: "0.0.0.0" });
   const index = await fetch(url);
   expect(index.headers.get("content-type")).toContain("text/html");
   expect(await index.text()).toContain("먕케이드");
@@ -38,7 +83,7 @@ it("serves only embedded files with correct MIME, HEAD support and no filesystem
     );
 });
 
-it("chooses another free local port when default 3001 is occupied", async () => {
+it("chooses another free port when default 3001 is occupied", async () => {
   const blocker = createServer();
   servers.push(blocker);
   await new Promise<void>((done, reject) => {
@@ -49,7 +94,7 @@ it("chooses another free local port when default 3001 is occupied", async () => 
   });
   const server = createServer();
   servers.push(server);
-  const url = await listenLocal(server);
+  const url = await listenGame(server);
   expect(url).toMatch(/^http:\/\/127\.0\.0\.1:\d+$/);
   expect(url).not.toBe("http://127.0.0.1:3001");
 });

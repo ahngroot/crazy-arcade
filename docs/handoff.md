@@ -1,12 +1,26 @@
 # 8단계 최종 점검과 인수인계
 
+## 2026-11-05 온라인 전용 전환
+
+- 제품 메뉴는 온라인 대전만 제공한다. 로컬 2인·무제한 연습과 클라이언트의 로컬 경기 실행 경로를 제거했다.
+- 각 PC는 한 캐릭터만 조작한다. 빨강·초록 모두 방향키 이동, Space 물풍선, 양쪽 Ctrl 아이템이다. 보관 한도 2개와 획득 순서 사용은 유지한다.
+- EXE 호스트는 같은 LAN의 상대 접속을 받는다. 초대 주소는 선택한 LAN IP와 화면의 포트를 사용하며, 상대는 브라우저로 참가한다.
+- 타입 검사·빌드·Vitest 92개·Chromium E2E 14개 통과. 두 팀의 입력 분리, Ctrl 겹침/길게 누름, 초대 코드, 재접속·재대결·서버 재시작·좁은 화면·음향을 확인했다.
+- Linux 포터블 파일을 Node/PATH 없는 한글 폴더에서 실행해 실제 소켓 2명과 브라우저 2명의 온라인 대전·방향키·Space·Ctrl을 확인했다. Windows ZIP은 별도로 생성하며 체크섬과 무결성을 검사한다.
+
+이 클라우드의 Chromium은 사설 IP로 이동하면 네트워크 정책의 `Domain forbidden` 응답을 받는다. 여기서는 `PLAYWRIGHT_LOOPBACK_INVITES=1`, `PORTABLE_BROWSER_LOOPBACK=1`로 같은 서버의 루프백 주소에서 두 독립 브라우저를 검증했다. LAN 주소 생성·포트·전체 IPv4 바인딩을 확인했지만 이를 실제 PC 두 대의 LAN 실측으로 표시하지 않는다. Windows CI의 포터블 검사는 기본 설정으로 감지된 LAN 주소를 사용한다.
+
+공개 인터넷 서버는 계속 미배포 상태다. 아래 과거 단계/빌드 기록은 당시 기능과 검증 범위다.
+
 후속으로 Node.js 설치 없이 실행하는 Windows 포터블 EXE 테스트 빌드를 추가했다. 사용·제작·실제 검증 범위는 [windows.md](windows.md)를 따른다. 아래 소스 개발 방법의 Node.js 24 요구는 EXE를 실행하는 사용자에게 적용되지 않는다.
 
 ## 후속 변경 (2026-11-04)
 
-게임 이름은 **crazy myangcade / 크레이지 먕케이드**로 변경했다. 사용 아이템은 합계 2개의 FIFO 보관 칸에 저장하며 Ctrl 한 번당 먼저 획득한 하나를 사용한다. 로컬 P1 왼쪽 Ctrl·P2 오른쪽 Ctrl, 온라인은 양쪽 Ctrl이다. 보호막→파워로 시작하고 가득 찼을 때 새 사용 아이템은 바닥에 남는다. 바늘이 맨 앞이면 갇힌 상태에서만 사용할 수 있다. 능력치 강화는 즉시 적용한다. 빠른 누름·뗌·재누름을 로컬 및 네트워크 송신 주기 사이에서도 순서대로 보존한다.
+게임 이름은 **crazy myangcade / 크레이지 먕케이드**로 변경했다. 사용 아이템은 합계 2개의 FIFO 보관 칸에 저장하며 Ctrl 한 번당 먼저 획득한 하나를 사용한다. 현재 온라인 전용이며 방향키·Space·양쪽 Ctrl로 내 캐릭터만 조작한다. 보호막→파워로 시작하고 가득 찼을 때 새 사용 아이템은 바닥에 남는다. 바늘이 맨 앞이면 갇힌 상태에서만 사용할 수 있다. 능력치 강화는 즉시 적용한다. 빠른 누름·뗌·재누름을 로컬 및 네트워크 송신 주기 사이에서도 순서대로 보존한다.
 
-아래 8단계 실행 기록은 2026-11-03 당시 결과다. 최신 조작법은 [README](../README.md#꼬물이-대전-로컬)를 따른다.
+현재 로컬 2인과 연습 모드는 제거했다. EXE 한 개를 호스트에서 실행하고 같은 LAN의 상대가 초대 주소로 접속한다. 자세한 실행법은 [Windows 안내](windows.md)를 따른다.
+
+아래 8단계 실행 기록은 2026-11-03 당시 결과다. 최신 조작법은 [README](../README.md#조작)를 따른다.
 
 변경 후 타입 검사·제품 빌드·Vitest 83개·Chromium Playwright 16개가 통과했다. 합계 2개 제한·FIFO·미사용 바늘 보존·초과 아이템 바닥 유지·누른 채 반복 방지·빠른 Ctrl 연속 입력·두 플레이어 분리·온라인 중복 입력 방지를 검증했다. 새 메뉴 화면은 `test-results/menu-desktop.png`, Ctrl 사용 후 두 칸 UI는 `test-results/items-ctrl.png`에 생성된다.
 
@@ -26,7 +40,7 @@ npm ci
 npm run dev
 ```
 
-터미널을 켜 둔 채 **http://localhost:5173**에 접속한다. 연습 모드 또는 꼬물이 대전을 선택하고, 소리가 필요하면 **소리 켜기**를 누른다. 종료는 Ctrl+C다. 조작표는 [README](../README.md#꼬물이-대전-로컬)를 참고한다.
+터미널을 켜 둔 채 **http://localhost:5173**에 접속한다. 온라인 대전에서 방을 만들거나 참가하고, 소리가 필요하면 **소리 켜기**를 누른다. 종료는 Ctrl+C다. 조작표는 [README](../README.md#조작)를 참고한다.
 
 기존 체크아웃은 `git status`로 자신의 변경을 확인하고 보존한 뒤 `git pull --ff-only origin main`, `npm ci`로 갱신한다. Codex에 저장소를 연결하면 다음 PC에서도 작업을 이어갈 수 있다. GitHub에는 소스·테스트·잠금 파일·문서가 저장되며 실행 프로세스·방·브라우저 저장소는 옮겨지지 않는다.
 
@@ -135,7 +149,7 @@ npm run test:e2e
 | `packages/shared/src/game.ts`, `competition.ts`        | 이동·충돌·물풍선·아이템·몬스터·점수·승패  |
 | `apps/server/src/rooms.ts`                             | 방·세션·서버 판정·입력 검증               |
 | `apps/server/src/app.ts`, `index.ts`                   | HTTP/Socket.IO·정적 클라이언트·시작/종료  |
-| `apps/client/src/main.ts`, `practice.ts`               | 메뉴·HUD·키보드·게임 수명주기             |
+| `apps/client/src/main.ts`, `game.ts`                   | 메뉴·HUD·키보드·게임 수명주기             |
 | `apps/client/src/online.ts`, `netcode.ts`              | 방 UI·재접속·예측·보정·보간               |
 | `art.ts`, `renderer.ts`, `presentation.ts`, `audio.ts` | 직접 작성한 그림·표시·연출 관찰·합성 음악 |
 | `tests/`, `scripts/benchmark.ts`                       | 실제 브라우저 검사·성능 재현              |

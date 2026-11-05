@@ -7,6 +7,7 @@ import {
   type ServerEvents,
 } from "@bubble/shared";
 import { RoomService } from "./rooms.js";
+import { lanGameUrls } from "./portable.js";
 
 export function createApp(
   clientDirectory?: string,
@@ -16,6 +17,12 @@ export function createApp(
   const app = express();
   app.disable("x-powered-by");
   app.get("/health", (_req, res) => res.json({ status: "ok", stage: 1 }));
+  app.get("/connection-info", (req, res) => {
+    res.setHeader("Cache-Control", "no-store");
+    res.json({
+      lanUrls: lanGameUrls(`http://127.0.0.1:${req.socket.localPort}`),
+    });
+  });
   if (clientDirectory) app.use(express.static(clientDirectory));
   const http = createServer(app);
   const rooms = new RoomService(clock);
