@@ -1,10 +1,14 @@
 # crazy myangcade · 크레이지 먕케이드
 
+**[⬇ Windows 게임 ZIP 다운로드 (약 35MB)](https://github.com/ahngroot/crazy-arcade/raw/refs/heads/main/crazy-myangcade-windows-x64.zip)**
+
+압축 해제 → `crazy-myangcade.exe` 더블클릭 → 브라우저에서 플레이. Node.js 설치 불필요.
+
 ## Windows EXE로 실행 (Node.js 설치 불필요)
 
 Windows 10/11 **64비트** 대상 포터블 테스트 빌드를 제공합니다. 배포 ZIP을 압축 해제하고 **`crazy-myangcade.exe`를 더블클릭**하세요. 기본 브라우저에 게임이 열립니다. 플레이하는 동안 서버 창을 켜 두고, 종료할 때는 창을 닫거나 Ctrl+C를 누르세요. 브라우저가 자동으로 열리지 않으면 서버 창의 `GAME_URL` 주소를 직접 여세요.
 
-GitHub에서 받을 때는 [Windows portable EXE 빌드](https://github.com/ahngroot/crazy-arcade/actions/workflows/windows-portable.yml)의 **성공한 실행 → Artifacts → crazy-myangcade-windows-x64**를 선택합니다. 로그인과 저장소 접근 권한이 필요할 수 있고, 보관 기간은 7일입니다. GitHub의 **Code → Download ZIP은 소스 코드**이며 실행 파일을 포함하지 않습니다.
+저장소 파일 목록의 **`crazy-myangcade-windows-x64.zip`** 또는 위 다운로드 링크를 사용하세요. Actions artifact를 거치지 않고 받을 수 있습니다. 체크섬은 같은 이름의 `.sha256` 파일에 있습니다. Code → Download ZIP은 전체 저장소 다운로드이므로 게임 실행만 필요하면 위 배포 ZIP을 받으세요. 새 자동 빌드 결과는 [Windows portable EXE 빌드](https://github.com/ahngroot/crazy-arcade/actions/workflows/windows-portable.yml)에도 7일간 보관됩니다.
 
 EXE에는 런타임과 화면·소리가 포함돼 있어 Node.js/npm·인터넷 연결 없이 실행할 수 있습니다. 같은 PC에서만 접속하며 공개 배포와는 별개입니다. [EXE 사용·제작·검증 범위](docs/windows.md)를 참고하세요.
 

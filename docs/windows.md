@@ -1,11 +1,13 @@
 # Windows 포터블 EXE 배포
 
+**[Windows 게임 ZIP 바로 다운로드](https://github.com/ahngroot/crazy-arcade/raw/refs/heads/main/crazy-myangcade-windows-x64.zip)** — 저장소 루트에 배포 ZIP과 SHA-256을 직접 보관한다.
+
 ## 플레이하기
 
 대상은 Windows 10/11 **x64**다. 플레이하는 PC에는 Node.js, npm, Git 설치가 필요하지 않다.
 
 1. `crazy-myangcade-windows-x64.zip` 또는 GitHub Actions의 `crazy-myangcade-windows-x64` artifact를 받는다.
-2. ZIP을 압축 해제한다. GitHub의 Code → Download ZIP은 실행 파일이 없는 소스 코드이므로 구분한다.
+2. ZIP을 압축 해제한다. GitHub의 Code → Download ZIP은 전체 저장소 다운로드이므로 위 게임 ZIP 직접 다운로드를 권장한다.
 3. `crazy-myangcade.exe`를 더블클릭한다.
 4. 기본 브라우저에 게임이 열린다. 서버 창을 켜 둔 상태로 플레이한다.
 5. 끝나면 서버 창을 닫거나 Ctrl+C를 누른다. 브라우저 탭만 닫으면 서버는 계속 실행된다.
@@ -45,7 +47,7 @@ Linux 또는 Windows에서 Windows x64 파일을 생성할 수 있다. 제작에
 | `release/SHA256SUMS.txt`                  | 실행 파일·배포 ZIP의 SHA-256                |
 | `build/portable/`                         | 번들·SEA 설정·blob 중간 결과                |
 
-라이선스 묶음은 Node.js 공식 LICENSE와 서버·클라이언트의 production npm 의존성 라이선스를 포함한다. 생성 파일과 다운로드 캐시는 Git에 넣지 않는다.
+라이선스 묶음은 Node.js 공식 LICENSE와 서버·클라이언트의 production npm 의존성 라이선스를 포함한다. 사용자 요청에 따라 루트 배포 ZIP과 체크섬만 Git에 보관한다. 그 외 생성 파일과 다운로드 캐시는 Git에 넣지 않는다.
 
 ## 실행 검증
 

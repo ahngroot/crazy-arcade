@@ -17,3 +17,5 @@
 - 소리는 기본 꺼짐과 사용자 제스처 제한을 유지하고, 세션 종료/탭 숨김에 예약 음악·노드를 정리한다. 그래픽/사운드 변경은 `docs/art-and-sound.md`와 생성 샘플의 검증 범위를 함께 확인한다.
 - QA 재현과 성능 측정은 `docs/qa.md`와 `npm run benchmark`를 따른다. 테스트용 조건과 실제 인터넷/Windows/GPU 측정을 구분하고, 헤드리스 측정으로 일반 PC의 60FPS를 보장하지 않는다.
 - 실행·인수인계는 `docs/handoff.md`, 원작 비교와 조정 가능한 밸런스 항목은 `docs/original-comparison.md`를 따른다. 8단계 정리를 마쳐도 공개 배포·실제 Windows/인터넷 검증·원작 실측까지 완료된 것으로 표시하지 않는다.
+
+- 사용자 요청에 따라 저장소 루트의 `crazy-myangcade-windows-x64.zip`과 `.zip.sha256`은 배포용으로 커밋한다. 이 두 파일은 생성 결과물 제외 규칙의 명시적 예외다. 나머지 `release/`, `build/`, `.cache/`는 계속 제외한다. 새 배포 ZIP 갱신 시 무결성과 체크섬, README 다운로드 링크를 확인한다.
