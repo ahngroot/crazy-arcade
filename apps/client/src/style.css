@@ -1504,3 +1504,12 @@ dialog p {
   line-height: 1.6;
   color: #526452;
 }
+
+.solo-mode .competition-stats > dl {
+  display: none;
+}
+@media (max-width: 700px) {
+  .solo-mode .game-hud {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

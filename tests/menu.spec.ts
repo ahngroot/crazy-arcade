@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-test("menu exposes only online play and the single-player controls", async ({
+test("menu exposes solo practice and online play with single-player controls", async ({
   page,
 }) => {
   const errors: string[] = [];
@@ -19,9 +19,10 @@ test("menu exposes only online play and the single-player controls", async ({
     path: "test-results/menu-desktop.png",
     fullPage: true,
   });
+  await expect(page.locator("#competition,#round-duration")).toHaveCount(0);
   await expect(
-    page.locator("#competition,#practice,#round-duration"),
-  ).toHaveCount(0);
+    page.getByRole("button", { name: /1인 연습 모드/ }),
+  ).toBeVisible();
   await expect(page.locator(".bottom-grid")).toContainText("↑ ↓ ← →");
   await expect(page.locator(".bottom-grid")).toContainText("CTRL");
   await page.getByRole("button", { name: /온라인 대전/ }).click();

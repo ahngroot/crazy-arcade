@@ -2,7 +2,7 @@
 
 **[⬇ Windows 게임 ZIP 다운로드 (약 35MB)](https://github.com/ahngroot/crazy-arcade/raw/refs/heads/main/crazy-myangcade-windows-x64.zip)**
 
-각자의 PC에서 한 캐릭터를 조작하는 **온라인 1:1 꼬물이 대전**입니다. 한 PC에서 두 캐릭터를 함께 조작하는 모드와 연습 모드는 제거했습니다. 직접 만든 그림과 합성 음악을 사용합니다.
+각자의 PC에서 한 캐릭터를 조작하는 **온라인 1:1 꼬물이 대전**입니다. **1인 무제한 연습 모드**도 제공합니다. 한 PC에서 두 캐릭터를 함께 조작하는 기능은 제공하지 않습니다. 직접 만든 그림과 합성 음악을 사용합니다.
 
 ## 조작
 
@@ -14,9 +14,13 @@
 
 팀과 관계없이 같은 조작을 사용합니다. WASD와 Enter는 게임 조작에 사용하지 않습니다. 바늘·보호막·파워는 **합계 최대 2개**, **획득 순서대로** Ctrl 한 번당 하나씩 사용합니다. 양쪽 Ctrl을 함께 누르거나 계속 누르고 있어도 중복 소비하지 않습니다. 능력치 강화는 획득 즉시 적용됩니다.
 
+## 혼자 연습하기
+
+메뉴에서 **1인 연습 모드**를 누르면 상대나 방 참가 없이 바로 시작합니다. 캐릭터는 한 명만 생성되며 시간제한 없이 이동·물풍선·상자 파괴·아이템·갇힘과 재생성을 연습할 수 있습니다. 조작은 방향키·Space·Ctrl입니다. 보호막→파워 2개로 시작하며 **처음부터 다시**로 맵·능력치·아이템을 초기화합니다. 온라인 연결이 끊겨도 연습은 사용할 수 있습니다.
+
 ## Windows EXE로 플레이
 
-Windows 10/11 **64비트**용입니다. 어느 PC에도 Node.js·npm·Git을 설치할 필요가 없습니다.
+Windows 10/11 **64비트**용입니다. 어느 PC에도 Node.js·npm·Git을 설치할 필요가 없습니다. 혼자 하려면 EXE 실행 후 **1인 연습 모드**를 선택하세요. 온라인 대전은 아래 순서를 따릅니다.
 
 1. **호스트 한 명**이 위 ZIP을 압축 해제하고 `crazy-myangcade.exe`를 더블클릭합니다.
 2. 열린 브라우저에서 **온라인 대전 → 닉네임 → 방 만들기**를 선택합니다.
@@ -78,7 +82,7 @@ npm run test:portable -- release/crazy-myangcade.exe
 
 Linux에서는 `PLAYWRIGHT_CHROMIUM_PATH=/usr/bin/chromium npm run test:e2e`를 사용할 수 있습니다. `npm run package:host`와 `npm run test:portable -- release/crazy-myangcade-linux`로 동일한 포터블 실행 경로를 검증합니다.
 
-타입 검사·제품 빌드·Vitest **93개**·Chromium E2E **14개**가 통과했습니다. 온라인 전용 전환의 확인 범위와 결과는 [인수인계 문서](docs/handoff.md), 배포 파일의 실행 범위는 [Windows 안내](docs/windows.md)에 기록합니다. 브라우저 검사는 두 팀의 방향키·Space·Ctrl, 상대 캐릭터 분리, 방 생성·참가, 재접속·재대결, UI 포커스와 그래픽·사운드를 확인합니다. 게임 이미지와 소리 샘플은 `test-results/`에 생성됩니다.
+타입 검사·제품 빌드·Vitest **95개**·Chromium E2E **17개**가 통과했습니다. 1인 연습 복구와 온라인 대전의 확인 범위와 결과는 [인수인계 문서](docs/handoff.md), 배포 파일의 실행 범위는 [Windows 안내](docs/windows.md)에 기록합니다. 브라우저 검사는 두 팀의 방향키·Space·Ctrl, 상대 캐릭터 분리, 방 생성·참가, 재접속·재대결, UI 포커스와 그래픽·사운드를 확인합니다. 게임 이미지와 소리 샘플은 `test-results/`에 생성됩니다.
 
 실제 서로 다른 집의 PC 두 대, Windows Chrome/Edge 수동 조작, 원작 조작감·수치 일치 여부는 추가 확인이 필요합니다. Phaser 청크 크기 경고는 알려진 상태이며 실행 오류는 아닙니다.
 
@@ -86,7 +90,7 @@ Linux에서는 `PLAYWRIGHT_CHROMIUM_PATH=/usr/bin/chromium npm run test:e2e`를 
 
 | 경로                                      | 역할                                                   |
 | ----------------------------------------- | ------------------------------------------------------ |
-| `apps/client/src/main.ts`, `game.ts`      | 온라인 메뉴·HUD·한 캐릭터 키보드 입력·렌더링           |
+| `apps/client/src/main.ts`, `game.ts`      | 1인 연습·온라인 메뉴·HUD·한 캐릭터 입력·렌더링         |
 | `apps/client/src/online.ts`, `netcode.ts` | 방·재접속 UI, 내 이동 예측과 보간                      |
 | `apps/server`                             | 방·세션 관리, 서버의 경기 판정, Socket.IO, 포터블 실행 |
 | `packages/shared`                         | 공통 상태·규칙·맵·엔진                                 |
@@ -94,6 +98,6 @@ Linux에서는 `PLAYWRIGHT_CHROMIUM_PATH=/usr/bin/chromium npm run test:e2e`를 
 
 각 작업이 끝나면 검증 후 커밋·푸시합니다. 다른 PC에서는 GitHub `main`을 clone하고 `npm ci`를 실행하세요. 기존 체크아웃은 미반영 변경을 확인한 뒤 `git pull --ff-only origin main`으로 갱신합니다. 실행 중인 서버와 방·세션은 Git에 저장되지 않습니다.
 
-이전 1~8단계 기록에서 로컬 2인·연습 모드는 **온라인 전용 전환 이전의 이력**입니다. 현재 제품 메뉴에는 온라인 대전만 제공하며 공통 엔진의 검증용 상태 생성 함수는 유지합니다. 공개 배포는 별도 단계입니다.
+현재 제품은 **1인 연습 + 온라인 1:1 대전**을 제공합니다. 이전 기록의 로컬 2인 플레이는 제거했으며, 연습 모드는 한 캐릭터만 사용하는 형태로 복구했습니다. 공개 배포는 별도 단계입니다.
 
 [게임 규칙](docs/rules.md) · [경쟁 규칙](docs/competition.md) · [원작 비교](docs/original-comparison.md) · [그래픽·사운드](docs/art-and-sound.md) · [QA 이력](docs/qa.md)

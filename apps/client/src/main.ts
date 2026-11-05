@@ -18,14 +18,15 @@ const extraStats = `<div class="competition-stats"><dl><dt>처치 점수</dt><dd
 
 document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
   <div class="shell">
-    <header class="topbar"><a class="brand" href="/" aria-label="크레이지 먕케이드 홈"><span class="brand-icon">m.</span><span>crazy myangcade<small>크레이지 먕케이드</small></span></a><span class="build-tag">ONLINE EDITION <b>PC WEB</b></span></header>
+    <header class="topbar"><a class="brand" href="/" aria-label="크레이지 먕케이드 홈"><span class="brand-icon">m.</span><span>crazy myangcade<small>크레이지 먕케이드</small></span></a><span class="build-tag">PC EDITION <b>PC WEB</b></span></header>
     <main>
       <div class="eyebrow"><span></span> THE LITTLE ARCADE CLUB</div>
-      <section class="intro"><div><h1>크레이지<br />먕케이드<span>.</span></h1><p>톡, 놓고 · 쏙, 피하고 · 팡, 터뜨려요.<br />각자의 PC에서 만나는 1:1 온라인 대전.</p></div><div class="intro-note"><span>✳</span><p>A LITTLE SPLASH.<br />A LOT OF FUN.</p></div></section>
+      <section class="intro"><div><h1>크레이지<br />먕케이드<span>.</span></h1><p>톡, 놓고 · 쏙, 피하고 · 팡, 터뜨려요.<br />혼자 연습하고, 친구와 온라인에서 대결해요.</p></div><div class="intro-note"><span>✳</span><p>A LITTLE SPLASH.<br />A LOT OF FUN.</p></div></section>
       <section class="game-layout" aria-label="게임 시작">
         <div class="arena-card"><div class="arena-top"><span><i></i> CLOVER GARDEN</span><span>맵 미리보기 <b>01</b></span></div><div class="arena-wrap"><div id="arena" role="img" aria-label="빨강과 초록 진영, 캐릭터와 물풍선이 있는 대칭형 정원 맵"></div><div class="preview-label">PHASER 4 · LIVE PREVIEW</div></div><div class="arena-bottom"><span><i class="red-dot"></i> RED TEAM</span><span>작은 정원에서 만나요</span><span><i class="green-dot"></i> GREEN TEAM</span></div></div>
-        <aside class="menu-card"><span class="section-number">LET’S GET STARTED</span><h2>친구와 대결해요</h2><p class="menu-caption">각자 한 캐릭터, 두 사람의 정원 대결.</p>
-          <button id="online" class="mode primary"><span class="mode-icon">◎</span><span><strong>온라인 대전</strong><small>방 만들기 · 친구의 방 참가하기</small></span><span class="arrow">↗</span></button>
+        <aside class="menu-card"><span class="section-number">LET’S GET STARTED</span><h2>어떻게 시작할까요?</h2><p class="menu-caption">혼자 연습하거나 친구와 대결해요.</p>
+          <button id="practice" class="mode primary"><span class="mode-icon">✳</span><span><strong>1인 연습 모드</strong><small>혼자서 이동·물풍선·아이템 연습</small></span><span class="arrow">↗</span></button>
+          <button id="online" class="mode secondary"><span class="mode-icon">◎</span><span><strong>온라인 대전</strong><small>방 만들기 · 친구의 방 참가하기</small></span><span class="arrow">↗</span></button>
           ${soundControls("menu-audio")}
           <div class="stage-note"><span>톡, 쏙, 팡! 작은 정원의 소리</span><p>소리를 켜면 정원만의 멜로디가 흘러요.<br />8자리 방 코드로 친구도 초대해 보세요.</p></div>
           <div class="connection"><span id="connection-dot"></span><span id="connection" role="status">서버 연결 중…</span><span>PC WEB</span></div>
@@ -70,11 +71,15 @@ socket.on("connect_error", () => connection(false));
 let preview: GameController | undefined;
 let previewGeneration = 0;
 let onlineGame = false;
-let onlinePlayerId: string | null = null;
+let controlledPlayerId: string | null = null;
 function updateGameHud(state: PracticeState) {
   document.querySelector<HTMLElement>("#game-arena")!.dataset.tick = String(
     state.tick,
   );
+  document.querySelector<HTMLElement>("#game-arena")!.dataset.playerCount =
+    String(state.players.length);
+  for (const panel of document.querySelectorAll<HTMLElement>(".player-panel"))
+    panel.hidden = !state.players.some((p) => p.id === panel.dataset.player);
   const r = state.round;
   const result = document.querySelector<HTMLElement>("#result-panel")!;
   result.hidden = r?.phase !== "FINISHED";
@@ -116,7 +121,7 @@ function updateGameHud(state: PracticeState) {
     const view = online.current();
     const button = document.querySelector<HTMLButtonElement>("#rematch")!;
     button.hidden = !view || view.phase === "PLAYING";
-    const self = view?.players.find((p) => p.id === onlinePlayerId);
+    const self = view?.players.find((p) => p.id === controlledPlayerId);
     button.disabled =
       !online.connected() ||
       !!self?.ready ||
@@ -129,7 +134,7 @@ function updateGameHud(state: PracticeState) {
     const panel = document.querySelector<HTMLElement>(
       `[data-player="${player.id}"]`,
     )!;
-    const self = player.id === onlinePlayerId;
+    const self = player.id === controlledPlayerId;
     panel.dataset.self = String(self);
     panel.querySelector("h3")!.textContent =
       `${self ? "나" : "상대"} · ${player.team.toUpperCase()}`;
@@ -162,7 +167,7 @@ function updateGameHud(state: PracticeState) {
       monsters: `${r?.monsters.filter((m) => m.team === player.team).length ?? 0} (대기 ${r?.pending.filter((p) => p.team === player.team).reduce((n, p) => n + p.count, 0) ?? 0})`,
       "inventory-count": `${player.inventory.length} / ${C.inventoryLimit}`,
       "item-help":
-        player.id !== onlinePlayerId
+        player.id !== controlledPlayerId
           ? "상대 보유 아이템"
           : player.inventory[0] === "needle"
             ? "바늘 · 갇혔을 때 Ctrl"
@@ -249,8 +254,12 @@ const online = setupOnline(socket, {
   openGame: async (timeline) => {
     const dialog = document.querySelector<HTMLDialogElement>("#game-dialog")!;
     onlineGame = true;
-    onlinePlayerId = timeline.playerId;
+    controlledPlayerId = timeline.playerId;
+    dialog.classList.remove("solo-mode");
     dialog.classList.add("competition-mode");
+    document
+      .querySelector("#game-arena")!
+      .setAttribute("aria-label", "온라인 1:1 대전 경기장");
     document.querySelector("#game-title")!.textContent =
       `온라인 대전 · ${timeline.playerId === "p1" ? "빨강 팀" : "초록 팀"}`;
     document.querySelector("#game-dialog .section-number")!.textContent =
@@ -306,13 +315,57 @@ const online = setupOnline(socket, {
         )!.textContent = member.nickname;
   },
 });
+document.querySelector("#practice")!.addEventListener("click", async () => {
+  const dialog = document.querySelector<HTMLDialogElement>("#game-dialog")!;
+  onlineGame = false;
+  controlledPlayerId = "p1";
+  dialog.classList.remove("competition-mode");
+  dialog.classList.add("solo-mode");
+  document.querySelector("#game-title")!.textContent = "1인 연습 모드";
+  document.querySelector("#game-dialog .section-number")!.textContent =
+    "SOLO PRACTICE · CLOVER GARDEN";
+  document
+    .querySelector("#game-arena")!
+    .setAttribute("aria-label", "1인 연습 경기장");
+  document.querySelector(".game-help")!.textContent =
+    "방향키 이동 · Space 물풍선 · Ctrl 아이템 · 내 캐릭터 하나로 자유롭게 연습하세요.";
+  document.querySelector("#special-controls")!.textContent =
+    "아이템 최대 2개 · 획득 순서대로 Ctrl 사용. 보호막과 파워로 시작해요. 바늘은 갇혔을 때 사용하세요.";
+  document.querySelector("#mode-note")!.textContent =
+    "시간제한 없이 연습합니다. 상자를 부수고 아이템을 모으세요. 물줄기에 닿아도 다시 태어나요.";
+  document.querySelector('[data-player="p1"] .profile-name')!.textContent =
+    "루비";
+  for (const id of ["#round-bar", "#network-message"])
+    document.querySelector<HTMLElement>(id)!.hidden = true;
+  for (const element of document.querySelectorAll<HTMLElement>(
+    "#special-controls,.competition-stats",
+  ))
+    element.hidden = false;
+  const restart = document.querySelector<HTMLButtonElement>("#rematch")!;
+  restart.hidden = false;
+  restart.disabled = false;
+  restart.textContent = "처음부터 다시";
+  if (!dialog.open) dialog.showModal();
+  sleepMenu();
+  const generation = ++previewGeneration;
+  try {
+    const { mountGame } = await import("./game");
+    if (!dialog.open || generation !== previewGeneration) return;
+    preview?.destroy(true);
+    preview = mountGame(document.querySelector("#game-arena")!, updateGameHud);
+  } catch {
+    const message = document.querySelector<HTMLElement>("#network-message")!;
+    message.hidden = false;
+    message.textContent = "연습 화면을 열지 못했습니다. 새로고침해 주세요.";
+  }
+});
 const gameDialog = document.querySelector<HTMLDialogElement>("#game-dialog")!;
 for (const button of gameDialog.querySelectorAll(".close, .back"))
   button.addEventListener("click", () => gameDialog.close());
 gameDialog.addEventListener("close", () => {
   const leavingOnline = onlineGame;
   onlineGame = false;
-  onlinePlayerId = null;
+  controlledPlayerId = null;
   previewGeneration++;
   preview?.destroy(true);
   preview = undefined;

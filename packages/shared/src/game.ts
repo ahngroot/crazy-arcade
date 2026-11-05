@@ -125,6 +125,14 @@ export function createPractice(seed = 2701): PracticeState {
   };
 }
 
+/** Unlimited solo practice uses one real player and the same item rules as online. */
+export function createSoloPractice(seed = 2701): PracticeState {
+  const state = createPractice(seed);
+  state.players = state.players.slice(0, 1);
+  state.players[0].inventory = ["shield", "power"];
+  return state;
+}
+
 export function random(s: PracticeState) {
   s.seed = (Math.imul(s.seed, 1664525) + 1013904223) >>> 0;
   return s.seed / 4294967296;

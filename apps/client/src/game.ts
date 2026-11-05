@@ -1,6 +1,8 @@
 import Phaser from "phaser";
 import {
   GAME_CONFIG as C,
+  createSoloPractice,
+  stepPractice,
   type PracticeState,
   type LocalInput,
 } from "@bubble/shared";
@@ -22,7 +24,7 @@ const editing = (target: EventTarget | null) =>
   target instanceof Element &&
   !!target.closest("input,select,textarea,button,[contenteditable]");
 
-/** One keyboard controls the authenticated online player's character, regardless of team. */
+/** One keyboard controls one character in solo practice or online play. */
 class GameKeyboard {
   private keys = new Set<string>();
   private balloonPending = false;
@@ -100,19 +102,19 @@ export interface GameController {
 export function mountGame(
   parent: HTMLElement,
   onState: (state: PracticeState) => void,
-  session: {
+  session?: {
     initial: PracticeState;
     frame: (input: LocalInput, delta: number) => PracticeState | null;
     restart: () => void;
   },
 ): GameController {
   const keyboard = new GameKeyboard();
-  let state = session.initial,
+  let state = session?.initial ?? createSoloPractice(),
     stopped = false;
   class GameScene extends Phaser.Scene {
     private view!: GameRenderer;
     constructor() {
-      super("online-game");
+      super("game");
     }
     create() {
       this.view = new GameRenderer(this, parent);
@@ -125,13 +127,24 @@ export function mountGame(
     }
     update(_time: number, delta: number) {
       if (stopped) return;
-      state = session.frame(keyboard.input(), delta) ?? state;
-      keyboard.consumeActions();
+      if (session) {
+        state = session.frame(keyboard.input(), delta) ?? state;
+        keyboard.consumeActions();
+      } else if (!document.hidden) {
+        const before = state.tick;
+        stepPractice(state, [keyboard.input()], Math.min(delta, C.maxFrameMs));
+        // Preserve fast presses until a fixed simulation step actually consumes them.
+        if (state.tick !== before) keyboard.consumeActions();
+      }
       this.view.update(state, delta);
       onState(state);
     }
+    resetTerrain() {
+      this.view?.reset();
+    }
   }
   arcadeAudio.beginSession();
+  const scene = new GameScene();
   const game = new Phaser.Game({
     type: Phaser.AUTO,
     parent,
@@ -139,7 +152,7 @@ export function mountGame(
     height: C.rows * C.tileSize,
     fps: { smoothStep: false },
     backgroundColor: "#cde1cd",
-    scene: new GameScene(),
+    scene,
     scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
     audio: { noAudio: true },
     render: { antialias: true },
@@ -157,7 +170,13 @@ export function mountGame(
     },
     reset() {
       keyboard.clear();
-      session.restart();
+      if (session) session.restart();
+      else {
+        state = createSoloPractice();
+        scene.resetTerrain();
+        arcadeAudio.beginSession();
+        onState(state);
+      }
       parent.focus({ preventScroll: true });
     },
   };

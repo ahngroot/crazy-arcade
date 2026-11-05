@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   GAME_CONFIG as C,
   createPractice,
+  createSoloPractice,
   stepPractice,
   placeBalloon,
   EMPTY_INPUT as idle,
@@ -13,6 +14,36 @@ const move = (x: number, y: number, balloon = false): LocalInput => ({
   x,
   y,
   balloon,
+});
+
+describe("solo practice", () => {
+  it("has one player, no round timer and the two FIFO training items", () => {
+    const s = createSoloPractice();
+    expect(s.players).toHaveLength(1);
+    expect(s.players[0].id).toBe("p1");
+    expect(s.players[0].inventory).toEqual(["shield", "power"]);
+    expect(s.round).toBeUndefined();
+    stepPractice(s, [{ ...idle, useItem: true }], 20);
+    expect(s.players[0].inventory).toEqual(["power"]);
+    stepPractice(s, [idle], 20);
+    stepPractice(s, [{ ...idle, useItem: true }], 20);
+    expect(s.players[0].inventory).toEqual([]);
+    expect(s.players[0].powerUntil).toBeGreaterThan(s.time);
+    expect(createPractice().players).toHaveLength(2);
+  });
+
+  it("continues beyond online round duration and respawns the only player", () => {
+    const s = createSoloPractice();
+    stepPractice(s, [{ ...idle, balloon: true }], 20);
+    for (let i = 0; i < 40; i++) stepPractice(s, [idle], 250);
+    expect(s.players).toHaveLength(1);
+    expect(s.players[0].deaths).toBe(1);
+    expect(s.players[0].status).toBe("active");
+    for (let i = 0; i < 720; i++) stepPractice(s, [idle], 250);
+    expect(s.time).toBeGreaterThan(C.roundMs);
+    expect(s.round).toBeUndefined();
+    expect(s.players).toHaveLength(1);
+  });
 });
 function openArena(seed = 1) {
   const s = createPractice(seed);

@@ -159,7 +159,54 @@ try {
   await page.goto(url);
   await expect(page).toHaveTitle("크레이지 먕케이드 · crazy myangcade");
   await expect(page.locator("#connection")).toHaveText("게임 서버 연결됨");
-  await expect(page.locator("#competition,#practice")).toHaveCount(0);
+  await expect(page.locator("#competition")).toHaveCount(0);
+  await page.getByRole("button", { name: /1인 연습 모드/ }).click();
+  await expect(page.locator("#game-arena")).toHaveAttribute(
+    "data-ready",
+    "true",
+  );
+  await expect(page.locator("#game-arena")).toHaveAttribute(
+    "data-player-count",
+    "1",
+  );
+  await expect(page.locator("[data-player=p2]")).toBeHidden();
+  await page.keyboard.down("ArrowDown");
+  await expect
+    .poll(async () =>
+      Number(await page.locator("[data-player=p1]").getAttribute("data-y")),
+    )
+    .toBeGreaterThan(2);
+  await page.keyboard.up("ArrowDown");
+  await page.keyboard.press("ControlLeft");
+  await expect(
+    page.locator("[data-player=p1] [data-stat=inventory-count]"),
+  ).toHaveText("1 / 2");
+  await page.keyboard.press("ControlRight");
+  await expect(
+    page.locator("[data-player=p1] [data-stat=inventory-count]"),
+  ).toHaveText("0 / 2");
+  await page.keyboard.press("Space");
+  await expect(page.locator("[data-player=p1] [data-stat=balloon]")).toHaveText(
+    "1 / 3",
+  );
+  await page
+    .getByRole("button", { name: "처음부터 다시", exact: true })
+    .click();
+  await expect(page.locator("[data-player=p1]")).toHaveAttribute(
+    "data-y",
+    "1.500",
+  );
+  await expect(
+    page.locator("[data-player=p1] [data-stat=inventory-count]"),
+  ).toHaveText("2 / 2");
+  mkdirSync("test-results/portable", { recursive: true });
+  await page.screenshot({
+    path: "test-results/portable/solo.png",
+    fullPage: true,
+  });
+  await page
+    .getByRole("button", { name: "메뉴로 돌아가기", exact: true })
+    .click();
   await page.locator("#online").click();
   await page.getByLabel("닉네임", { exact: true }).fill("Portable Host");
   await page.locator("#online-create").click();
@@ -241,6 +288,8 @@ try {
       lanConnection: peerUrl !== url,
       arrowsSpaceCtrl: true,
       fifoCtrl: true,
+      soloPractice: true,
+      soloRestart: true,
     }),
   );
 } finally {
