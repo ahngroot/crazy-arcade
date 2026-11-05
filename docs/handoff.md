@@ -10,6 +10,8 @@
 
 이 클라우드의 Chromium은 사설 IP로 이동하면 네트워크 정책의 `Domain forbidden` 응답을 받는다. 여기서는 `PLAYWRIGHT_LOOPBACK_INVITES=1`, `PORTABLE_BROWSER_LOOPBACK=1`로 같은 서버의 루프백 주소에서 두 독립 브라우저를 검증했다. LAN 주소 생성·포트·전체 IPv4 바인딩을 확인했지만 이를 실제 PC 두 대의 LAN 실측으로 표시하지 않는다. Windows CI의 포터블 검사는 기본 설정으로 감지된 LAN 주소를 사용한다.
 
+Windows 자동 빌드도 [실행 41958014533](https://github.com/ahngroot/crazy-arcade/actions/runs/41958014533)에서 성공했다(소스 `f374338`, 2분 13초). Windows에서 93개 테스트, EXE 생성, Node/PATH 없는 폴더에서 실제 실행, 두 브라우저 온라인 대전 검사를 통과하고 배포 파일과 화면 artifact를 생성했다. 실제 사용자 PC 두 대의 인터넷 회선 검증과는 구분한다.
+
 공개 인터넷 서버는 계속 미배포 상태다. 아래 과거 단계/빌드 기록은 당시 기능과 검증 범위다.
 
 후속으로 Node.js 설치 없이 실행하는 Windows 포터블 EXE 테스트 빌드를 추가했다. 사용·제작·실제 검증 범위는 [windows.md](windows.md)를 따른다. 아래 소스 개발 방법의 Node.js 24 요구는 EXE를 실행하는 사용자에게 적용되지 않는다.
