@@ -1,6 +1,7 @@
 import type { RequestHandler } from "express";
 import type { Server } from "node:http";
 import type { AddressInfo } from "node:net";
+import { createConnection } from "node:net";
 import { extname } from "node:path";
 import { spawn } from "node:child_process";
 import { networkInterfaces } from "node:os";
@@ -36,6 +37,20 @@ export function embeddedClient(
 
 /** Serve both players from one host PC; the OS chooses a free port if 3001 is busy. */
 export async function listenGame(server: Server, port = 3001): Promise<string> {
+  // Windows can allow 0.0.0.0 and 127.0.0.1 listeners to share a port. In that
+  // case opening localhost could reach an older game instead of this process.
+  const loopbackBusy = (value: number) =>
+    new Promise<boolean>((resolve) => {
+      const socket = createConnection({ host: "127.0.0.1", port: value });
+      const finish = (busy: boolean) => {
+        socket.destroy();
+        resolve(busy);
+      };
+      socket.setTimeout(500);
+      socket.once("connect", () => finish(true));
+      socket.once("timeout", () => finish(true));
+      socket.once("error", () => finish(false));
+    });
   async function listen(value: number) {
     await new Promise<void>((resolve, reject) => {
       const fail = (error: Error) => {
@@ -52,6 +67,10 @@ export async function listenGame(server: Server, port = 3001): Promise<string> {
     });
   }
   try {
+    if (port !== 0 && (await loopbackBusy(port)))
+      throw Object.assign(Error(`Port ${port} is already in use`), {
+        code: "EADDRINUSE",
+      });
     await listen(port);
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code !== "EADDRINUSE" || port !== 3001)

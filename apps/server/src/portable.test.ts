@@ -1,5 +1,6 @@
 import { afterEach, expect, it } from "vitest";
 import { createServer } from "node:http";
+import type { AddressInfo } from "node:net";
 import { networkInterfaces } from "node:os";
 import express from "express";
 import {
@@ -101,6 +102,18 @@ it("chooses another free port when default 3001 is occupied", async () => {
 
 it("requires a packaged index page rather than silently starting an empty game", () => {
   expect(() => embeddedClient(new Map())).toThrow("index.html");
+});
+
+it("rejects an explicitly requested occupied loopback port on every platform", async () => {
+  const blocker = createServer(),
+    server = createServer();
+  servers.push(blocker, server);
+  await new Promise<void>((done) => blocker.listen(0, "127.0.0.1", done));
+  const port = (blocker.address() as AddressInfo).port;
+  await expect(listenGame(server, port)).rejects.toMatchObject({
+    code: "EADDRINUSE",
+  });
+  expect(server.listening).toBe(false);
 });
 
 it("accepts only valid launch flags and rejects broken ports", () => {
