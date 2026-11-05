@@ -169,6 +169,17 @@ try {
     "data-player-count",
     "1",
   );
+  await expect(page.locator("#game-arena")).toHaveAttribute(
+    "data-map-theme",
+    "battle",
+  );
+  for (const text of ["3", "2", "1", "Game Start!"])
+    await expect(page.locator(".game-start-overlay")).toHaveText(text);
+  await expect(page.locator("#game-arena")).toHaveAttribute(
+    "data-start-phase",
+    "playing",
+    { timeout: 10000 },
+  );
   await expect(page.locator("[data-player=p2]")).toBeHidden();
   await page.keyboard.down("ArrowDown");
   await expect
@@ -231,6 +242,16 @@ try {
     "data-ready",
     "true",
   );
+  await expect(page.locator("#game-arena")).toHaveAttribute(
+    "data-start-phase",
+    "playing",
+    { timeout: 10000 },
+  );
+  await expect(peer.locator("#game-arena")).toHaveAttribute(
+    "data-start-phase",
+    "playing",
+    { timeout: 10000 },
+  );
   await expect(
     page.locator("[data-player=p1] [data-stat=inventory-count]"),
   ).toHaveText("2 / 2");
@@ -290,6 +311,8 @@ try {
       fifoCtrl: true,
       soloPractice: true,
       soloRestart: true,
+      countdown: true,
+      classicBattleMap: true,
     }),
   );
 } finally {

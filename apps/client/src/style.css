@@ -1513,3 +1513,51 @@ dialog p {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+#game-arena {
+  position: relative;
+}
+.game-start-overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  z-index: 4;
+  pointer-events: none;
+  background: #19394332;
+  border-radius: inherit;
+}
+.game-start-overlay span {
+  font-size: clamp(68px, 13vw, 132px);
+  line-height: 1.1;
+  font-weight: 900;
+  color: #fff3b0;
+  -webkit-text-stroke: 2px #426d87;
+  text-shadow:
+    0 5px 0 #31556f,
+    0 10px 22px #1c405a77;
+  animation: start-pop 220ms ease-out;
+}
+.game-start-overlay[data-cue="Game Start!"] {
+  background: transparent;
+}
+.game-start-overlay[data-cue="Game Start!"] span {
+  font-size: clamp(30px, 6vw, 64px);
+  white-space: nowrap;
+  color: #fff5b5;
+}
+@keyframes start-pop {
+  from {
+    transform: scale(1.24);
+    opacity: 0.4;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .game-start-overlay span {
+    animation: none;
+  }
+}

@@ -362,9 +362,42 @@ function balloon(c: Ctx) {
   oval(c, 31, 31, 3, 2, "#a8f0ff");
   shape(c, [20, 42, 24, 38, 28, 42], "#51bce7", "#236b98");
 }
-function tile(c: Ctx, kind: Tile | "ground-red" | "ground-green", variant = 0) {
+function tile(
+  c: Ctx,
+  kind:
+    | Tile
+    | "ground-red"
+    | "ground-green"
+    | "ground-battle"
+    | "wall-battle"
+    | "crate-battle",
+  variant = 0,
+) {
   c.lineWidth = 1.5;
-  if (kind === "ground-red" || kind === "ground-green") {
+  if (kind === "ground-battle") {
+    rounded(c, 0, 0, 40, 40, 2, variant ? "#e6f0f4" : "#f8edd9");
+    line(c, [0, 39, 39, 39, 39, 0], "#a1bac480", 1);
+    line(c, [1, 37, 1, 1, 37, 1], "#ffffffa0", 1);
+    rounded(c, 5, 5, 30, 30, 2, "#ffffff14", "#ffffff35");
+  } else if (kind === "wall-battle") {
+    rounded(c, 2, 9, 36, 37, 5, "#3d6683", "#2f536e");
+    rounded(c, 1, 2, 38, 32, 6, "#85b6d2", "#375f79");
+    rounded(c, 5, 5, 30, 23, 4, "#b8def0", "#6f9db6");
+    line(c, [7, 8, 32, 8], "#e6f8ff", 2);
+    line(c, [5, 35, 35, 35], "#284b69", 2);
+  } else if (kind === "crate-battle") {
+    const colors = [
+      ["#f4938a", "#c75f5d", "#ffe0cd"],
+      ["#ffda7e", "#bd8a40", "#fff0b9"],
+      ["#8bd5cf", "#4c9eaa", "#d6f6e6"],
+    ][variant % 3];
+    rounded(c, 3, 10, 34, 35, 4, colors[1], "#675d68");
+    rounded(c, 2, 2, 36, 32, 5, colors[0], colors[1]);
+    rounded(c, 7, 6, 26, 22, 3, colors[2], colors[1]);
+    line(c, [20, 3, 20, 32], colors[1], 3);
+    line(c, [3, 17, 37, 17], colors[1], 3);
+    line(c, [5, 4, 34, 4], "#ffffffa0", 2);
+  } else if (kind === "ground-red" || kind === "ground-green") {
     const red = kind === "ground-red";
     const gradient = c.createLinearGradient(0, 0, 40, 40);
     gradient.addColorStop(0, red ? "#ffe5ba" : "#cef0cb");
@@ -512,6 +545,15 @@ export function installArt(scene: Phaser.Scene) {
       );
   for (const kind of ["wall", "crate"] as const)
     make(`art-${kind}`, 40, 48, (c) => tile(c, kind));
+  for (let variant = 0; variant < 2; variant++)
+    make(`art-ground-battle-${variant}`, 40, 40, (c) =>
+      tile(c, "ground-battle", variant),
+    );
+  make("art-wall-battle", 40, 48, (c) => tile(c, "wall-battle"));
+  for (let variant = 0; variant < 3; variant++)
+    make(`art-crate-battle-${variant}`, 40, 48, (c) =>
+      tile(c, "crate-battle", variant),
+    );
   for (const kind of [
     "balloon",
     "range",

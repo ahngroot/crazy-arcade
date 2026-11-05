@@ -59,6 +59,11 @@ export const test = base.extend<{
         "true",
         { timeout: 15000 },
       );
+      await expect(page.locator("#game-arena")).toHaveAttribute(
+        "data-start-phase",
+        "playing",
+        { timeout: 10000 },
+      );
       return opponent;
     });
     for (const socket of sockets) socket.disconnect();

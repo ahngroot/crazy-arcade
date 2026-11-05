@@ -120,7 +120,7 @@ function updateGameHud(state: PracticeState) {
   if (onlineGame) {
     const view = online.current();
     const button = document.querySelector<HTMLButtonElement>("#rematch")!;
-    button.hidden = !view || view.phase === "PLAYING";
+    button.hidden = !view || ["PLAYING", "COUNTDOWN"].includes(view.phase);
     const self = view?.players.find((p) => p.id === controlledPlayerId);
     button.disabled =
       !online.connected() ||
@@ -294,6 +294,7 @@ const online = setupOnline(socket, {
           frame: (input, delta) =>
             timeline.frame(input, delta, online.connected()),
           restart: () => void online.ready(),
+          view: () => timeline.view,
         },
       );
     } catch {
@@ -323,7 +324,7 @@ document.querySelector("#practice")!.addEventListener("click", async () => {
   dialog.classList.add("solo-mode");
   document.querySelector("#game-title")!.textContent = "1인 연습 모드";
   document.querySelector("#game-dialog .section-number")!.textContent =
-    "SOLO PRACTICE · CLOVER GARDEN";
+    "SOLO PRACTICE · CLASSIC ARENA";
   document
     .querySelector("#game-arena")!
     .setAttribute("aria-label", "1인 연습 경기장");
@@ -332,7 +333,7 @@ document.querySelector("#practice")!.addEventListener("click", async () => {
   document.querySelector("#special-controls")!.textContent =
     "아이템 최대 2개 · 획득 순서대로 Ctrl 사용. 보호막과 파워로 시작해요. 바늘은 갇혔을 때 사용하세요.";
   document.querySelector("#mode-note")!.textContent =
-    "시간제한 없이 연습합니다. 상자를 부수고 아이템을 모으세요. 물줄기에 닿아도 다시 태어나요.";
+    "일반 대결형 맵에서 시간제한 없이 연습합니다. 중앙 구분 없이 상자를 부수며 길을 넓히세요.";
   document.querySelector('[data-player="p1"] .profile-name')!.textContent =
     "루비";
   for (const id of ["#round-bar", "#network-message"])

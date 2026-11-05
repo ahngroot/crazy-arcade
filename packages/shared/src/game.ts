@@ -1,5 +1,6 @@
 import {
   createPreviewMap,
+  createBattleMap,
   GAME_CONFIG as C,
   type Position,
   type Tile,
@@ -75,6 +76,7 @@ export interface PracticeState {
   mapRevision: number;
   accumulator: number;
   map: Tile[][];
+  terrain?: "garden" | "battle";
   players: PracticePlayer[];
   balloons: Balloon[];
   blasts: Blast[];
@@ -128,6 +130,8 @@ export function createPractice(seed = 2701): PracticeState {
 /** Unlimited solo practice uses one real player and the same item rules as online. */
 export function createSoloPractice(seed = 2701): PracticeState {
   const state = createPractice(seed);
+  state.map = createBattleMap();
+  state.terrain = "battle";
   state.players = state.players.slice(0, 1);
   state.players[0].inventory = ["shield", "power"];
   return state;

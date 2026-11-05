@@ -3,6 +3,7 @@ import {
   GAME_CONFIG as C,
   createPractice,
   createSoloPractice,
+  createBattleMap,
   stepPractice,
   placeBalloon,
   EMPTY_INPUT as idle,
@@ -17,6 +18,41 @@ const move = (x: number, y: number, balloon = false): LocalInput => ({
 });
 
 describe("solo practice", () => {
+  it("uses a shared battle map with safe starts, fixed pillars and destructible routes across the center", () => {
+    const s = createSoloPractice(),
+      map = createBattleMap();
+    expect(s.terrain).toBe("battle");
+    expect(s.map).toEqual(map);
+    expect(map[1][1]).toBe("floor");
+    expect(map[1][2]).toBe("floor");
+    expect(map[2][1]).toBe("floor");
+    expect(map[2][2]).toBe("wall");
+    expect(map[1][3]).toBe("crate");
+    for (let y = 1; y < C.rows - 1; y++) expect(map[y][7]).not.toBe("wall");
+    const visited = new Set<string>(["1,1"]),
+      queue = [{ x: 1, y: 1 }];
+    for (let i = 0; i < queue.length; i++) {
+      const { x, y } = queue[i];
+      for (const [dx, dy] of [
+        [1, 0],
+        [-1, 0],
+        [0, 1],
+        [0, -1],
+      ]) {
+        const key = `${x + dx},${y + dy}`;
+        if (
+          map[y + dy]?.[x + dx] &&
+          map[y + dy][x + dx] !== "wall" &&
+          !visited.has(key)
+        ) {
+          visited.add(key);
+          queue.push({ x: x + dx, y: y + dy });
+        }
+      }
+    }
+    expect(visited.has(`${C.columns - 2},${C.rows - 2}`)).toBe(true);
+    expect(createPractice().map[1][7]).toBe("wall");
+  });
   it("has one player, no round timer and the two FIFO training items", () => {
     const s = createSoloPractice();
     expect(s.players).toHaveLength(1);

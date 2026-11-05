@@ -12,6 +12,15 @@ async function start(page: import("@playwright/test").Page) {
   );
   await expect(page.locator("[data-player=p2]")).toBeHidden();
   await expect(page.locator("#round-bar")).toBeHidden();
+  await expect(page.locator("#game-arena")).toHaveAttribute(
+    "data-map-theme",
+    "battle",
+  );
+  await expect(page.locator("#game-arena")).toHaveAttribute(
+    "data-start-phase",
+    "playing",
+    { timeout: 10000 },
+  );
 }
 
 test("solo practice works without an online connection and uses one character, arrows, Space and Ctrl", async ({
@@ -66,6 +75,11 @@ test("solo balloon explosion, respawn and crate pickup work; restart restores th
   await page.goto("/");
   await start(page);
   const self = page.locator("[data-player=p1]");
+  await page.keyboard.down("ArrowRight");
+  await expect
+    .poll(async () => Number(await self.getAttribute("data-x")))
+    .toBeGreaterThan(2.2);
+  await page.keyboard.up("ArrowRight");
   await page.keyboard.press("Space");
   await expect(self).toHaveAttribute("data-status", "trapped", {
     timeout: 6000,

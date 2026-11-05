@@ -37,6 +37,31 @@ const packet = (sequence: number, roundId = 1) => ({
   useItem: false,
 });
 describe("server room lifecycle", () => {
+  it("shares a frozen arena during countdown and rejects early movement, balloons and item use", () => {
+    const h = pair();
+    h.service.ready("a", true);
+    h.service.ready("b", true);
+    const view = h.service.current("a")!,
+      game = view.game!;
+    expect(view.phase).toBe("COUNTDOWN");
+    expect(game).not.toBeNull();
+    expect(game.time).toBe(0);
+    expect(
+      h.service.input("a", {
+        ...packet(1, view.roundId),
+        balloon: true,
+        useItem: true,
+      }),
+    ).toBe(false);
+    h.advance(C.countdownMs - 100);
+    expect(game.time).toBe(0);
+    expect(game.players[0].position.y).toBe(1.5);
+    expect(game.players[0].inventory).toEqual(["shield", "power"]);
+    expect(game.balloons).toHaveLength(0);
+    h.advance(200);
+    expect(h.service.current("a")?.phase).toBe("PLAYING");
+    expect(h.service.current("a")?.game).toBe(game);
+  });
   it("releases sessions, socket bindings, rooms and expired request buckets across repeated create/leave cycles", () => {
     const h = setup();
     for (let i = 0; i < 40; i++) {

@@ -53,6 +53,7 @@ export class GameRenderer {
   private clock = 0;
   private lastTime = -1;
   private lastPhase = "";
+  private terrain = "";
   constructor(
     private scene: Phaser.Scene,
     private parent: HTMLElement,
@@ -111,6 +112,23 @@ export class GameRenderer {
       }
   }
   private blocksFrom(state: PracticeState) {
+    const terrain = state.terrain ?? "garden";
+    if (terrain !== this.terrain) {
+      this.terrain = terrain;
+      this.parent.dataset.mapTheme = terrain;
+      this.floors.forEach((floor, i) => {
+        const x = i % C.columns,
+          y = Math.floor(i / C.columns);
+        floor.setTexture(
+          terrain === "battle"
+            ? `art-ground-battle-${(x + y) % 2}`
+            : `art-ground-${x < 7 ? "red" : "green"}-${(x + y) % 2}`,
+        );
+      });
+      for (const block of this.blocks.values()) block.image.destroy();
+      this.blocks.clear();
+      this.revision = -1;
+    }
     if (state.mapRevision === this.revision) return;
     this.revision = state.mapRevision;
     state.map.forEach((row, y) =>
@@ -129,7 +147,14 @@ export class GameRenderer {
               .image(
                 (x + 0.5) * C.tileSize,
                 (y + 1) * C.tileSize,
-                safeTexture(this.scene, `art-${tile}`),
+                safeTexture(
+                  this.scene,
+                  terrain === "battle"
+                    ? tile === "wall"
+                      ? "art-wall-battle"
+                      : `art-crate-battle-${(x + y) % 3}`
+                    : `art-${tile}`,
+                ),
               )
               .setOrigin(0.5, 1)
               .setDisplaySize(40, 48)

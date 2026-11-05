@@ -57,6 +57,15 @@ test("two independent browsers share a room, reconnect and rematch; a third is r
     await expect(c.locator("#room-code")).not.toHaveText(code!);
     await page.getByRole("button", { name: "READY", exact: true }).click();
     await b.getByRole("button", { name: "READY", exact: true }).click();
+    for (const text of ["3", "2", "1", "Game Start!"]) {
+      await expect(page.locator(".game-start-overlay")).toHaveText(text);
+      await expect(b.locator(".game-start-overlay")).toHaveText(text);
+      if (text === "1")
+        await page.screenshot({
+          path: "test-results/countdown-online.png",
+          fullPage: true,
+        });
+    }
     await expect(
       page.getByRole("heading", { name: "온라인 대전 · 빨강 팀" }),
     ).toBeVisible({ timeout: 10000 });
@@ -70,6 +79,14 @@ test("two independent browsers share a room, reconnect and rematch; a third is r
     await expect(b.locator("#game-arena")).toHaveAttribute(
       "data-ready",
       "true",
+    );
+    await expect(page.locator("#game-arena")).toHaveAttribute(
+      "data-start-phase",
+      "playing",
+    );
+    await expect(b.locator("#game-arena")).toHaveAttribute(
+      "data-start-phase",
+      "playing",
     );
     await page.keyboard.down("ControlRight");
     await expect(
@@ -157,8 +174,15 @@ test("two independent browsers share a room, reconnect and rematch; a third is r
       .getByRole("button", { name: "재대결 준비", exact: true })
       .click();
     await b.getByRole("button", { name: "재대결 준비", exact: true }).click();
+    for (const text of ["3", "2", "1", "Game Start!"])
+      await expect(page.locator(".game-start-overlay")).toHaveText(text);
     await expect(page.locator("#result-panel")).toBeHidden({ timeout: 10000 });
     await expect(b.locator("#result-panel")).toBeHidden({ timeout: 10000 });
+    await expect(page.locator("#game-arena")).toHaveAttribute(
+      "data-start-phase",
+      "playing",
+      { timeout: 10000 },
+    );
     await expect(page.locator("#red-score")).toHaveText("0");
     await expect(b.locator("#green-score")).toHaveText("0");
     await page

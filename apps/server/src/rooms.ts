@@ -226,6 +226,9 @@ export class RoomService {
     if (room.seats.every((s) => s.ready)) {
       room.phase = "COUNTDOWN";
       room.countdown = this.now() + C.countdownMs;
+      room.roundId++;
+      room.tick = 0;
+      room.game = createCompetition(randomInt(0x7fffffff), room.durationMs);
     }
     return { ok: true };
   }
@@ -289,6 +292,7 @@ export class RoomService {
     }
     room.game?.players.forEach((p) => (p.moving = false));
     if (room.phase === "COUNTDOWN" || room.phase === "READY") {
+      if (room.phase === "COUNTDOWN") room.game = null;
       room.phase = "WAITING";
       room.countdown = null;
       room.seats.forEach((s) => (s.ready = false));
@@ -314,6 +318,7 @@ export class RoomService {
       room.game.round.winner = seat.id === "p1" ? "green" : "red";
       room.reason = reason;
     } else if (room.phase !== "FINISHED") {
+      if (room.phase === "COUNTDOWN") room.game = null;
       room.phase = "WAITING";
       room.countdown = null;
       room.seats.forEach((s) => (s.ready = false));
@@ -347,9 +352,6 @@ export class RoomService {
         room.countdown !== null &&
         now >= room.countdown
       ) {
-        room.roundId++;
-        room.tick = 0;
-        room.game = createCompetition(randomInt(0x7fffffff), room.durationMs);
         room.phase = "PLAYING";
         room.countdown = null;
         for (const seat of room.seats) {

@@ -146,3 +146,19 @@ export function createPreviewMap(): Tile[][] {
     }),
   );
 }
+
+/** Classic battle layout: shared arena, fixed pillars, crates and safe corner starts. */
+export function createBattleMap(): Tile[][] {
+  const { columns, rows } = GAME_CONFIG;
+  return Array.from({ length: rows }, (_, y) =>
+    Array.from({ length: columns }, (_, x): Tile => {
+      if (x === 0 || y === 0 || x === columns - 1 || y === rows - 1)
+        return "wall";
+      if (x % 2 === 0 && y % 2 === 0) return "wall";
+      const cx = Math.min(x, columns - 1 - x);
+      const cy = Math.min(y, rows - 1 - y);
+      if ((cx === 1 && cy <= 2) || (cy === 1 && cx <= 2)) return "floor";
+      return (cx * 7 + cy * 11) % 5 === 0 ? "floor" : "crate";
+    }),
+  );
+}
