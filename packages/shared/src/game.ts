@@ -408,7 +408,14 @@ function explode(s: PracticeState) {
     s.map[y][x] = "floor";
     s.mapRevision++;
     if (random(s) < C.itemDropChance) {
-      const drops = ["balloon", "range", "speed", "ultra"] as const;
+      const drops = [
+        "balloon",
+        "range",
+        "speed",
+        "ultra",
+        "needle",
+        "shield",
+      ] as const;
       const kind = drops[Math.floor(random(s) * drops.length)];
       s.items.push({
         id: s.nextId++,

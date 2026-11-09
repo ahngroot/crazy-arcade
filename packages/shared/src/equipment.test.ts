@@ -72,11 +72,20 @@ it("only drops enabled test items and collects ultra immediately through the sim
     s.balloons[0].explodesAt = 0;
     stepPractice(s, [EMPTY_INPUT], C.fixedStepMs);
     for (const item of s.items) {
-      expect(["balloon", "range", "speed", "ultra"]).toContain(item.kind);
+      expect([
+        "balloon",
+        "range",
+        "speed",
+        "ultra",
+        "needle",
+        "shield",
+      ]).toContain(item.kind);
       dropped.add(item.kind);
     }
   }
-  expect(dropped).toEqual(new Set(["balloon", "range", "speed", "ultra"]));
+  expect(dropped).toEqual(
+    new Set(["balloon", "range", "speed", "ultra", "needle", "shield"]),
+  );
   const s = createSoloPractice(),
     p = s.players[0];
   p.inventory = ["needle", "shield"];
@@ -85,6 +94,32 @@ it("only drops enabled test items and collects ultra immediately through the sim
   expect(s.items).toHaveLength(0);
   expect(p.range).toBe(C.maxRange);
   expect(p.inventory).toEqual(["needle", "shield"]);
+});
+
+it("stores picked-up needle and shield without activation, then consumes each only on its valid Ctrl edge", () => {
+  const s = createSoloPractice(),
+    p = s.players[0];
+  for (const kind of ["needle", "shield"] as const)
+    s.items.push({ id: s.nextId++, kind, x: 1, y: 1, availableAt: 0 });
+  stepPractice(s, [EMPTY_INPUT], C.fixedStepMs);
+  expect(p.inventory).toEqual(["needle", "shield"]);
+  expect(p.shieldUntil).toBe(0);
+  const ctrl = { ...EMPTY_INPUT, useItem: true };
+  stepPractice(s, [ctrl], C.fixedStepMs);
+  expect(p.inventory).toEqual(["needle", "shield"]);
+  stepPractice(s, [EMPTY_INPUT], C.fixedStepMs);
+  p.status = "trapped";
+  p.statusUntil = s.time + C.trappedMs;
+  stepPractice(s, [ctrl], C.fixedStepMs);
+  expect(p.status).toBe("active");
+  expect(p.inventory).toEqual(["shield"]);
+  expect(p.shieldUntil).toBe(0);
+  stepPractice(s, [ctrl], C.fixedStepMs);
+  expect(p.inventory).toEqual(["shield"]);
+  stepPractice(s, [EMPTY_INPUT], C.fixedStepMs);
+  stepPractice(s, [ctrl], C.fixedStepMs);
+  expect(p.inventory).toEqual([]);
+  expect(p.shieldUntil - s.time).toBeCloseTo(C.shieldMs);
 });
 
 it("shoes push one tile and gloves throw two tiles, retaining fuse and owner; prediction cannot move balloons", () => {

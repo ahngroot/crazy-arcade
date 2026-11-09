@@ -1,5 +1,11 @@
 import type Phaser from "phaser";
 import type { Team, ItemKind, Facing, Tile } from "@bubble/shared";
+import activeItemsUrl from "./assets/active-items.png";
+
+// One reference-based sheet supplies both world pickups and inventory icons.
+const activeItemsImage = new Image();
+activeItemsImage.src = activeItemsUrl;
+await activeItemsImage.decode();
 
 export const ART = {
   playerWidth: 42,
@@ -457,6 +463,22 @@ function tile(
 }
 
 function item(c: Ctx, kind: ItemKind) {
+  if (kind === "needle" || kind === "shield") {
+    const half = activeItemsImage.naturalWidth / 2;
+    c.imageSmoothingEnabled = false;
+    c.drawImage(
+      activeItemsImage,
+      kind === "needle" ? 0 : half,
+      0,
+      half,
+      activeItemsImage.naturalHeight,
+      0,
+      0,
+      36,
+      36,
+    );
+    return;
+  }
   c.lineWidth = 1.6;
   rounded(c, 3, 3, 30, 30, 9, "#fff9dc", "#d8a555");
   rounded(c, 5, 5, 26, 25, 7, "#fffff1", "#fff");
@@ -505,22 +527,6 @@ function item(c: Ctx, kind: ItemKind) {
     );
     oval(c, -3, -3, 2, 3, "#fff");
     oval(c, 3, -3, 2, 3, "#fff");
-  } else if (kind === "needle") {
-    line(c, [-7, 10, 7, -10], "#9879ba", 3);
-    oval(c, 6, -8, 3, 4, "#fff", "#9879ba");
-    line(c, [3, -10, -3, -14, -9, -10], "#e295bd", 1.5);
-  } else if (kind === "shield") {
-    c.beginPath();
-    c.moveTo(0, -12);
-    c.lineTo(10, -7);
-    c.quadraticCurveTo(10, 6, 0, 12);
-    c.quadraticCurveTo(-10, 6, -10, -7);
-    c.closePath();
-    c.fillStyle = "#8cdced";
-    c.fill();
-    c.strokeStyle = "#397ea0";
-    c.stroke();
-    line(c, [0, -8, 0, 7], "#e4fdff", 2);
   } else {
     leaf(c, -1, -1, "#91c67c", -0.7, 0.45);
     leaf(c, 2, -1, "#b8db83", 0.6, 0.4);
@@ -628,7 +634,11 @@ export function portraitSvg(team: Team) {
 }
 
 export function itemSvg(kind: ItemKind) {
-  const icons: Record<ItemKind, string> = {
+  if (kind === "needle" || kind === "shield") {
+    const half = activeItemsImage.naturalWidth / 2;
+    return `<svg viewBox="${kind === "needle" ? 0 : half} 0 ${half} ${activeItemsImage.naturalHeight}" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><image href="${activeItemsUrl}" width="${activeItemsImage.naturalWidth}" height="${activeItemsImage.naturalHeight}" style="image-rendering:pixelated"/></svg>`;
+  }
+  const icons: Record<Exclude<ItemKind, "needle" | "shield">, string> = {
     ultra:
       '<path d="M18 2l4 8 10-3-4 11 5 8-11-1-4 9-5-9-10 1 5-9-4-9 10 2Z" fill="#7534c7"/><ellipse cx="18" cy="18" rx="8" ry="10" fill="#ffdb37"/>',
     glove:
@@ -643,10 +653,6 @@ export function itemSvg(kind: ItemKind) {
       '<path d="M14 6h8v12l8 11q-12 9-24 0l8-11Z" fill="#29c9ff" stroke="#2472b5"/><ellipse cx="18" cy="6" rx="6" ry="3" fill="#ffaa30"/><path d="M14 19l-3 7 4 2" fill="none" stroke="#dcfaff" stroke-width="3"/>',
     speed:
       '<path d="M12 6h12v13l6 2v6H8V17h4Z" fill="#ef4535" stroke="#983c2a"/><ellipse cx="18" cy="6" rx="7" ry="3" fill="#ddd" stroke="#888"/><circle cx="12" cy="29" r="4" fill="#ffbf26" stroke="#9b6a20"/><circle cx="26" cy="29" r="4" fill="#ffbf26" stroke="#9b6a20"/>',
-    needle:
-      '<path d="M11 29L25 7" stroke="#9d84c0" stroke-width="3" stroke-linecap="round"/><ellipse cx="23" cy="10" rx="3" ry="4" fill="#fff" stroke="#9d84c0"/><path d="M22 6Q14 0 9 7" fill="none" stroke="#eb9cb9" stroke-width="2"/>',
-    shield:
-      '<path d="M18 5l11 6q1 14-11 20Q6 25 7 11Z" fill="#95dfee" stroke="#568eaf"/><path d="M18 10v15M13 16h10" fill="none" stroke="#effeff" stroke-width="2"/>',
     power:
       '<path d="M17 14Q3 5 11 4q10 1 6 10M19 14Q20 0 29 4q2 8-10 10" fill="#abd77f" stroke="#699873"/><path d="M12 13l13 1-5 14-5 3-2-9Z" fill="#ffcf75" stroke="#bf9657"/><path d="M14 24l-5 4m10-4 7 4" stroke="#bf9657" fill="none"/>',
   };
