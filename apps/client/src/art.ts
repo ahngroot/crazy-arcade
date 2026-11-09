@@ -2,6 +2,7 @@ import type Phaser from "phaser";
 import type { Team, ItemKind, Facing, Tile } from "@bubble/shared";
 import activeItemsUrl from "./assets/active-items.png";
 import charactersUrl from "./assets/characters.png";
+import passiveItemsUrl from "./assets/passive-items.png";
 
 // One reference-based sheet supplies both world pickups and inventory icons.
 const activeItemsImage = new Image();
@@ -10,6 +11,29 @@ await activeItemsImage.decode();
 const charactersImage = new Image();
 charactersImage.src = charactersUrl;
 await charactersImage.decode();
+const passiveItemsImage = new Image();
+passiveItemsImage.src = passiveItemsUrl;
+await passiveItemsImage.decode();
+const passiveIndex: Partial<Record<ItemKind, number>> = {
+  balloon: 0,
+  ultra: 1,
+  range: 2,
+};
+function passiveIcon(c: Ctx, index: number, size: number) {
+  const cell = passiveItemsImage.naturalWidth / 3;
+  c.imageSmoothingEnabled = false;
+  c.drawImage(
+    passiveItemsImage,
+    index * cell,
+    0,
+    cell,
+    passiveItemsImage.naturalHeight,
+    0,
+    0,
+    size,
+    size,
+  );
+}
 export const keyCharacter = (id: number, left: boolean, frame: number) =>
   `art-character-${id}-${left ? 1 : 0}-${frame}`;
 
@@ -469,6 +493,11 @@ function tile(
 }
 
 function item(c: Ctx, kind: ItemKind) {
+  const index = passiveIndex[kind];
+  if (index !== undefined) {
+    passiveIcon(c, index, 36);
+    return;
+  }
   if (kind === "needle" || kind === "shield") {
     const half = activeItemsImage.naturalWidth / 2;
     c.imageSmoothingEnabled = false;
@@ -632,7 +661,8 @@ export function installArt(scene: Phaser.Scene) {
     "ghost",
   ] as const)
     make(`art-item-${kind}`, 36, 38, (c) => item(c, kind));
-  make("art-balloon", 48, 48, balloon);
+  make("art-balloon", 48, 48, (c) => passiveIcon(c, 0, 48));
+  make("art-balloon-ultra", 48, 48, (c) => passiveIcon(c, 1, 48));
   make("art-shadow", 40, 16, (c) => oval(c, 20, 8, 18, 5, "#28545630"));
   make("art-drop", 24, 32, (c) => {
     c.translate(12, 14);
@@ -663,6 +693,11 @@ export function portraitSvg(team: Team) {
 }
 
 export function itemSvg(kind: ItemKind) {
+  const index = passiveIndex[kind];
+  if (index !== undefined) {
+    const cell = passiveItemsImage.naturalWidth / 3;
+    return `<svg viewBox="${index * cell} 0 ${cell} ${passiveItemsImage.naturalHeight}" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><image href="${passiveItemsUrl}" width="${passiveItemsImage.naturalWidth}" height="${passiveItemsImage.naturalHeight}" style="image-rendering:pixelated"/></svg>`;
+  }
   if (kind === "needle" || kind === "shield") {
     const half = activeItemsImage.naturalWidth / 2;
     return `<svg viewBox="${kind === "needle" ? 0 : half} 0 ${half} ${activeItemsImage.naturalHeight}" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><image href="${activeItemsUrl}" width="${activeItemsImage.naturalWidth}" height="${activeItemsImage.naturalHeight}" style="image-rendering:pixelated"/></svg>`;

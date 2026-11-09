@@ -544,7 +544,14 @@ export class GameRenderer {
     }
     this.prune(this.balloons, new Set(state.balloons.map((b) => b.id)));
     for (const b of state.balloons) {
-      const actor = this.actor(this.balloons, b.id, "art-balloon", 37, 39, 0.5),
+      const actor = this.actor(
+          this.balloons,
+          b.id,
+          b.ultra ? "art-balloon-ultra" : "art-balloon",
+          37,
+          39,
+          0.5,
+        ),
         pulse =
           1 +
           Math.sin(this.clock / (b.explodesAt - state.time < 600 ? 48 : 160)) *

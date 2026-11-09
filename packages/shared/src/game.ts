@@ -11,6 +11,7 @@ import {
   finishCompetition,
   type CompetitionRound,
 } from "./competition.js";
+import { rollCrateItem } from "./drops.js";
 
 export type Facing = "up" | "down" | "left" | "right";
 export type ItemKind =
@@ -35,6 +36,7 @@ export interface LocalInput {
   useItem?: boolean;
 }
 export interface PracticePlayer {
+  ultra?: boolean;
   characterId?: number;
   id: string;
   team: Team;
@@ -63,6 +65,7 @@ export interface PracticePlayer {
   ghostUntil?: number;
 }
 export interface Balloon {
+  ultra?: boolean;
   id: number;
   owner: string;
   x: number;
@@ -225,8 +228,10 @@ export function collectItem(p: PracticePlayer, kind: ItemKind): boolean {
   else if (kind === "range") p.range = Math.min(C.maxRange, p.range + 1);
   else if (kind === "speed")
     p.speed = Math.min(C.maxSpeed, p.speed + C.speedIncrement);
-  else if (kind === "ultra") p.range = C.maxRange;
-  else {
+  else if (kind === "ultra") {
+    p.range = C.maxRange;
+    p.ultra = true;
+  } else {
     if (p.inventory.length >= C.inventoryLimit) return false;
     p.inventory.push(kind);
   }
@@ -338,6 +343,7 @@ export function placeBalloon(s: PracticeState, p: PracticePlayer): boolean {
   )
     return false;
   s.balloons.push({
+    ultra: Boolean(p.ultra),
     id: s.nextId++,
     owner: p.id,
     x,
@@ -409,15 +415,7 @@ function explode(s: PracticeState) {
     s.map[y][x] = "floor";
     s.mapRevision++;
     if (random(s) < C.itemDropChance) {
-      const drops = [
-        "balloon",
-        "range",
-        "speed",
-        "ultra",
-        "needle",
-        "shield",
-      ] as const;
-      const kind = drops[Math.floor(random(s) * drops.length)];
+      const kind = rollCrateItem(random(s));
       s.items.push({
         id: s.nextId++,
         kind,
