@@ -43,7 +43,7 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
     <div class="match-layout"><div class="competition-stage"><div id="game-arena" aria-label="온라인 1:1 대전 경기장"></div><section id="result-panel" aria-label="경기 결과" hidden><span>ROUND COMPLETE</span><div class="result-friends"><span class="portrait result-red">${portraitSvg("red")}</span><svg class="result-trophy" viewBox="0 0 64 64" aria-hidden="true"><path d="M20 13H9v11q0 14 17 14m18-25h11v11q0 14-17 14" fill="none" stroke="#d6aa4f" stroke-width="4"/><path d="M17 7h30v19q0 15-15 17-15-2-15-17Z" fill="#ffdb79" stroke="#af8d4c" stroke-width="2"/><path d="M32 43v11M22 57h20" fill="none" stroke="#af8d4c" stroke-width="5" stroke-linecap="round"/><path d="m32 14 3 6 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1Z" fill="#fff8d9"/></svg><span class="portrait result-green">${portraitSvg("green")}</span></div><h3 id="result-title"></h3><p id="result-score"></p><p>아래 재대결 버튼으로 다시 시작해요.</p></section></div><aside class="game-hud" aria-label="플레이어 능력치">
       <div class="player-panel red-panel" data-player="p1"><div class="player-profile"><span class="portrait">${portraitSvg("red")}</span><div><h3>RED</h3><span class="profile-name">루비</span><p class="player-status" role="status"></p></div></div><dl><dt>물풍선</dt><dd data-stat="balloon"></dd><dt>물줄기</dt><dd data-stat="range"></dd><dt>이동속도</dt><dd data-stat="speed"></dd><dt>재생성</dt><dd data-stat="deaths"></dd></dl>${extraStats}</div>
       <div class="player-panel green-panel" data-player="p2"><div class="player-profile"><span class="portrait">${portraitSvg("green")}</span><div><h3>GREEN</h3><span class="profile-name">모모</span><p class="player-status" role="status"></p></div></div><dl><dt>물풍선</dt><dd data-stat="balloon"></dd><dt>물줄기</dt><dd data-stat="range"></dd><dt>이동속도</dt><dd data-stat="speed"></dd><dt>재생성</dt><dd data-stat="deaths"></dd></dl>${extraStats}</div>
-      <div class="item-guide"><span>${itemSvg("range")}액체 · 물줄기 증가</span><span>${itemSvg("speed")}롤러스케이트 · 속도 증가</span><span>${itemSvg("ultra")}울트라 · 최대 물줄기</span><span>${itemSvg("glove")}장갑 · 물풍선 던지기</span><span>${itemSvg("shoes")}신발 · 물풍선 밀기</span><span>${itemSvg("ghost")}고스트 · 모습 숨기기</span></div><p class="game-note" id="mode-note">각자 자신의 캐릭터만 조작합니다.</p>
+      <div class="item-guide"><span>${itemSvg("range")}액체 · 물줄기 증가</span><span>${itemSvg("speed")}롤러스케이트 · 속도 증가</span><span>${itemSvg("ultra")}울트라 · 최대 물줄기</span></div><p class="game-note" id="mode-note">각자 자신의 캐릭터만 조작합니다.</p>
     </aside></div><div class="game-actions"><button id="rematch">재대결 준비</button><button class="back">메뉴로 돌아가기</button></div></dialog>
   <dialog id="online-dialog" aria-labelledby="online-title"><div class="dialog-header"><div><span class="section-number">ONLINE · CRITTER DUEL</span><h2 id="online-title">친구와 정원에서 만나요</h2></div><button class="close" aria-label="온라인 화면 닫기">×</button></div>
     <p class="online-help">각자의 PC에서 같은 서버 주소로 접속하세요. 방향키 이동 · Space 물풍선 · Ctrl 아이템.</p><div id="server-sharing" hidden><label for="server-address">상대 PC에서 열 주소 (같은 네트워크)</label><select id="server-address"></select><p>이 주소를 상대에게 보내세요. 상대는 EXE를 따로 실행하지 않아도 됩니다.</p></div><div id="online-setup"><label>닉네임<input id="nickname" maxlength="16" autocomplete="nickname" placeholder="1~16자 닉네임" /></label><label>온라인 경기 시간<select id="online-duration"><option value="180000">180초</option><option value="30000">30초</option></select></label><button id="online-create">방 만들기</button><div class="join-row"><label>방 코드<input id="join-code" maxlength="8" placeholder="8자리 코드" autocapitalize="characters" /></label><button id="online-join">방 참가하기</button></div></div>
@@ -173,7 +173,7 @@ function updateGameHud(state: PracticeState) {
             ? "바늘 · 갇혔을 때 Ctrl"
             : "Ctrl · 다음 아이템 사용",
       buffs: [
-        ...(["ultra", "glove", "shoes", "ghost"] as const).map((kind) =>
+        ...(["glove", "shoes", "ghost"] as const).map((kind) =>
           (player[`${kind}Until`] ?? 0) > state.time
             ? `${{ ultra: "울트라", glove: "장갑", shoes: "신발", ghost: "고스트" }[kind]} ${Math.ceil((player[`${kind}Until`]! - state.time) / 1000)}초`
             : "",
@@ -219,7 +219,6 @@ function updateGameHud(state: PracticeState) {
               needle: "바늘",
               shield: "보호막",
               power: "파워",
-              ultra: "울트라 물풍선",
               glove: "장갑",
               shoes: "신발",
               ghost: "고스트",
@@ -345,7 +344,7 @@ document.querySelector("#practice")!.addEventListener("click", async () => {
   document.querySelector(".game-help")!.textContent =
     "방향키 이동 · Space 물풍선 · Ctrl 아이템 · 내 캐릭터 하나로 자유롭게 연습하세요.";
   document.querySelector("#special-controls")!.textContent =
-    "아이템 없이 시작해요. 사용 아이템은 최대 2개 · 획득 순서대로 Ctrl 사용. 액체와 롤러스케이트는 즉시 적용됩니다.";
+    "아이템 없이 시작해요. 액체·롤러스케이트·울트라 물풍선은 획득 즉시 적용됩니다. 사용 아이템은 최대 2개 · Ctrl로 사용해요.";
   document.querySelector("#mode-note")!.textContent =
     "일반 대결형 맵에서 시간제한 없이 연습합니다. 중앙 구분 없이 상자를 부수며 길을 넓히세요.";
   document.querySelector('[data-player="p1"] .profile-name')!.textContent =

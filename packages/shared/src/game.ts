@@ -24,7 +24,10 @@ export type ItemKind =
   | "glove"
   | "shoes"
   | "ghost";
-export type UsableItemKind = Exclude<ItemKind, "balloon" | "range" | "speed">;
+export type UsableItemKind = Exclude<
+  ItemKind,
+  "balloon" | "range" | "speed" | "ultra"
+>;
 export interface LocalInput {
   x: number;
   y: number;
@@ -54,7 +57,6 @@ export interface PracticePlayer {
   itemDown: boolean;
   shieldUntil: number;
   powerUntil: number;
-  ultraUntil?: number;
   gloveUntil?: number;
   shoesUntil?: number;
   ghostUntil?: number;
@@ -196,10 +198,7 @@ export function effectiveStats(s: PracticeState, p: PracticePlayer) {
       p.status === "trapped"
         ? C.movementTilesPerSecond * C.trappedSpeedMultiplier
         : p.speed + (power ? C.powerSpeedBonus : 0),
-    range:
-      (p.ultraUntil ?? 0) > s.time
-        ? C.maxRange
-        : p.range + (power ? C.powerRangeBonus : 0),
+    range: p.range + (power ? C.powerRangeBonus : 0),
     capacity: p.capacity + (power ? C.powerCapacityBonus : 0),
   };
 }
@@ -225,6 +224,7 @@ export function collectItem(p: PracticePlayer, kind: ItemKind): boolean {
   else if (kind === "range") p.range = Math.min(C.maxRange, p.range + 1);
   else if (kind === "speed")
     p.speed = Math.min(C.maxSpeed, p.speed + C.speedIncrement);
+  else if (kind === "ultra") p.range = C.maxRange;
   else {
     if (p.inventory.length >= C.inventoryLimit) return false;
     p.inventory.push(kind);
@@ -408,15 +408,7 @@ function explode(s: PracticeState) {
     s.map[y][x] = "floor";
     s.mapRevision++;
     if (random(s) < C.itemDropChance) {
-      const drops = [
-        "balloon",
-        "range",
-        "speed",
-        "ultra",
-        "glove",
-        "shoes",
-        "ghost",
-      ] as const;
+      const drops = ["balloon", "range", "speed", "ultra"] as const;
       const kind = drops[Math.floor(random(s) * drops.length)];
       s.items.push({
         id: s.nextId++,

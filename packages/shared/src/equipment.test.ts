@@ -33,18 +33,58 @@ it("allows exactly five seconds of trapped movement at 40% base speed without ba
   expect(p.status).toBe("active");
 });
 
-it("activates ultra, glove, shoes and ghost through the same two-slot FIFO inventory", () => {
-  for (const kind of ["ultra", "glove", "shoes", "ghost"] as const) {
+it("retains the dormant equipment implementation for future testing", () => {
+  for (const kind of ["glove", "shoes", "ghost"] as const) {
     const s = createSoloPractice(),
       p = s.players[0];
     expect(collectItem(p, kind)).toBe(true);
     stepPractice(s, [{ ...EMPTY_INPUT, useItem: true }], C.fixedStepMs);
     expect(p.inventory).toEqual([]);
     expect(p[`${kind}Until`]).toBeGreaterThan(s.time);
-    if (kind === "ultra") expect(effectiveStats(s, p).range).toBe(C.maxRange);
     stepPractice(s, [EMPTY_INPUT], C.powerMs + 20);
     expect(p[`${kind}Until`]).toBeLessThan(s.time);
   }
+});
+
+it("applies fluid, roller and ultra immediately even with a full inventory, without expiring or consuming Ctrl", () => {
+  const s = createSoloPractice(),
+    p = s.players[0];
+  p.inventory = ["needle", "shield"];
+  collectItem(p, "range");
+  expect(p.range).toBe(C.initialRange + 1);
+  collectItem(p, "speed");
+  expect(p.speed).toBe(C.movementTilesPerSecond + C.speedIncrement);
+  collectItem(p, "ultra");
+  expect(effectiveStats(s, p).range).toBe(C.maxRange);
+  expect(p.inventory).toEqual(["needle", "shield"]);
+  stepPractice(s, [EMPTY_INPUT], C.powerMs + 20);
+  expect(effectiveStats(s, p).range).toBe(C.maxRange);
+  expect(p.inventory).toEqual(["needle", "shield"]);
+});
+
+it("only drops enabled test items and collects ultra immediately through the simulation", () => {
+  const dropped = new Set<string>();
+  for (let seed = 1; seed <= 100; seed++) {
+    const s = createSoloPractice(seed),
+      p = s.players[0];
+    s.map[1][2] = "crate";
+    placeBalloon(s, p);
+    s.balloons[0].explodesAt = 0;
+    stepPractice(s, [EMPTY_INPUT], C.fixedStepMs);
+    for (const item of s.items) {
+      expect(["balloon", "range", "speed", "ultra"]).toContain(item.kind);
+      dropped.add(item.kind);
+    }
+  }
+  expect(dropped).toEqual(new Set(["balloon", "range", "speed", "ultra"]));
+  const s = createSoloPractice(),
+    p = s.players[0];
+  p.inventory = ["needle", "shield"];
+  s.items.push({ id: 99, kind: "ultra", x: 1, y: 1, availableAt: 0 });
+  stepPractice(s, [EMPTY_INPUT], C.fixedStepMs);
+  expect(s.items).toHaveLength(0);
+  expect(p.range).toBe(C.maxRange);
+  expect(p.inventory).toEqual(["needle", "shield"]);
 });
 
 it("shoes push one tile and gloves throw two tiles, retaining fuse and owner; prediction cannot move balloons", () => {
