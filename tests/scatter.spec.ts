@@ -1,0 +1,63 @@
+import { test, expect } from "@playwright/test";
+test("death items fly from the character to authoritative floor targets at enlarged size", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.evaluate(async () => {
+    const path = "/src/showcase.ts";
+    const { mountArenaFixture } = await import(path);
+    const root = document.createElement("div");
+    root.id = "scatter-fixture";
+    root.style.cssText =
+      "position:fixed;inset:0;width:600px;height:520px;z-index:9999;background:#111";
+    document.body.append(root);
+    const f = mountArenaFixture(root, "pirate-lion");
+    await f.ready;
+    f.scatter();
+    (window as any).scatterFixture = f;
+  });
+  const advance = (time: number) =>
+    page.evaluate((time) => {
+      (window as any).scatterFixture.state.time = time;
+    }, time);
+  const frames = () =>
+    page.evaluate(
+      () =>
+        (window as any).scatterFixture.itemFrames() as {
+          x: number;
+          y: number;
+          width: number;
+          height: number;
+        }[],
+    );
+  await expect.poll(async () => (await frames()).length).toBe(4);
+  const from = await frames();
+  expect(from[0].width).toBe(40.5);
+  await advance(350);
+  await page.waitForTimeout(80);
+  const middle = await frames();
+  expect(middle).not.toEqual(from);
+  await page
+    .locator("#scatter-fixture")
+    .screenshot({ path: "test-results/scatter-flight.png" });
+  await advance(1100);
+  await page.waitForTimeout(80);
+  const landed = await frames();
+  const targets = await page.evaluate(() =>
+    (window as any).scatterFixture.state.items.map((i: any) => ({
+      x: (i.x + 0.5) * 40,
+      y: (i.y + 0.5) * 40,
+    })),
+  );
+  landed.forEach((f, n) => {
+    expect(f.x).toBeCloseTo(targets[n].x, 4);
+    expect(Math.abs(f.y - targets[n].y - 7)).toBeLessThan(2);
+  });
+  expect(
+    middle.some((f, n) => f.y < Math.min(from[n].y, landed[n].y) - 15),
+  ).toBe(true);
+  await page
+    .locator("#scatter-fixture")
+    .screenshot({ path: "test-results/scatter-landed.png" });
+  await page.evaluate(() => (window as any).scatterFixture.destroy());
+});

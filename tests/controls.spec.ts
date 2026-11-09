@@ -65,10 +65,10 @@ test("keyup and blur clear movement, UI controls retain focus and leaving remove
   const dialog = page.locator("#game-dialog");
   const scroll = await dialog.evaluate((el) => el.scrollTop);
   await moveSome(page);
-  await page.waitForTimeout(400);
+  await page.waitForTimeout(850);
   const released = await readPosition(page);
   await page.waitForTimeout(200);
-  // Online correction can settle by <0.005 tile after keyup; held movement travels 0.6 tile here.
+  // Finish the current tile after release, then allow only subpixel online correction.
   const afterRelease = await readPosition(page);
   for (const axis of ["x", "y"] as const)
     expect(afterRelease[axis]).toBeCloseTo(released[axis], 2);
@@ -83,7 +83,7 @@ test("keyup and blur clear movement, UI controls retain focus and leaving remove
     )
     .toBeGreaterThan(0.2);
   await page.evaluate(() => window.dispatchEvent(new Event("blur")));
-  await page.waitForTimeout(400);
+  await page.waitForTimeout(850);
   const blurred = await readPosition(page);
   await page.waitForTimeout(200);
   const afterBlur = await readPosition(page);

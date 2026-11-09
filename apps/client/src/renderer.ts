@@ -626,16 +626,43 @@ export class GameRenderer {
           28.5,
           0.8,
         ),
-        x = (item.x + 0.5) * C.tileSize,
-        y = (item.y + 0.5) * C.tileSize;
+        flight = item.flight,
+        progress = flight
+          ? Phaser.Math.Clamp(
+              (state.time - flight.startedAt) /
+                (flight.landsAt - flight.startedAt),
+              0,
+              1,
+            )
+          : 1,
+        x =
+          ((flight ? flight.from.x * (1 - progress) : 0) +
+            (item.x + 0.5) * (flight ? progress : 1)) *
+          C.tileSize,
+        y =
+          ((flight ? flight.from.y * (1 - progress) : 0) +
+            (item.y + 0.5) * (flight ? progress : 1)) *
+          C.tileSize,
+        lift =
+          progress < 1
+            ? Math.sin(Math.PI * progress) * (65 + (item.id % 3) * 12)
+            : 0;
       actor.image
-        .setPosition(x, y + 7 + Math.sin(this.clock / 200 + item.id) * 1.5)
-        .setDisplaySize(27, 28.5)
-        .setAlpha(item.availableAt > state.time ? 0.45 : 1)
-        .setDepth(y);
+        .setPosition(
+          x,
+          y +
+            7 -
+            lift +
+            (progress === 1 ? Math.sin(this.clock / 200 + item.id) * 1.5 : 0),
+        )
+        .setDisplaySize(40.5, 42.75)
+        .setAngle(progress < 1 ? Math.sin(progress * Math.PI * 2) * 25 : 0)
+        .setAlpha(progress < 1 || item.availableAt <= state.time ? 1 : 0.6)
+        .setDepth(progress < 1 ? 15000 + y : y);
       actor.shadow
         .setPosition(x, y + 13)
-        .setDisplaySize(20, 7)
+        .setDisplaySize(30 - lift * 0.12, 10.5 - lift * 0.035)
+        .setAlpha(0.65 - lift * 0.004)
         .setDepth(1);
     }
     this.effects(delta);

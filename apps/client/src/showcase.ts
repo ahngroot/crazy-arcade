@@ -3,6 +3,7 @@ import Phaser from "phaser";
 import {
   createCompetition,
   createArenaPractice,
+  defeatPlayer,
   type PracticeState,
   type Facing,
 } from "@bubble/shared";
@@ -31,16 +32,43 @@ export function mountArenaFixture(parent: HTMLElement, id: string) {
       this.view.update(state, delta);
     }
   }
+  const scene = new ArenaScene();
   const game = new Phaser.Game({
     type: Phaser.AUTO,
     parent,
     width: 600,
     height: 520,
-    scene: new ArenaScene(),
+    scene: scene,
     audio: { noAudio: true },
     fps: { smoothStep: false },
   });
-  return { ready, state, destroy: () => game.destroy(true) };
+  return {
+    ready,
+    state,
+    scatter() {
+      state.players[0].inventory = ["shield", "needle"];
+      state.players[0].capacity = 3;
+      defeatPlayer(state, state.players[0]);
+    },
+    itemFrames() {
+      return scene.children.list
+        .filter(
+          (o) =>
+            o instanceof Phaser.GameObjects.Image &&
+            o.texture.key.startsWith("art-item-"),
+        )
+        .map((o) => {
+          const image = o as Phaser.GameObjects.Image;
+          return {
+            x: image.x,
+            y: image.y,
+            width: image.displayWidth,
+            height: image.displayHeight,
+          };
+        });
+    },
+    destroy: () => game.destroy(true),
+  };
 }
 
 export function mountArtGallery(parent: HTMLElement) {

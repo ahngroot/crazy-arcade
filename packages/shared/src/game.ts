@@ -46,6 +46,8 @@ export interface PracticePlayer {
   id: string;
   team: Team;
   position: Position;
+  /** Finish the current tile before accepting a turn or stopping. */
+  moveTarget?: Position;
   spawn: Position;
   facing: Facing;
   status: "active" | "trapped" | "respawning";
@@ -91,6 +93,7 @@ export interface Item {
   x: number;
   y: number;
   availableAt: number;
+  flight?: { from: Position; startedAt: number; landsAt: number };
 }
 export interface PracticeState {
   time: number;
@@ -264,6 +267,10 @@ export function movePlayer(
   dt: number,
   interact = true,
 ) {
+  if (s.arenaId) {
+    moveOnGrid(s, p, raw, dt);
+    return;
+  }
   let x = Number.isFinite(raw.x) ? Math.max(-1, Math.min(1, raw.x)) : 0;
   let y = Number.isFinite(raw.y) ? Math.max(-1, Math.min(1, raw.y)) : 0;
   const length = Math.hypot(x, y);
@@ -344,6 +351,57 @@ export function movePlayer(
     }
   }
   p.moving = p.position.x !== oldX || p.position.y !== oldY;
+}
+
+function moveOnGrid(
+  s: PracticeState,
+  p: PracticePlayer,
+  raw: LocalInput,
+  dt: number,
+) {
+  let remaining = (effectiveStats(s, p).speed * dt) / 1000;
+  const before = { ...p.position };
+  const x = Number.isFinite(raw.x) ? Math.sign(raw.x) : 0;
+  const y = Number.isFinite(raw.y) ? Math.sign(raw.y) : 0;
+  while (remaining > 1e-8) {
+    if (!p.moveTarget) {
+      if (!x && !y) break;
+      const dx =
+        x && (!y || p.facing === "left" || p.facing === "right") ? x : 0;
+      const dy = dx ? 0 : y;
+      const target = {
+        x: Math.floor(p.position.x) + 0.5 + dx,
+        y: Math.floor(p.position.y) + 0.5 + dy,
+      };
+      if (!canOccupy(s, p, target.x, target.y)) break;
+      p.moveTarget = target;
+      p.facing = dx ? (dx > 0 ? "right" : "left") : dy > 0 ? "down" : "up";
+    }
+    const target = p.moveTarget;
+    const dx = target.x - p.position.x,
+      dy = target.y - p.position.y;
+    const distance = Math.hypot(dx, dy);
+    const step = Math.min(remaining, distance);
+    if (distance < 1e-8) {
+      p.moveTarget = undefined;
+      continue;
+    }
+    const next = {
+      x: p.position.x + (dx / distance) * step,
+      y: p.position.y + (dy / distance) * step,
+    };
+    if (!canOccupy(s, p, next.x, next.y)) {
+      p.moveTarget = undefined;
+      break;
+    }
+    p.position = next;
+    remaining -= step;
+    if (step >= distance - 1e-8) {
+      p.position = { ...target };
+      p.moveTarget = undefined;
+    }
+  }
+  p.moving = p.position.x !== before.x || p.position.y !== before.y;
 }
 
 export function placeBalloon(s: PracticeState, p: PracticePlayer): boolean {
@@ -505,11 +563,17 @@ export function defeatPlayer(s: PracticeState, p: PracticePlayer) {
           id: s.nextId++,
           kind,
           ...pos,
+          flight: {
+            from: { ...p.position },
+            startedAt: s.time,
+            landsAt: s.time + 700 + index * 45,
+          },
           availableAt: s.time + C.respawnMs + C.deathDropPickupDelayMs,
         });
     });
   }
   p.inventory = [];
+  p.moveTarget = undefined;
   p.capacity = C.initialBalloons;
   p.range = C.initialRange;
   p.speed = C.movementTilesPerSecond;
@@ -563,6 +627,7 @@ function respawn(s: PracticeState, p: PracticePlayer) {
   );
   if (safe) {
     p.position = safe;
+    p.moveTarget = undefined;
     p.status = "active";
     p.invulnerableUntil = s.time + C.invulnerableMs;
     p.pickupBlockedUntil = s.time + C.deathDropPickupDelayMs;

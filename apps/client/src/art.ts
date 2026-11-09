@@ -658,6 +658,43 @@ export function installArt(scene: Phaser.Scene) {
           make(keyPlayer(team, pose, dir, f), 64, 80, (c) =>
             character(c, team, dir, pose, f),
           );
+  const characterBounds = Array.from({ length: 13 }, (_, id) => {
+    const sourceCell = charactersImage.naturalWidth / 4;
+    const cell = Math.ceil(sourceCell);
+    const canvas = document.createElement("canvas");
+    canvas.width = canvas.height = cell;
+    const ctx = canvas.getContext("2d")!;
+    ctx.drawImage(
+      charactersImage,
+      (id % 4) * sourceCell,
+      Math.floor(id / 4) * sourceCell,
+      sourceCell,
+      sourceCell,
+      0,
+      0,
+      cell,
+      cell,
+    );
+    const pixels = ctx.getImageData(0, 0, cell, cell).data;
+    let left = cell,
+      top = cell,
+      right = 0,
+      bottom = 0;
+    for (let y = 0; y < cell; y++)
+      for (let x = 0; x < cell; x++)
+        if (pixels[(y * cell + x) * 4 + 3] > 32) {
+          left = Math.min(left, x);
+          top = Math.min(top, y);
+          right = Math.max(right, x);
+          bottom = Math.max(bottom, y);
+        }
+    return {
+      left: (left * sourceCell) / cell,
+      top: (top * sourceCell) / cell,
+      width: (Math.max(1, right - left + 1) * sourceCell) / cell,
+      height: (Math.max(1, bottom - top + 1) * sourceCell) / cell,
+    };
+  });
   for (let id = 0; id < 13; id++)
     for (const left of [false, true])
       for (let frame = 0; frame < 4; frame++)
@@ -668,16 +705,20 @@ export function installArt(scene: Phaser.Scene) {
           c.translate(32, 40);
           c.scale(left ? -1 : 1, 1);
           c.rotate(frame === 1 ? -0.035 : frame === 3 ? 0.035 : 0);
+          const bounds = characterBounds[id];
+          const scale = Math.min(60 / bounds.width, 74 / bounds.height);
+          const width = bounds.width * scale,
+            height = bounds.height * scale;
           c.drawImage(
             charactersImage,
-            (id % 4) * cell,
-            Math.floor(id / 4) * cell,
-            cell,
-            cell,
-            -32,
-            -40 - (frame % 2 ? 2 : 0),
-            64,
-            80,
+            (id % 4) * cell + bounds.left,
+            Math.floor(id / 4) * cell + bounds.top,
+            bounds.width,
+            bounds.height,
+            -width / 2,
+            38 - height - (frame % 2 ? 2 : 0),
+            width,
+            height,
           );
           c.restore();
         });
