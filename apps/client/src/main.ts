@@ -345,7 +345,7 @@ document.querySelector("#practice")!.addEventListener("click", async () => {
   document.querySelector(".game-help")!.textContent =
     "방향키 이동 · Space 물풍선 · Ctrl 아이템 · 내 캐릭터 하나로 자유롭게 연습하세요.";
   document.querySelector("#special-controls")!.textContent =
-    "아이템 최대 2개 · 획득 순서대로 Ctrl 사용. 보호막과 파워로 시작해요. 바늘은 갇혔을 때 사용하세요.";
+    "아이템 없이 시작해요. 사용 아이템은 최대 2개 · 획득 순서대로 Ctrl 사용. 액체와 롤러스케이트는 즉시 적용됩니다.";
   document.querySelector("#mode-note")!.textContent =
     "일반 대결형 맵에서 시간제한 없이 연습합니다. 중앙 구분 없이 상자를 부수며 길을 넓히세요.";
   document.querySelector('[data-player="p1"] .profile-name')!.textContent =
