@@ -10,6 +10,7 @@ import {
 import { GameRenderer } from "./renderer";
 import { arcadeAudio } from "./audio";
 import { createStartOverlay, startCue, START_MESSAGE_MS } from "./countdown";
+import { selectedCharacter } from "./character-selection";
 
 const GAME_KEYS = new Set([
   "ArrowUp",
@@ -123,7 +124,13 @@ export function mountGame(
   let introAt = performance.now(),
     observedAt = introAt,
     observedView: RoomView | null = null;
-  let state = session?.initial ?? createSoloPractice(),
+  const characterId = selectedCharacter();
+  const solo = () => {
+    const state = createSoloPractice();
+    state.players[0].characterId = characterId;
+    return state;
+  };
+  let state = session?.initial ?? solo(),
     stopped = false;
   class GameScene extends Phaser.Scene {
     private view!: GameRenderer;
@@ -228,7 +235,7 @@ export function mountGame(
         keyboard.setEnabled(false);
         intro.show("3");
         parent.dataset.startPhase = "waiting";
-        state = createSoloPractice();
+        state = solo();
         scene.resetTerrain();
         arcadeAudio.beginSession();
         onState(state);

@@ -35,6 +35,7 @@ export interface LocalInput {
   useItem?: boolean;
 }
 export interface PracticePlayer {
+  characterId?: number;
   id: string;
   team: Team;
   position: Position;

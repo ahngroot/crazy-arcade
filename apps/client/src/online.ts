@@ -6,6 +6,8 @@ import type {
   AdmissionResult,
 } from "@bubble/shared";
 import { OnlineTimeline, hasActionTransition } from "./netcode";
+import { selectedCharacter } from "./character-selection";
+import { CHARACTERS } from "@bubble/shared";
 
 export function setupOnline(
   socket: Socket<ServerEvents, ClientEvents>,
@@ -109,7 +111,7 @@ export function setupOnline(
     list.replaceChildren();
     for (const member of view.players) {
       const li = document.createElement("li");
-      li.textContent = `${member.team === "red" ? "빨강" : "초록"} · ${member.nickname}${member.id === playerId ? " (나)" : ""} · ${!member.connected ? "재접속 대기" : member.ready ? "READY" : "준비 전"}`;
+      li.textContent = `${member.team === "red" ? "빨강" : "초록"} · ${member.nickname}${member.id === playerId ? " (나)" : ""} · ${CHARACTERS[member.characterId ?? 0]} · ${!member.connected ? "재접속 대기" : member.ready ? "READY" : "준비 전"}`;
       list.append(li);
     }
     const ready = document.querySelector<HTMLButtonElement>("#online-ready")!;
@@ -251,6 +253,7 @@ export function setupOnline(
     "click",
     () =>
       void admission("createRoom", {
+        characterId: selectedCharacter(),
         nickname: document.querySelector<HTMLInputElement>("#nickname")!.value,
         durationMs: Number(
           document.querySelector<HTMLSelectElement>("#online-duration")!.value,
@@ -261,6 +264,7 @@ export function setupOnline(
     "click",
     () =>
       void admission("joinRoom", {
+        characterId: selectedCharacter(),
         nickname: document.querySelector<HTMLInputElement>("#nickname")!.value,
         code: document
           .querySelector<HTMLInputElement>("#join-code")!

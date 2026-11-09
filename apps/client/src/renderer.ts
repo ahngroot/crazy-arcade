@@ -5,7 +5,14 @@ import {
   type PracticePlayer,
   type Position,
 } from "@bubble/shared";
-import { ART, installArt, keyPlayer, safeTexture, type Pose } from "./art";
+import {
+  ART,
+  installArt,
+  keyPlayer,
+  keyCharacter,
+  safeTexture,
+  type Pose,
+} from "./art";
 import { PresentationTracker, type PresentationEvent } from "./presentation";
 import { arcadeAudio } from "./audio";
 
@@ -315,7 +322,9 @@ export class GameRenderer {
     const actor = this.actor(
       this.players,
       p.id,
-      keyPlayer(p.team, pose, facing, frame),
+      p.characterId === undefined
+        ? keyPlayer(p.team, pose, facing, frame)
+        : keyCharacter(p.characterId, facing === "left", p.moving ? frame : 0),
       ART.playerWidth,
       ART.playerHeight,
     );

@@ -1,11 +1,17 @@
 import type Phaser from "phaser";
 import type { Team, ItemKind, Facing, Tile } from "@bubble/shared";
 import activeItemsUrl from "./assets/active-items.png";
+import charactersUrl from "./assets/characters.png";
 
 // One reference-based sheet supplies both world pickups and inventory icons.
 const activeItemsImage = new Image();
 activeItemsImage.src = activeItemsUrl;
 await activeItemsImage.decode();
+const charactersImage = new Image();
+charactersImage.src = charactersUrl;
+await charactersImage.decode();
+export const keyCharacter = (id: number, left: boolean, frame: number) =>
+  `art-character-${id}-${left ? 1 : 0}-${frame}`;
 
 export const ART = {
   playerWidth: 42,
@@ -571,6 +577,29 @@ export function installArt(scene: Phaser.Scene) {
           make(keyPlayer(team, pose, dir, f), 64, 80, (c) =>
             character(c, team, dir, pose, f),
           );
+  for (let id = 0; id < 13; id++)
+    for (const left of [false, true])
+      for (let frame = 0; frame < 4; frame++)
+        make(keyCharacter(id, left, frame), 64, 80, (c) => {
+          const cell = charactersImage.naturalWidth / 4;
+          c.imageSmoothingEnabled = false;
+          c.save();
+          c.translate(32, 40);
+          c.scale(left ? -1 : 1, 1);
+          c.rotate(frame === 1 ? -0.035 : frame === 3 ? 0.035 : 0);
+          c.drawImage(
+            charactersImage,
+            (id % 4) * cell,
+            Math.floor(id / 4) * cell,
+            cell,
+            cell,
+            -32,
+            -40 - (frame % 2 ? 2 : 0),
+            64,
+            80,
+          );
+          c.restore();
+        });
   for (const kind of ["normal", "chaser", "golden"] as const)
     for (let f = 0; f < 4; f++)
       make(`art-monster-${kind}-${f}`, 56, 56, (c) => monster(c, kind, f));

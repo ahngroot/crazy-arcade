@@ -9,6 +9,12 @@ import type { GameController } from "./game";
 import { setupOnline } from "./online";
 import { portraitSvg, itemSvg } from "./art";
 import { arcadeAudio } from "./audio";
+import {
+  characterPicker,
+  bindCharacterPicker,
+  characterPortrait,
+} from "./character-selection";
+import { CHARACTERS } from "@bubble/shared";
 import "./style.css";
 
 function soundControls(id: string) {
@@ -25,6 +31,7 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
       <section class="game-layout" aria-label="게임 시작">
         <div class="arena-card"><div class="arena-top"><span><i></i> CLOVER GARDEN</span><span>맵 미리보기 <b>01</b></span></div><div class="arena-wrap"><div id="arena" role="img" aria-label="빨강과 초록 진영, 캐릭터와 물풍선이 있는 대칭형 정원 맵"></div><div class="preview-label">PHASER 4 · LIVE PREVIEW</div></div><div class="arena-bottom"><span><i class="red-dot"></i> RED TEAM</span><span>작은 정원에서 만나요</span><span><i class="green-dot"></i> GREEN TEAM</span></div></div>
         <aside class="menu-card"><span class="section-number">LET’S GET STARTED</span><h2>어떻게 시작할까요?</h2><p class="menu-caption">혼자 연습하거나 친구와 대결해요.</p>
+          ${characterPicker()}
           <button id="practice" class="mode primary"><span class="mode-icon">✳</span><span><strong>1인 연습 모드</strong><small>혼자서 이동·물풍선·아이템 연습</small></span><span class="arrow">↗</span></button>
           <button id="online" class="mode secondary"><span class="mode-icon">◎</span><span><strong>온라인 대전</strong><small>방 만들기 · 친구의 방 참가하기</small></span><span class="arrow">↗</span></button>
           ${soundControls("menu-audio")}
@@ -51,6 +58,7 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
     <p id="online-message" role="status"></p><div class="online-status" id="online-status" role="status">연결 상태 확인 중…</div><button class="back">메뉴로 돌아가기</button></dialog>
 `;
 arcadeAudio.bind();
+bindCharacterPicker();
 
 const socket: Socket<ServerEvents, ClientEvents> = io({ timeout: 5000 });
 function connection(ready: boolean) {
@@ -135,6 +143,25 @@ function updateGameHud(state: PracticeState) {
       `[data-player="${player.id}"]`,
     )!;
     const self = player.id === controlledPlayerId;
+    panel.dataset.character = String(player.characterId ?? 0);
+    const portrait = panel.querySelector<HTMLElement>(".portrait")!;
+    if (portrait.dataset.character !== String(player.characterId)) {
+      portrait.innerHTML = characterPortrait(player.characterId ?? 0);
+      portrait.dataset.character = String(player.characterId);
+    }
+    if (!onlineGame)
+      panel.querySelector(".profile-name")!.textContent =
+        CHARACTERS[player.characterId ?? 0];
+    const resultPortrait = document.querySelector(`.result-${player.team}`)!;
+    if (
+      (resultPortrait as HTMLElement).dataset.character !==
+      String(player.characterId)
+    ) {
+      resultPortrait.innerHTML = characterPortrait(player.characterId ?? 0);
+      (resultPortrait as HTMLElement).dataset.character = String(
+        player.characterId,
+      );
+    }
     panel.dataset.self = String(self);
     panel.querySelector("h3")!.textContent =
       `${self ? "나" : "상대"} · ${player.team.toUpperCase()}`;

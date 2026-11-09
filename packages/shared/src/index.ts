@@ -77,6 +77,7 @@ export interface Position {
 }
 
 export * from "./game.js";
+export * from "./characters.js";
 export * from "./competition.js";
 export * from "./network.js";
 export interface PlayerState {

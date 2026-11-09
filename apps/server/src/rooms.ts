@@ -2,6 +2,7 @@ import { randomBytes, randomInt } from "node:crypto";
 import {
   GAME_CONFIG as C,
   createCompetition,
+  isCharacterId,
   stepPractice,
   EMPTY_INPUT,
   type LocalInput,
@@ -15,6 +16,7 @@ import {
 } from "@bubble/shared";
 
 interface Seat {
+  characterId: number;
   id: string;
   token: string;
   nickname: string;
@@ -89,8 +91,14 @@ export class RoomService {
     } while (this.rooms.has(value));
     return value;
   }
-  private seat(room: Room, socketId: string, name: string) {
+  private seat(
+    room: Room,
+    socketId: string,
+    name: string,
+    characterId: number,
+  ) {
     const seat: Seat = {
+      characterId,
       id: room.seats.some((s) => s.id === "p1") ? "p2" : "p1",
       token: randomBytes(32).toString("hex"),
       nickname: name,
@@ -117,6 +125,11 @@ export class RoomService {
     if (this.bindings.has(socketId))
       return fail("현재 방에서 먼저 나가 주세요.");
     if (!record(request)) return fail("잘못된 방 생성 요청입니다.");
+    if (
+      request.characterId !== undefined &&
+      !isCharacterId(request.characterId)
+    )
+      return fail("잘못된 캐릭터입니다.");
     const name = nickname(request.nickname);
     if (!name) return fail("닉네임은 문자·숫자·공백·_-로 1~16자 입력하세요.");
     if (request.durationMs !== 30_000 && request.durationMs !== C.roundMs)
@@ -137,7 +150,12 @@ export class RoomService {
       reason: null,
     };
     this.rooms.set(room.code, room);
-    const seat = this.seat(room, socketId, name);
+    const seat = this.seat(
+      room,
+      socketId,
+      name,
+      Number(request.characterId ?? 0),
+    );
     return {
       ok: true,
       token: seat.token,
@@ -151,6 +169,11 @@ export class RoomService {
     if (this.bindings.has(socketId))
       return fail("현재 방에서 먼저 나가 주세요.");
     if (!record(request)) return fail("잘못된 입장 요청입니다.");
+    if (
+      request.characterId !== undefined &&
+      !isCharacterId(request.characterId)
+    )
+      return fail("잘못된 캐릭터입니다.");
     const name = nickname(request.nickname),
       key = code(request.code);
     if (!name || !key) return fail("닉네임과 8자리 방 코드를 확인하세요.");
@@ -165,7 +188,12 @@ export class RoomService {
       room.seats.forEach((s) => (s.ready = false));
       room.reason = null;
     }
-    const seat = this.seat(room, socketId, name);
+    const seat = this.seat(
+      room,
+      socketId,
+      name,
+      Number(request.characterId ?? 0),
+    );
     room.phase = "WAITING";
     return {
       ok: true,
@@ -229,6 +257,10 @@ export class RoomService {
       room.roundId++;
       room.tick = 0;
       room.game = createCompetition(randomInt(0x7fffffff), room.durationMs);
+      for (const player of room.game.players)
+        player.characterId = room.seats.find(
+          (s) => s.id === player.id,
+        )!.characterId;
     }
     return { ok: true };
   }
@@ -400,6 +432,7 @@ export class RoomService {
     const players: RoomMember[] = room.seats.map((s) => ({
       id: s.id,
       nickname: s.nickname,
+      characterId: s.characterId,
       team: s.id === "p1" ? "red" : "green",
       connected: !!s.socketId,
       ready: s.ready,
