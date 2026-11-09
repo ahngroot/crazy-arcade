@@ -1,5 +1,6 @@
 import type Phaser from "phaser";
 import type { Team, ItemKind, Facing, Tile } from "@bubble/shared";
+import waterStreamUrl from "./assets/water-stream.png";
 import activeItemsUrl from "./assets/active-items.png";
 import charactersUrl from "./assets/characters.png";
 import passiveItemsUrl from "./assets/passive-items.png";
@@ -7,6 +8,10 @@ import placedBalloonUrl from "./assets/placed-balloon.png";
 import speedUrl from "./assets/speed.png";
 import arenaTilesUrl from "./assets/arena-tiles.png";
 import arenaLandmarksUrl from "./assets/arena-landmarks.png";
+
+const waterStreamImage = new Image();
+waterStreamImage.src = waterStreamUrl;
+await waterStreamImage.decode();
 
 // One reference-based sheet supplies both world pickups and inventory icons.
 const activeItemsImage = new Image();
@@ -605,6 +610,27 @@ export function installArt(scene: Phaser.Scene) {
     draw(ctx);
     scene.textures.addCanvas(key, canvas);
   };
+  const unit = waterStreamImage.naturalWidth / 1254;
+  for (const [kind, x, y] of [
+    ["body", 165, 120],
+    ["cap", 792, 0],
+    ["center", 165, 790],
+    ["single", 790, 790],
+  ] as const)
+    make(`art-stream-${kind}`, 40, 40, (c) => {
+      c.imageSmoothingEnabled = false;
+      c.drawImage(
+        waterStreamImage,
+        x * unit,
+        y * unit,
+        300 * unit,
+        300 * unit,
+        0,
+        0,
+        40,
+        40,
+      );
+    });
   for (let theme = 0; theme < 7; theme++)
     for (let column = 0; column < 8; column++)
       make(

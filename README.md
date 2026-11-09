@@ -1,6 +1,6 @@
 # crazy myangcade · 크레이지 먕케이드
 
-**[⬇ Windows 게임 ZIP 다운로드 (약 43MB)](https://raw.githubusercontent.com/ahngroot/crazy-arcade/main/crazy-myangcade-windows-x64.zip)**
+**[⬇ Windows 게임 ZIP 다운로드 (약 44MB)](https://raw.githubusercontent.com/ahngroot/crazy-arcade/main/crazy-myangcade-windows-x64.zip)**
 
 최신 변경: 방향키를 겹쳐 누르면 새 방향으로 꺾고 보조 키를 떼면 기존 방향으로 돌아갑니다. 바닥 아이템은 12초 유지하며 마지막 1.5초에 옅어져 사라집니다(사망 드롭은 착지부터 계산). 갇힘 5초 판정은 유지하며 남은 초 표시는 제거했습니다.
 
@@ -95,7 +95,7 @@ npm run test:portable -- release/crazy-myangcade.exe
 
 Linux에서는 `PLAYWRIGHT_CHROMIUM_PATH=/usr/bin/chromium npm run test:e2e`를 사용할 수 있습니다. `npm run package:host`와 `npm run test:portable -- release/crazy-myangcade-linux`로 동일한 포터블 실행 경로를 검증합니다.
 
-타입 검사·제품 빌드·Vitest **129개**·Chromium E2E **34개**가 통과했습니다. 타일 중심 정지/회전·충돌, 사망 아이템의 비행/착지와 1.5배 크기, 확대 화면의 버튼 배치, 연습·온라인 재접속/재대결을 확인했습니다. 자세한 범위는 [화면·조작 안내](docs/play-feel.md)와 [Windows 안내](docs/windows.md)를 참고하세요.
+타입 검사·제품 빌드·Vitest **129개**·Chromium E2E **35개 항목**가 통과했습니다. 타일 중심 정지/회전·충돌, 사망 아이템의 비행/착지와 1.5배 크기, 확대 화면의 버튼 배치, 연습·온라인 재접속/재대결을 확인했습니다. 자세한 범위는 [화면·조작 안내](docs/play-feel.md)와 [Windows 안내](docs/windows.md)를 참고하세요.
 
 실제 서로 다른 집의 PC 두 대, Windows Chrome/Edge 수동 조작, 원작 조작감·수치 일치 여부는 추가 확인이 필요합니다. Phaser 청크 크기 경고는 알려진 상태이며 실행 오류는 아닙니다.
 

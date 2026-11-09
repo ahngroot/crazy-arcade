@@ -57,6 +57,7 @@ export class GameRenderer {
   private rings: Ring[] = [];
   private popups: Popup[] = [];
   private water: Phaser.GameObjects.Graphics;
+  private streams = new Map<string, Phaser.GameObjects.Image>();
   private overlays: Phaser.GameObjects.Graphics;
   private revision = -1;
   private clock = 0;
@@ -458,71 +459,46 @@ export class GameRenderer {
     }
   }
   private blasts(state: PracticeState) {
-    const g = this.water;
-    g.clear();
-    const tile = C.tileSize;
+    const live = new Set<string>();
     for (const blast of state.blasts) {
       const cells = new Set(blast.cells.map((c) => `${c.x},${c.y}`));
+      const origin = blast.cells[0];
       for (const cell of blast.cells) {
-        const x = (cell.x + 0.5) * tile,
-          y = (cell.y + 0.5) * tile;
-        // The translucent tile base is exactly the logical hit area.
-        g.fillStyle(0x51c6ed, 0.28);
-        g.fillRect(cell.x * tile, cell.y * tile, tile, tile);
-        const left = cells.has(`${cell.x - 1},${cell.y}`),
-          right = cells.has(`${cell.x + 1},${cell.y}`),
-          up = cells.has(`${cell.x},${cell.y - 1}`),
-          down = cells.has(`${cell.x},${cell.y + 1}`);
-        g.lineStyle(26, 0x299fd8, 0.92);
-        g.lineBetween(
-          left ? x - tile / 2 : x - 1,
-          y,
-          right ? x + tile / 2 : x + 1,
-          y,
-        );
-        g.lineBetween(
-          x,
-          up ? y - tile / 2 : y - 1,
-          x,
-          down ? y + tile / 2 : y + 1,
-        );
-        g.fillStyle(0x4ed5f1, 0.98);
-        g.fillRoundedRect(
-          left ? x - 20 : x - 13,
-          y - 11,
-          left || right ? (left && right ? 40 : 33) : 26,
-          22,
-          8,
-        );
-        if (up || down)
-          g.fillRoundedRect(
-            x - 11,
-            up ? y - 20 : y - 13,
-            22,
-            up && down ? 40 : 33,
-            8,
-          );
-        g.lineStyle(8, 0xc6fcff, 0.92);
-        if (left || right)
-          g.lineBetween(left ? x - 20 : x - 5, y, right ? x + 20 : x + 5, y);
-        if (up || down)
-          g.lineBetween(x, up ? y - 20 : y - 5, x, down ? y + 20 : y + 5);
-        if (cell.x === blast.cells[0].x && cell.y === blast.cells[0].y) {
-          g.fillStyle(0xe1ffff);
-          g.fillCircle(x, y, 11);
-          g.lineStyle(2, 0xffffff, 0.8);
-          g.strokeCircle(x, y, 15 + Math.sin(this.clock / 50));
+        const key = `${blast.id}:${cell.x},${cell.y}`;
+        live.add(key);
+        const dx = Math.sign(cell.x - origin.x),
+          dy = Math.sign(cell.y - origin.y);
+        const center = dx === 0 && dy === 0;
+        const end = !center && !cells.has(`${cell.x + dx},${cell.y + dy}`);
+        const kind = center
+          ? blast.cells.length === 1
+            ? "single"
+            : "center"
+          : end
+            ? "cap"
+            : "body";
+        let sprite = this.streams.get(key);
+        if (!sprite) {
+          sprite = this.scene.add
+            .image(0, 0, `art-stream-${kind}`)
+            .setDisplaySize(C.tileSize, C.tileSize)
+            .setDepth(2);
+          this.streams.set(key, sprite);
         }
-        g.fillStyle(0xffffff, 0.9);
-        for (let i = 0; i < 3; i++)
-          g.fillCircle(
-            x - 12 + ((i * 11 + this.clock / 30) % 24),
-            y - 10 + ((i * 8 + this.clock / 40) % 20),
-            1.5,
-          );
+        sprite
+          .setTexture(`art-stream-${kind}`)
+          .setPosition((cell.x + 0.5) * C.tileSize, (cell.y + 0.5) * C.tileSize)
+          .setAngle(center ? 0 : dx > 0 ? 90 : dx < 0 ? -90 : dy > 0 ? 180 : 0)
+          .setAlpha(0.94 + Math.sin(this.clock / 55) * 0.06);
       }
     }
+    for (const [key, image] of this.streams)
+      if (!live.has(key)) {
+        image.destroy();
+        this.streams.delete(key);
+      }
   }
+
   update(state: PracticeState, elapsed: number) {
     const delta = Math.min(Math.max(elapsed, 0), 100);
     this.clock += delta;
@@ -680,6 +656,8 @@ export class GameRenderer {
   }
   reset() {
     this.tracker.reset();
+    for (const image of this.streams.values()) image.destroy();
+    this.streams.clear();
     this.revision = -1;
     this.lastTime = -1;
     this.lastPhase = "";

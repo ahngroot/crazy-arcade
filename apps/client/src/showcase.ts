@@ -292,6 +292,15 @@ export function mountRendererFixture(parent: HTMLElement) {
     ready,
     state,
     capture: () => scene.capture(),
+    waterFrames() {
+      return scene.children.list
+        .filter(
+          (obj): obj is Phaser.GameObjects.Image =>
+            obj instanceof Phaser.GameObjects.Image &&
+            obj.texture.key.startsWith("art-stream-"),
+        )
+        .map((image) => ({ key: image.texture.key, angle: image.angle }));
+    },
     balloonFrame() {
       const images = scene.children.list.filter(
         (obj): obj is Phaser.GameObjects.Image =>
