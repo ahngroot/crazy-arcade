@@ -45,6 +45,7 @@ export interface PracticePlayer {
   status: "active" | "trapped" | "respawning";
   statusUntil: number;
   invulnerableUntil: number;
+  pickupBlockedUntil?: number;
   capacity: number;
   range: number;
   speed: number;
@@ -429,6 +430,75 @@ export function inBlast(s: PracticeState, position: Position) {
   );
 }
 
+/** One authoritative death path for drowning and monster contact. Used items are not duplicated. */
+export function defeatPlayer(s: PracticeState, p: PracticePlayer) {
+  if (p.status === "respawning") return;
+  const drops: ItemKind[] = [...p.inventory];
+  for (let n = C.initialBalloons; n < Math.min(p.capacity, C.maxBalloons); n++)
+    drops.push("balloon");
+  const speedSteps = Math.max(
+    0,
+    Math.round(
+      (Math.min(p.speed, C.maxSpeed) - C.movementTilesPerSecond) /
+        C.speedIncrement,
+    ),
+  );
+  for (let n = 0; n < speedSteps; n++) drops.push("speed");
+  if (drops.length) {
+    const floors: Position[] = [];
+    for (let y = 1; y < C.rows - 1; y++)
+      for (let x = 1; x < C.columns - 1; x++)
+        if (
+          s.map[y][x] === "floor" &&
+          (!s.round || (p.team === "red" ? x < 7 : x > 7))
+        )
+          floors.push({ x, y });
+    const preferred = floors.filter(
+      (pos) =>
+        !s.items.some((i) => i.x === pos.x && i.y === pos.y) &&
+        !s.balloons.some((b) => b.x === pos.x && b.y === pos.y) &&
+        !inBlast(s, { x: pos.x + 0.5, y: pos.y + 0.5 }) &&
+        !s.players.some(
+          (other) =>
+            sameCell(pos, other.spawn) ||
+            (other.status === "active" && sameCell(pos, other.position)),
+        ),
+    );
+    const candidates = preferred.length >= drops.length ? preferred : floors;
+    candidates.sort(
+      (a, b) =>
+        Math.hypot(a.x + 0.5 - p.position.x, a.y + 0.5 - p.position.y) -
+        Math.hypot(b.x + 0.5 - p.position.x, b.y + 0.5 - p.position.y),
+    );
+    const pool = candidates.slice(0, Math.max(12, drops.length * 2));
+    for (let n = pool.length - 1; n > 0; n--) {
+      const j = Math.floor(random(s) * (n + 1));
+      [pool[n], pool[j]] = [pool[j], pool[n]];
+    }
+    drops.forEach((kind, index) => {
+      const pos = pool[index % pool.length];
+      if (pos)
+        s.items.push({
+          id: s.nextId++,
+          kind,
+          ...pos,
+          availableAt: s.time + C.respawnMs + C.deathDropPickupDelayMs,
+        });
+    });
+  }
+  p.inventory = [];
+  p.capacity = C.initialBalloons;
+  p.range = C.initialRange;
+  p.speed = C.movementTilesPerSecond;
+  p.shieldUntil = p.powerUntil = p.gloveUntil = p.shoesUntil = p.ghostUntil = 0;
+  p.invulnerableUntil = 0;
+  p.pickupBlockedUntil = 0;
+  p.status = "respawning";
+  p.statusUntil = s.time + C.respawnMs;
+  p.moving = false;
+  p.deaths++;
+}
+
 function respawn(s: PracticeState, p: PracticePlayer) {
   const candidates: Position[] = [];
   for (let y = 1; y < C.rows - 1; y++)
@@ -461,6 +531,7 @@ function respawn(s: PracticeState, p: PracticePlayer) {
     p.position = safe;
     p.status = "active";
     p.invulnerableUntil = s.time + C.invulnerableMs;
+    p.pickupBlockedUntil = s.time + C.deathDropPickupDelayMs;
     p.facing = "down";
   }
 }
@@ -480,9 +551,7 @@ function tick(s: PracticeState, inputs: readonly LocalInput[]) {
     const input = inputs[index] ?? EMPTY_INPUT;
     useItems(s, p, input);
     if (p.status === "trapped" && s.time >= p.statusUntil) {
-      p.status = "respawning";
-      p.statusUntil = s.time + C.respawnMs;
-      p.deaths++;
+      defeatPlayer(s, p);
     }
     if (p.status === "respawning" && s.time >= p.statusUntil) respawn(s, p);
     if (p.status === "active" || p.status === "trapped") {
@@ -509,6 +578,7 @@ function tick(s: PracticeState, inputs: readonly LocalInput[]) {
       p.moving = false;
       continue;
     }
+    if (s.time < (p.pickupBlockedUntil ?? 0)) continue;
     s.items = s.items.filter((item) => {
       if (item.availableAt > s.time || !sameCell(p.position, item)) return true;
       return !collectItem(p, item.kind);

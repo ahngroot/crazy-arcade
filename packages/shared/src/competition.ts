@@ -1,6 +1,7 @@
 import { GAME_CONFIG as C, type Position, type Team } from "./index.js";
 import {
   createPractice,
+  defeatPlayer,
   random,
   overlapsCell,
   type PracticeState,
@@ -370,10 +371,7 @@ export function resolveMonsterContact(s: PracticeState) {
             C.playerRadius + C.monsterRadius,
       )
     ) {
-      p.status = "respawning";
-      p.statusUntil = s.time + C.respawnMs;
-      p.deaths++;
-      p.moving = false;
+      defeatPlayer(s, p);
       p.combo = 0;
       p.lastKillAt = -C.comboWindowMs - 1;
     }
