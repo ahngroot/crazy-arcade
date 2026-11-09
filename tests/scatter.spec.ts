@@ -28,6 +28,7 @@ test("death items fly from the character to authoritative floor targets at enlar
           y: number;
           width: number;
           height: number;
+          alpha: number;
         }[],
     );
   await expect.poll(async () => (await frames()).length).toBe(4);
@@ -59,5 +60,12 @@ test("death items fly from the character to authoritative floor targets at enlar
   await page
     .locator("#scatter-fixture")
     .screenshot({ path: "test-results/scatter-landed.png" });
+  const expiry = await page.evaluate(
+    () => (window as any).scatterFixture.state.items[0].expiresAt,
+  );
+  await advance(expiry - 750);
+  await expect.poll(async () => (await frames())[0].alpha).toBeCloseTo(0.5, 2);
+  await advance(expiry);
+  await expect.poll(async () => (await frames())[0].alpha).toBe(0);
   await page.evaluate(() => (window as any).scatterFixture.destroy());
 });

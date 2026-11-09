@@ -40,6 +40,8 @@ export interface LocalInput {
   y: number;
   balloon: boolean;
   useItem?: boolean;
+  turn?: Facing;
+  turnId?: number;
 }
 export interface PracticePlayer {
   characterId?: number;
@@ -48,6 +50,8 @@ export interface PracticePlayer {
   position: Position;
   /** Finish the current tile before accepting a turn or stopping. */
   moveTarget?: Position;
+  queuedTurn?: Facing;
+  lastTurnId?: number;
   spawn: Position;
   facing: Facing;
   status: "active" | "trapped" | "respawning";
@@ -93,6 +97,7 @@ export interface Item {
   x: number;
   y: number;
   availableAt: number;
+  expiresAt?: number;
   flight?: { from: Position; startedAt: number; landsAt: number };
 }
 export interface PracticeState {
@@ -363,17 +368,41 @@ function moveOnGrid(
   const before = { ...p.position };
   const x = Number.isFinite(raw.x) ? Math.sign(raw.x) : 0;
   const y = Number.isFinite(raw.y) ? Math.sign(raw.y) : 0;
+  if (raw.turn && raw.turnId !== undefined && raw.turnId !== p.lastTurnId) {
+    p.queuedTurn = raw.turn;
+    p.lastTurnId = raw.turnId;
+  }
   while (remaining > 1e-8) {
     if (!p.moveTarget) {
-      if (!x && !y) break;
-      const dx =
-        x && (!y || p.facing === "left" || p.facing === "right") ? x : 0;
-      const dy = dx ? 0 : y;
+      const queued = p.queuedTurn;
+      p.queuedTurn = undefined;
+      if (!queued && !x && !y) break;
+      const dx = queued
+        ? queued === "right"
+          ? 1
+          : queued === "left"
+            ? -1
+            : 0
+        : x && (!y || p.facing === "left" || p.facing === "right")
+          ? x
+          : 0;
+      const dy = queued
+        ? queued === "down"
+          ? 1
+          : queued === "up"
+            ? -1
+            : 0
+        : dx
+          ? 0
+          : y;
       const target = {
         x: Math.floor(p.position.x) + 0.5 + dx,
         y: Math.floor(p.position.y) + 0.5 + dy,
       };
-      if (!canOccupy(s, p, target.x, target.y)) break;
+      if (!canOccupy(s, p, target.x, target.y)) {
+        if (queued) continue;
+        break;
+      }
       p.moveTarget = target;
       p.facing = dx ? (dx > 0 ? "right" : "left") : dy > 0 ? "down" : "up";
     }
@@ -498,6 +527,7 @@ function explode(s: PracticeState) {
         x,
         y,
         availableAt: s.time + C.blastMs,
+        expiresAt: s.time + C.itemLifetimeMs,
       });
     }
   }
@@ -569,11 +599,13 @@ export function defeatPlayer(s: PracticeState, p: PracticePlayer) {
             landsAt: s.time + 700 + index * 45,
           },
           availableAt: s.time + C.respawnMs + C.deathDropPickupDelayMs,
+          expiresAt: s.time + 700 + index * 45 + C.itemLifetimeMs,
         });
     });
   }
   p.inventory = [];
   p.moveTarget = undefined;
+  p.queuedTurn = undefined;
   p.capacity = C.initialBalloons;
   p.range = C.initialRange;
   p.speed = C.movementTilesPerSecond;
@@ -628,6 +660,7 @@ function respawn(s: PracticeState, p: PracticePlayer) {
   if (safe) {
     p.position = safe;
     p.moveTarget = undefined;
+    p.queuedTurn = undefined;
     p.status = "active";
     p.invulnerableUntil = s.time + C.invulnerableMs;
     p.pickupBlockedUntil = s.time + C.deathDropPickupDelayMs;
@@ -664,6 +697,10 @@ function tick(s: PracticeState, inputs: readonly LocalInput[]) {
     }
     p.bombDown = Boolean(input.balloon);
   }
+  s.items = s.items.filter((item) => {
+    item.expiresAt ??= (item.flight?.landsAt ?? s.time) + C.itemLifetimeMs;
+    return s.time < item.expiresAt;
+  });
   explode(s);
   if (s.round) advanceCompetition(s);
   for (const p of s.players) {

@@ -64,6 +64,7 @@ export function mountArenaFixture(parent: HTMLElement, id: string) {
             y: image.y,
             width: image.displayWidth,
             height: image.displayHeight,
+            alpha: image.alpha,
           };
         });
     },

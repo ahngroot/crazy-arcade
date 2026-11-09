@@ -6,6 +6,7 @@ import {
   type PracticeState,
   type LocalInput,
   type RoomView,
+  type Facing,
 } from "@bubble/shared";
 import { GameRenderer } from "./renderer";
 import { arcadeAudio } from "./audio";
@@ -27,11 +28,15 @@ const editing = (target: EventTarget | null) =>
   target instanceof Element &&
   !!target.closest("input,select,textarea,button,[contenteditable]");
 
+let nextTurnId = Date.now() * 1000;
+
 /** One keyboard controls one character in solo practice or online play. */
-class GameKeyboard {
+export class GameKeyboard {
   private enabled = false;
   private keys = new Set<string>();
   private balloonPending = false;
+  private turn?: Facing;
+  private turnId?: number;
   private itemEdges: boolean[] = [];
   private controlHeld() {
     return this.keys.has("ControlLeft") || this.keys.has("ControlRight");
@@ -45,6 +50,17 @@ class GameKeyboard {
     event.preventDefault();
     if (!this.enabled || (event.repeat && !this.keys.has(event.code))) return;
     const controlWasHeld = this.controlHeld();
+    if (event.code.startsWith("Arrow") && !this.keys.has(event.code)) {
+      this.turn = (
+        {
+          ArrowUp: "up",
+          ArrowDown: "down",
+          ArrowLeft: "left",
+          ArrowRight: "right",
+        } as Record<string, Facing>
+      )[event.code];
+      this.turnId = ++nextTurnId;
+    }
     this.keys.add(event.code);
     if (isControl(event.code) && !controlWasHeld && !event.repeat)
       this.itemEdge(true);
@@ -60,6 +76,8 @@ class GameKeyboard {
   };
   clear = () => {
     this.keys.clear();
+    this.turn = undefined;
+    this.turnId = undefined;
     this.balloonPending = false;
     this.itemEdges = [];
   };
@@ -85,10 +103,14 @@ class GameKeyboard {
     document.addEventListener("focusin", this.focus);
   }
   input(): LocalInput {
-    const has = (code: string) => Number(this.keys.has(code));
+    const direction = [...this.keys]
+      .reverse()
+      .find((code) => code.startsWith("Arrow"));
     return {
-      x: has("ArrowRight") - has("ArrowLeft"),
-      y: has("ArrowDown") - has("ArrowUp"),
+      x: direction === "ArrowRight" ? 1 : direction === "ArrowLeft" ? -1 : 0,
+      y: direction === "ArrowDown" ? 1 : direction === "ArrowUp" ? -1 : 0,
+      turn: this.turn,
+      turnId: this.turnId,
       balloon: this.balloonPending || this.keys.has("Space"),
       useItem: this.itemEdges[0] ?? this.controlHeld(),
     };

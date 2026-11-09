@@ -20,6 +20,8 @@ export const GAME_CONFIG = Object.freeze({
   deathDropPickupDelayMs: 500,
   invulnerableMs: 1500,
   itemDropChance: 0.45,
+  itemLifetimeMs: 6000,
+  itemFadeMs: 1500,
   maxBalloons: 6,
   maxRange: 6,
   maxSpeed: 6,

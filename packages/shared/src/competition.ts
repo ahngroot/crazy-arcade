@@ -353,6 +353,7 @@ export function resolveMonsterHits(s: PracticeState) {
           x,
           y,
           availableAt: s.time + C.blastMs,
+          expiresAt: s.time + C.itemLifetimeMs,
         });
     }
     r.events.push({

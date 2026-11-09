@@ -27,15 +27,14 @@ test("trapped solo player moves slowly, shows dwindling breath and dies once bef
     path: "test-results/trapped-moving.png",
     fullPage: true,
   });
-  await expect(self.locator(".player-status")).toContainText("1초", {
-    timeout: 6000,
-  });
+  await expect(self.locator(".player-status")).toHaveText("물방울에 갇힘!");
+  await expect(self.locator(".player-status")).not.toHaveText(/\d+초/);
   await page.screenshot({
     path: "test-results/trapped-last-breath.png",
     fullPage: true,
   });
   await expect(self).toHaveAttribute("data-status", "respawning", {
-    timeout: 3000,
+    timeout: 6000,
   });
   await page.waitForTimeout(850);
   await page.screenshot({

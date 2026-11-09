@@ -50,3 +50,25 @@ it("records authoritative death origin and staggered flight times without granti
   expect(new Set(s.items.map((i) => i.flight!.landsAt)).size).toBe(4);
   expect(p.inventory).toEqual([]);
 });
+it("remembers a quick overlapping turn until the next tile and then resumes the held direction", () => {
+  const { s, p } = fixture();
+  movePlayer(s, p, { ...EMPTY_INPUT, y: 1, turn: "down", turnId: 1 }, 100);
+  movePlayer(s, p, { ...EMPTY_INPUT, x: 1, turn: "right", turnId: 2 }, 16);
+  const held = { ...EMPTY_INPUT, y: 1, turn: "right" as const, turnId: 2 };
+  for (let i = 0; i < 43; i++) movePlayer(s, p, held, 16);
+  expect(p.position.x).toBe(5.5);
+  expect(p.position.y).toBeGreaterThan(5.5);
+  const x = p.position.x;
+  for (let i = 0; i < 25; i++) movePlayer(s, p, held, 16);
+  expect(p.position.x).toBe(x);
+  expect(p.position.y).toBeGreaterThan(6.5);
+});
+it("does not let a blocked overlapping turn lock the held direction", () => {
+  const { s, p } = fixture();
+  s.map[5][5] = "wall";
+  movePlayer(s, p, { ...EMPTY_INPUT, y: 1 }, 100);
+  for (let i = 0; i < 50; i++)
+    movePlayer(s, p, { ...EMPTY_INPUT, y: 1, turn: "right", turnId: 9 }, 16);
+  expect(p.position.x).toBe(4.5);
+  expect(p.position.y).toBeGreaterThan(6.5);
+});

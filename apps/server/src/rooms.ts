@@ -299,12 +299,23 @@ export class RoomService {
     )
       return false;
     if (actions.some((key) => typeof packet[key] !== "boolean")) return false;
+    if (packet.turn !== undefined || packet.turnId !== undefined) {
+      if (
+        typeof packet.turn !== "string" ||
+        !["up", "down", "left", "right"].includes(packet.turn) ||
+        !Number.isSafeInteger(packet.turnId) ||
+        Number(packet.turnId) < 0
+      )
+        return false;
+    }
     const input = packet as unknown as NetworkInput;
     for (const key of actions)
       if (input[key] && !seat.input[key]) seat.actions[key] = true;
     seat.input = {
       x: input.x,
       y: input.y,
+      turn: input.turn,
+      turnId: input.turnId,
       balloon: input.balloon,
       useItem: input.useItem,
     };

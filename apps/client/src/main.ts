@@ -182,7 +182,7 @@ function updateGameHud(state: PracticeState) {
         : player.status;
     const status =
       player.status === "trapped"
-        ? `물방울에 갇힘! ${Math.max(0, Math.ceil((player.statusUntil - state.time) / 1000))}초`
+        ? "물방울에 갇힘!"
         : player.status === "respawning"
           ? "쓰러짐 · 다시 오는 중…"
           : player.invulnerableUntil > state.time

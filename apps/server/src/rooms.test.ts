@@ -401,3 +401,34 @@ describe("validated authoritative inputs", () => {
     expect(game.balloons).toHaveLength(2);
   });
 });
+it("validates and carries short direction presses to the authoritative tile movement", () => {
+  const h = pair();
+  start(h);
+  const g = h.service.current("a")!.game!,
+    p = g.players[0];
+  g.map = g.map.map((row) => row.map(() => "floor"));
+  g.round!.monsters = [];
+  p.position = { x: 4.5, y: 4.5 };
+  for (const turn of [["up"], { toString: null }, null])
+    expect(h.service.input("a", { ...packet(1), turn, turnId: 1 })).toBe(false);
+  expect(h.service.input("a", { ...packet(1), turn: "evil", turnId: 1 })).toBe(
+    false,
+  );
+  expect(
+    h.service.input("a", { ...packet(1), turn: "down", turnId: NaN }),
+  ).toBe(false);
+  expect(h.service.input("a", { ...packet(1), turn: "down", turnId: 1 })).toBe(
+    true,
+  );
+  h.advance(100);
+  expect(h.service.input("a", { ...packet(2), turn: "right", turnId: 2 })).toBe(
+    true,
+  );
+  h.advance(100);
+  for (let n = 3; n < 12; n++) {
+    h.service.input("a", { ...packet(n), turn: "right", turnId: 2 });
+    h.advance(100);
+  }
+  expect(p.position.x).toBe(5.5);
+  expect(p.position.y).toBeGreaterThan(6.5);
+});

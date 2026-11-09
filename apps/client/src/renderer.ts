@@ -431,15 +431,6 @@ export class GameRenderer {
       this.overlays.strokePath();
       this.overlays.fillStyle(0xffffff, 0.8);
       this.overlays.fillCircle(x - 13, y - 13, 3);
-      // Remaining breath: five segments disappear one per second.
-      for (
-        let i = 0;
-        !drowning && i < Math.ceil((p.statusUntil - state.time) / 1000);
-        i++
-      ) {
-        this.overlays.fillStyle(urgency > 0.6 ? 0xff7777 : 0x89e8ff, 0.95);
-        this.overlays.fillCircle(x - 12 + i * 6, y - 30, 2);
-      }
     } else {
       actor.image.clearTint();
       if (dying && since >= 600 && since < 1050) {
@@ -657,12 +648,30 @@ export class GameRenderer {
         )
         .setDisplaySize(40.5, 42.75)
         .setAngle(progress < 1 ? Math.sin(progress * Math.PI * 2) * 25 : 0)
-        .setAlpha(progress < 1 || item.availableAt <= state.time ? 1 : 0.6)
+        .setAlpha(
+          (progress < 1 || item.availableAt <= state.time ? 1 : 0.6) *
+            (item.expiresAt === undefined
+              ? 1
+              : Phaser.Math.Clamp(
+                  (item.expiresAt - state.time) / C.itemFadeMs,
+                  0,
+                  1,
+                )),
+        )
         .setDepth(progress < 1 ? 15000 + y : y);
       actor.shadow
         .setPosition(x, y + 13)
         .setDisplaySize(30 - lift * 0.12, 10.5 - lift * 0.035)
-        .setAlpha(0.65 - lift * 0.004)
+        .setAlpha(
+          (0.65 - lift * 0.004) *
+            (item.expiresAt === undefined
+              ? 1
+              : Phaser.Math.Clamp(
+                  (item.expiresAt - state.time) / C.itemFadeMs,
+                  0,
+                  1,
+                )),
+        )
         .setDepth(1);
     }
     this.effects(delta);
