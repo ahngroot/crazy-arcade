@@ -5,9 +5,9 @@ test("selects one of 13 equal-stat characters before solo play and keeps it thro
 }) => {
   await page.goto("/");
   await expect(page.getByRole("radio")).toHaveCount(13);
-  await page.getByRole("radio", { name: "갈색 곰", exact: true }).click();
+  await page.getByRole("radio", { name: "케피", exact: true }).click();
   await expect(
-    page.getByRole("radio", { name: "갈색 곰", exact: true }),
+    page.getByRole("radio", { name: "케피", exact: true }),
   ).toHaveAttribute("aria-checked", "true");
   await page.screenshot({
     path: "test-results/character-selection.png",
@@ -34,7 +34,7 @@ test("selects one of 13 equal-stat characters before solo play and keeps it thro
   await expect(self).toHaveAttribute("data-character", "12");
   await page.reload();
   await expect(
-    page.getByRole("radio", { name: "갈색 곰", exact: true }),
+    page.getByRole("radio", { name: "케피", exact: true }),
   ).toHaveAttribute("aria-checked", "true");
 });
 
@@ -43,7 +43,7 @@ test("online guest uses the selected character while the host keeps their own se
   duel,
 }) => {
   await page.goto("/");
-  await page.getByRole("radio", { name: "분홍 헬멧", exact: true }).click();
+  await page.getByRole("radio", { name: "모스", exact: true }).click();
   await duel(page, { guest: true, navigate: false });
   await expect(page.locator("[data-player=p2]")).toHaveAttribute(
     "data-character",
