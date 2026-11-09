@@ -28,25 +28,25 @@ for (const guest of [false, true]) {
 
     await page.keyboard.down("ControlLeft");
     await expect(self.locator('[data-stat="inventory-count"]')).toHaveText(
-      "1 / 2",
+      "0 / 2",
     );
     await page.keyboard.down("ControlRight");
     await page.keyboard.up("ControlLeft");
     await page.waitForTimeout(200);
     await expect(self.locator('[data-stat="inventory-count"]')).toHaveText(
-      "1 / 2",
+      "0 / 2",
     );
     await page.keyboard.up("ControlRight");
     await page.keyboard.press("ControlRight");
     await expect(self.locator('[data-stat="inventory-count"]')).toHaveText(
       "0 / 2",
     );
-    await expect(self.locator('[data-stat="range"]')).toHaveText("3칸");
+    await expect(self.locator('[data-stat="range"]')).toHaveText("1칸");
     await expect(other.locator('[data-stat="inventory-count"]')).toHaveText(
-      "2 / 2",
+      "0 / 2",
     );
     await page.keyboard.press("Space");
-    await expect(self.locator('[data-stat="balloon"]')).toHaveText("1 / 3");
+    await expect(self.locator('[data-stat="balloon"]')).toHaveText("1 / 1");
     await expect(other.locator('[data-stat="balloon"]')).toHaveText("0 / 1");
     await page.screenshot({
       path: `test-results/controls-${guest ? "green" : "red"}.png`,

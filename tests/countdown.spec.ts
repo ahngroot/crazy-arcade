@@ -21,7 +21,7 @@ test("solo countdown displays 3, 2, 1 and Game Start while gameplay stays frozen
   );
   await expect(
     page.locator("[data-player=p1] [data-stat=inventory-count]"),
-  ).toHaveText("2 / 2");
+  ).toHaveText("0 / 2");
   await expect(page.locator("[data-player=p1] [data-stat=balloon]")).toHaveText(
     "0 / 1",
   );

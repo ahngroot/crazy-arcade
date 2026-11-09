@@ -39,6 +39,10 @@ export const SOUND_CUES: Record<Cue, Tone[]> = {
     { note: 88, length: 0.16, delay: 0.07, volume: 0.12 },
   ],
   trap: [{ note: 76, length: 0.24, slide: 57, type: "sine", volume: 0.2 }],
+  breath: [
+    { note: 43, length: 0.13, slide: 58, type: "sine", volume: 0.2 },
+    { note: 51, length: 0.18, slide: 35, type: "sine", volume: 0.16 },
+  ],
   defeat: [
     { note: 62, length: 0.15, volume: 0.12 },
     { note: 57, length: 0.22, delay: 0.12, volume: 0.12 },

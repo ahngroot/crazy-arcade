@@ -112,6 +112,7 @@ export function mountGame(
   onState: (state: PracticeState) => void,
   session?: {
     initial: PracticeState;
+    playerId?: string;
     frame: (input: LocalInput, delta: number) => PracticeState | null;
     restart: () => void;
     view: () => RoomView | null;
@@ -130,7 +131,12 @@ export function mountGame(
       super("game");
     }
     create() {
-      this.view = new GameRenderer(this, parent);
+      this.view = new GameRenderer(
+        this,
+        parent,
+        true,
+        session?.playerId ?? "p1",
+      );
       introAt = performance.now();
       this.events.once(Phaser.Scenes.Events.SHUTDOWN, () =>
         this.view.destroy(),

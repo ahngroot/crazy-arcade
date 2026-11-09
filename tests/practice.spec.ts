@@ -39,22 +39,22 @@ test("solo practice works without an online connection and uses one character, a
   await page.keyboard.up("ArrowDown");
   await page.keyboard.press("ControlLeft");
   await expect(self.locator('[data-stat="inventory-count"]')).toHaveText(
-    "1 / 2",
+    "0 / 2",
   );
   await page.keyboard.press("ControlRight");
   await expect(self.locator('[data-stat="inventory-count"]')).toHaveText(
     "0 / 2",
   );
-  await expect(self.locator('[data-stat="range"]')).toHaveText("3칸");
+  await expect(self.locator('[data-stat="range"]')).toHaveText("1칸");
   await page.keyboard.press("Space");
-  await expect(self.locator('[data-stat="balloon"]')).toHaveText("1 / 3");
+  await expect(self.locator('[data-stat="balloon"]')).toHaveText("1 / 1");
   await page
     .getByRole("button", { name: "처음부터 다시", exact: true })
     .click();
   await expect(self).toHaveAttribute("data-y", "1.500");
   await expect(self.locator('[data-stat="balloon"]')).toHaveText("0 / 1");
   await expect(self.locator('[data-stat="inventory-count"]')).toHaveText(
-    "2 / 2",
+    "0 / 2",
   );
   await page.screenshot({
     path: "test-results/solo-practice.png",
@@ -89,7 +89,7 @@ test("solo balloon explosion, respawn and crate pickup work; restart restores th
   });
   await expect(self).toHaveAttribute("data-status", "active");
   await page.keyboard.down("ArrowRight");
-  await expect(self.locator('[data-stat="balloon"]')).toHaveText("0 / 2");
+  await expect(self.locator('[data-stat="range"]')).toHaveText("2칸");
   await page.keyboard.up("ArrowRight");
   await page
     .getByRole("button", { name: "처음부터 다시", exact: true })

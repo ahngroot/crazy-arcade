@@ -53,18 +53,18 @@ describe("solo practice", () => {
     expect(visited.has(`${C.columns - 2},${C.rows - 2}`)).toBe(true);
     expect(createPractice().map[1][7]).toBe("wall");
   });
-  it("has one player, no round timer and the two FIFO training items", () => {
+  it("has one player, no round timer and an empty starting inventory", () => {
     const s = createSoloPractice();
     expect(s.players).toHaveLength(1);
     expect(s.players[0].id).toBe("p1");
-    expect(s.players[0].inventory).toEqual(["shield", "power"]);
+    expect(s.players[0].inventory).toEqual([]);
     expect(s.round).toBeUndefined();
     stepPractice(s, [{ ...idle, useItem: true }], 20);
-    expect(s.players[0].inventory).toEqual(["power"]);
+    expect(s.players[0].inventory).toEqual([]);
     stepPractice(s, [idle], 20);
     stepPractice(s, [{ ...idle, useItem: true }], 20);
     expect(s.players[0].inventory).toEqual([]);
-    expect(s.players[0].powerUntil).toBeGreaterThan(s.time);
+    expect(s.players[0].powerUntil).toBe(0);
     expect(createPractice().players).toHaveLength(2);
   });
 
@@ -260,7 +260,7 @@ describe("balloons and blasts", () => {
 });
 
 describe("damage, respawn and items", () => {
-  it("traps once, freezes movement, then respawns with protection", () => {
+  it("traps once, allows slow movement, then respawns with protection", () => {
     const s = openArena(),
       p = s.players[0];
     placeBalloon(s, p);
@@ -268,7 +268,9 @@ describe("damage, respawn and items", () => {
     expect(p.status).toBe("trapped");
     const pos = { ...p.position };
     step(s, 500, move(0, 1));
-    expect(p.position).toEqual(pos);
+    expect(p.position.y - pos.y).toBeCloseTo(
+      C.movementTilesPerSecond * 0.4 * 0.5,
+    );
     step(s, C.trappedMs - 500 + C.respawnMs);
     expect(p.status).toBe("active");
     expect(p.deaths).toBe(1);

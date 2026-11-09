@@ -56,7 +56,7 @@ it("predicts only movement, emits sequenced input, and never predicts balloons, 
   )!;
   expect(result.players[0].position.y).toBeGreaterThan(1.5);
   expect(result.balloons).toHaveLength(0);
-  expect(result.players[0].inventory).toEqual(["shield", "power"]);
+  expect(result.players[0].inventory).toEqual([]);
   expect(sent[0].useItem).toBe(true);
   expect(result.players[0].score).toBe(0);
   expect(sent[0]).toMatchObject({ sequence: 1, roundId: 1, balloon: true });

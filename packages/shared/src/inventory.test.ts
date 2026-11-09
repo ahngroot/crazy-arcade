@@ -9,10 +9,10 @@ import {
 } from "./index";
 const press = { ...EMPTY_INPUT, useItem: true };
 
-it("starts both teams with exactly two ordered usable items", () => {
+it("starts both teams with no items", () => {
   const s = createCompetition();
   expect(C.inventoryLimit).toBe(2);
-  for (const p of s.players) expect(p.inventory).toEqual(["shield", "power"]);
+  for (const p of s.players) expect(p.inventory).toEqual([]);
 });
 
 it("caps the combined inventory at two, including duplicates, while applying passive upgrades immediately", () => {

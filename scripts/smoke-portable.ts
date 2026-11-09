@@ -142,7 +142,7 @@ try {
   });
   await waitFor(() =>
     [...views[1].values()].find(
-      (v) => v.game?.players[0].inventory.length === 1,
+      (v) => v.game?.players[0].inventory.length === 0 && v.players[0].ack >= 1,
     ),
   );
   sockets.forEach((s) => s.disconnect());
@@ -191,14 +191,14 @@ try {
   await page.keyboard.press("ControlLeft");
   await expect(
     page.locator("[data-player=p1] [data-stat=inventory-count]"),
-  ).toHaveText("1 / 2");
+  ).toHaveText("0 / 2");
   await page.keyboard.press("ControlRight");
   await expect(
     page.locator("[data-player=p1] [data-stat=inventory-count]"),
   ).toHaveText("0 / 2");
   await page.keyboard.press("Space");
   await expect(page.locator("[data-player=p1] [data-stat=balloon]")).toHaveText(
-    "1 / 3",
+    "1 / 1",
   );
   await page
     .getByRole("button", { name: "처음부터 다시", exact: true })
@@ -209,7 +209,7 @@ try {
   );
   await expect(
     page.locator("[data-player=p1] [data-stat=inventory-count]"),
-  ).toHaveText("2 / 2");
+  ).toHaveText("0 / 2");
   mkdirSync("test-results/portable", { recursive: true });
   await page.screenshot({
     path: "test-results/portable/solo.png",
@@ -254,19 +254,19 @@ try {
   );
   await expect(
     page.locator("[data-player=p1] [data-stat=inventory-count]"),
-  ).toHaveText("2 / 2");
+  ).toHaveText("0 / 2");
   await page.keyboard.press("ControlLeft");
   await expect(
     page.locator("[data-player=p1] [data-stat=inventory-count]"),
-  ).toHaveText("1 / 2");
+  ).toHaveText("0 / 2");
   await page.keyboard.press("ControlLeft");
   await expect(page.locator("[data-player=p1] [data-stat=range]")).toHaveText(
-    "3칸",
+    "1칸",
   );
   await peer.keyboard.press("ControlRight");
   await expect(
     peer.locator("[data-player=p2] [data-stat=inventory-count]"),
-  ).toHaveText("1 / 2");
+  ).toHaveText("0 / 2");
   await peer.keyboard.press("Space");
   await expect(peer.locator("[data-player=p2] [data-stat=balloon]")).toHaveText(
     "1 / 1",
@@ -304,11 +304,11 @@ try {
       embeddedAssets: true,
       websocketPlayers: 2,
       matchingScores: true,
-      serverCtrlItem: true,
+      emptyStartCtrlSafe: true,
       browserPlayers: 2,
       lanConnection: peerUrl !== url,
       arrowsSpaceCtrl: true,
-      fifoCtrl: true,
+      emptyStartingInventory: true,
       soloPractice: true,
       soloRestart: true,
       countdown: true,

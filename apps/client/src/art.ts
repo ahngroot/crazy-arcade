@@ -467,14 +467,44 @@ function item(c: Ctx, kind: ItemKind) {
     c.translate(-24, -24);
     balloon(c);
   } else if (kind === "range") {
-    line(c, [-9, 0, 9, 0], "#4dbedb", 6);
-    shape(c, [7, -5, 14, 0, 7, 5], "#79dcf1", "#2f91b9");
-    shape(c, [-7, -5, -14, 0, -7, 5], "#79dcf1", "#2f91b9");
+    shape(
+      c,
+      [-4, -12, 4, -12, 3, -3, 10, 8, 7, 12, -7, 12, -10, 8, -3, -3],
+      "#28c6ff",
+      "#2472b5",
+    );
+    oval(c, 0, -12, 5, 2, "#ffad34");
+    line(c, [-3, 1, -5, 7, -2, 8], "#dcfaff", 2);
   } else if (kind === "speed") {
     rounded(c, -10, -7, 11, 12, 3, "#faab64", COLORS.ink);
     rounded(c, -10, 1, 19, 7, 3, "#fac47b", COLORS.ink);
     line(c, [-12, -5, -17, -5], "#77bed1", 2);
     line(c, [-12, 0, -18, 0], "#77bed1", 2);
+    oval(c, -6, 10, 4, 4, "#ee3827", "#8d381f");
+    oval(c, 7, 10, 4, 4, "#ee3827", "#8d381f");
+  } else if (kind === "ultra") {
+    star(c, 0, 0, 15, "#6d35c6");
+    oval(c, 0, 0, 9, 11, "#ffdc38", "#6938b0");
+    oval(c, -3, -2, 2, 3, "#fff");
+    oval(c, 3, -2, 2, 3, "#fff");
+  } else if (kind === "glove") {
+    rounded(c, -7, -10, 14, 19, 6, "#f02b32", "#a71c29");
+    oval(c, 7, -1, 4, 6, "#ff4344");
+    rounded(c, -6, 7, 12, 5, 2, "#fff", "#aaa");
+  } else if (kind === "shoes") {
+    rounded(c, -7, -10, 13, 16, 4, "#ffb426", "#b87a27");
+    oval(c, 0, -9, 7, 3, "#1678ce", "#ffcb3d");
+    rounded(c, -10, 2, 22, 10, 5, "#298fd7", "#215c95");
+    line(c, [-8, 12, 10, 12], "#fff", 3);
+  } else if (kind === "ghost") {
+    shape(
+      c,
+      [-8, 10, -7, -4, -4, -10, 4, -10, 7, -4, 9, 10, 4, 7, 0, 11, -4, 7],
+      "#c2c8cd",
+      "#7e858c",
+    );
+    oval(c, -3, -3, 2, 3, "#fff");
+    oval(c, 3, -3, 2, 3, "#fff");
   } else if (kind === "needle") {
     line(c, [-7, 10, 7, -10], "#9879ba", 3);
     oval(c, 6, -8, 3, 4, "#fff", "#9879ba");
@@ -561,6 +591,10 @@ export function installArt(scene: Phaser.Scene) {
     "needle",
     "shield",
     "power",
+    "ultra",
+    "glove",
+    "shoes",
+    "ghost",
   ] as const)
     make(`art-item-${kind}`, 36, 38, (c) => item(c, kind));
   make("art-balloon", 48, 48, balloon);
@@ -595,12 +629,20 @@ export function portraitSvg(team: Team) {
 
 export function itemSvg(kind: ItemKind) {
   const icons: Record<ItemKind, string> = {
+    ultra:
+      '<path d="M18 2l4 8 10-3-4 11 5 8-11-1-4 9-5-9-10 1 5-9-4-9 10 2Z" fill="#7534c7"/><ellipse cx="18" cy="18" rx="8" ry="10" fill="#ffdb37"/>',
+    glove:
+      '<rect x="10" y="5" width="15" height="22" rx="7" fill="#f22e35"/><ellipse cx="26" cy="17" rx="4" ry="6" fill="#ef2330"/><path d="M12 27h12v5H12Z" fill="#ddd"/>',
+    shoes:
+      '<path d="M12 8h14v14l5 2v6H6v-9h6Z" fill="#218bd0" stroke="#63777d"/><ellipse cx="19" cy="8" rx="8" ry="4" fill="#2a84d5" stroke="#ffb52a" stroke-width="3"/>',
+    ghost:
+      '<path d="M7 29l3-17q8-17 16 0l3 17-7-3-4 5-4-5Z" fill="#bbc2ca" stroke="#7e858c"/><ellipse cx="15" cy="15" rx="2" ry="3" fill="white"/><ellipse cx="22" cy="15" rx="2" ry="3" fill="white"/>',
     balloon:
       '<ellipse cx="18" cy="17" rx="9" ry="10" fill="#72d4ef" stroke="#397fa5"/><ellipse cx="15" cy="13" rx="3" ry="2" fill="#fff"/><path d="M16 27l2-3 2 3" fill="#72d4ef" stroke="#397fa5"/>',
     range:
-      '<path d="M6 18h24M10 14l-4 4 4 4M26 14l4 4-4 4" fill="none" stroke="#5db8db" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>',
+      '<path d="M14 6h8v12l8 11q-12 9-24 0l8-11Z" fill="#29c9ff" stroke="#2472b5"/><ellipse cx="18" cy="6" rx="6" ry="3" fill="#ffaa30"/><path d="M14 19l-3 7 4 2" fill="none" stroke="#dcfaff" stroke-width="3"/>',
     speed:
-      '<path d="M12 9h10v10l7 2v7H10v-8Z" fill="#ffbf7a" stroke="#9b7c59"/><path d="M4 11h5M3 17h5" stroke="#86c6dc" stroke-width="2" stroke-linecap="round"/>',
+      '<path d="M12 6h12v13l6 2v6H8V17h4Z" fill="#ef4535" stroke="#983c2a"/><ellipse cx="18" cy="6" rx="7" ry="3" fill="#ddd" stroke="#888"/><circle cx="12" cy="29" r="4" fill="#ffbf26" stroke="#9b6a20"/><circle cx="26" cy="29" r="4" fill="#ffbf26" stroke="#9b6a20"/>',
     needle:
       '<path d="M11 29L25 7" stroke="#9d84c0" stroke-width="3" stroke-linecap="round"/><ellipse cx="23" cy="10" rx="3" ry="4" fill="#fff" stroke="#9d84c0"/><path d="M22 6Q14 0 9 7" fill="none" stroke="#eb9cb9" stroke-width="2"/>',
     shield:

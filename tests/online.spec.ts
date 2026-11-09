@@ -91,38 +91,38 @@ test("two independent browsers share a room, reconnect and rematch; a third is r
     await page.keyboard.down("ControlRight");
     await expect(
       page.locator("[data-player=p1] [data-stat=inventory-count]"),
-    ).toHaveText("1 / 2");
+    ).toHaveText("0 / 2");
     await expect(
       b.locator("[data-player=p2] [data-stat=inventory-count]"),
-    ).toHaveText("2 / 2");
+    ).toHaveText("0 / 2");
     await page.keyboard.up("ControlRight");
     await page.keyboard.down("ControlRight");
     await expect(page.locator("[data-player=p1] [data-stat=range]")).toHaveText(
-      "3칸",
+      "1칸",
     );
     await page.keyboard.up("ControlRight");
     await page.keyboard.down("Space");
     await expect(
       page.locator("[data-player=p1] [data-stat=balloon]"),
-    ).toHaveText("1 / 3");
+    ).toHaveText("1 / 1");
     await page.keyboard.up("Space");
 
     await b.keyboard.down("ControlLeft");
     await expect(
       b.locator("[data-player=p2] [data-stat=inventory-count]"),
-    ).toHaveText("1 / 2");
+    ).toHaveText("0 / 2");
     await b.keyboard.up("ControlLeft");
     await b.keyboard.down("ControlLeft");
     await expect(b.locator("[data-player=p2] [data-stat=range]")).toHaveText(
-      "3칸",
+      "1칸",
     );
     await b.keyboard.up("ControlLeft");
     await b.keyboard.down("Space");
     await expect(b.locator("[data-player=p2] [data-stat=balloon]")).toHaveText(
-      "1 / 3",
+      "1 / 1",
     );
     await expect(b.locator("[data-player=p1] [data-stat=balloon]")).toHaveText(
-      "1 / 3",
+      "1 / 1",
     );
     await b.keyboard.up("Space");
 

@@ -93,9 +93,9 @@ export class OnlineTimeline {
   private predict(input: LocalInput, dt: number) {
     const s = this.predicted,
       p = s?.players.find((p) => p.id === this.playerId);
-    if (!s || !p || p.status !== "active") return;
+    if (!s || !p || p.status === "respawning") return;
     for (let left = dt; left > 1e-6; left -= C.fixedStepMs)
-      movePlayer(s, p, input, Math.min(C.fixedStepMs, left));
+      movePlayer(s, p, input, Math.min(C.fixedStepMs, left), false);
   }
   frame(
     input: LocalInput,

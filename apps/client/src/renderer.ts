@@ -58,6 +58,7 @@ export class GameRenderer {
     private scene: Phaser.Scene,
     private parent: HTMLElement,
     private sound = true,
+    private playerId = "p1",
   ) {
     installArt(scene);
     for (let y = 0; y < C.rows; y++)
@@ -290,17 +291,22 @@ export class GameRenderer {
       winner = state.round?.winner;
     const won = finished && winner === p.team,
       lost = finished && winner !== "draw" && winner !== p.team;
-    const pose: Pose = won
-      ? "win"
-      : lost
-        ? "lose"
-        : p.status === "trapped"
-          ? "trapped"
-          : p.status === "respawning"
-            ? "defeat"
-            : p.moving
-              ? "walk"
-              : "idle";
+    const drowning =
+      p.status === "respawning" &&
+      state.time < p.statusUntil - C.respawnMs + 600;
+    const pose: Pose = drowning
+      ? "trapped"
+      : won
+        ? "win"
+        : lost
+          ? "lose"
+          : p.status === "trapped"
+            ? "trapped"
+            : p.status === "respawning"
+              ? "defeat"
+              : p.moving
+                ? "walk"
+                : "idle";
     const facing = pose === "trapped" || finished ? "down" : p.facing;
     const frame =
       Math.floor(
@@ -319,7 +325,7 @@ export class GameRenderer {
     }
     const since = this.clock - actor.changedAt;
     const dying = p.status === "respawning",
-      fade = dying ? Math.max(0, 1 - since / 260) : 1;
+      fade = dying ? Math.max(0, 1 - Math.max(0, since - 600) / 1200) : 1;
     const spawn =
       !dying && p.invulnerableUntil > state.time && since < 300
         ? Math.max(0.25, since / 300)
@@ -331,20 +337,44 @@ export class GameRenderer {
     const bob = won ? Math.abs(Math.sin(this.clock / 180)) * 3 : 0;
     actor.image
       .setVisible(fade > 0)
-      .setPosition(
-        p.position.x * C.tileSize,
-        p.position.y * C.tileSize - (dying ? since / 18 : 0) - bob,
-      )
+      .setPosition(p.position.x * C.tileSize, p.position.y * C.tileSize - bob)
       .setDisplaySize(ART.playerWidth * spawn, ART.playerHeight * spawn)
-      .setAlpha(fade * (invincible ? 0.5 : 1))
+      .setAngle(dying ? Math.min(90, Math.max(0, since - 600) / 6) : 0)
+      .setAlpha(
+        fade *
+          ((p.ghostUntil ?? 0) > state.time
+            ? p.id === this.playerId
+              ? 0.25
+              : 0
+            : invincible
+              ? 0.5
+              : 1),
+      )
       .setDepth(p.position.y * C.tileSize + 1);
     actor.shadow
       .setPosition(p.position.x * C.tileSize, p.position.y * C.tileSize + 5)
-      .setAlpha(fade * 0.85)
+      .setAlpha((p.ghostUntil ?? 0) > state.time ? 0 : fade * 0.85)
       .setDepth(p.position.y * C.tileSize - 1);
     const x = p.position.x * C.tileSize,
       y = p.position.y * C.tileSize - 13;
-    if (p.status === "trapped") {
+    if ((p.ghostUntil ?? 0) > state.time && p.id !== this.playerId) return;
+    if (p.status === "trapped" || drowning) {
+      const urgency = drowning
+        ? 1
+        : Math.max(0, 1 - (p.statusUntil - state.time) / C.trappedMs);
+      const pulse = Math.sin(this.clock / (180 - urgency * 130));
+      actor.image
+        .setX(x + pulse * urgency * 3)
+        .setTint(0xffffff - Math.floor(urgency * 90) * 0x010100);
+      for (let i = 0; i < 5; i++) {
+        const rise = (this.clock / (18 - urgency * 10) + i * 11) % 50;
+        this.overlays.lineStyle(1, 0xd9faff, 0.8);
+        this.overlays.strokeCircle(
+          x + Math.sin(i * 7 + rise / 9) * 12,
+          y + 20 - rise,
+          1 + urgency * 2,
+        );
+      }
       this.overlays.fillStyle(0xa4e7ff, 0.24);
       this.overlays.lineStyle(2, 0x56b4e1, 0.95);
       this.overlays.fillEllipse(x, y, 44, 50);
@@ -355,6 +385,21 @@ export class GameRenderer {
       this.overlays.strokePath();
       this.overlays.fillStyle(0xffffff, 0.8);
       this.overlays.fillCircle(x - 13, y - 13, 3);
+      // Remaining breath: five segments disappear one per second.
+      for (
+        let i = 0;
+        !drowning && i < Math.ceil((p.statusUntil - state.time) / 1000);
+        i++
+      ) {
+        this.overlays.fillStyle(urgency > 0.6 ? 0xff7777 : 0x89e8ff, 0.95);
+        this.overlays.fillCircle(x - 12 + i * 6, y - 30, 2);
+      }
+    } else {
+      actor.image.clearTint();
+      if (dying && since >= 600 && since < 1050) {
+        this.overlays.lineStyle(2, 0xa4e7ff, 1 - (since - 600) / 450);
+        this.overlays.strokeCircle(x, y, 22 + (since - 600) / 14);
+      }
     }
     if (p.shieldUntil > state.time) {
       this.overlays.lineStyle(2, 0x9bdfff, 0.75);

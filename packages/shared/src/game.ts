@@ -14,8 +14,17 @@ import {
 
 export type Facing = "up" | "down" | "left" | "right";
 export type ItemKind =
-  "balloon" | "range" | "speed" | "needle" | "shield" | "power";
-export type UsableItemKind = Extract<ItemKind, "needle" | "shield" | "power">;
+  | "balloon"
+  | "range"
+  | "speed"
+  | "needle"
+  | "shield"
+  | "power"
+  | "ultra"
+  | "glove"
+  | "shoes"
+  | "ghost";
+export type UsableItemKind = Exclude<ItemKind, "balloon" | "range" | "speed">;
 export interface LocalInput {
   x: number;
   y: number;
@@ -45,6 +54,10 @@ export interface PracticePlayer {
   itemDown: boolean;
   shieldUntil: number;
   powerUntil: number;
+  ultraUntil?: number;
+  gloveUntil?: number;
+  shoesUntil?: number;
+  ghostUntil?: number;
 }
 export interface Balloon {
   id: number;
@@ -133,7 +146,6 @@ export function createSoloPractice(seed = 2701): PracticeState {
   state.map = createBattleMap();
   state.terrain = "battle";
   state.players = state.players.slice(0, 1);
-  state.players[0].inventory = ["shield", "power"];
   return state;
 }
 
@@ -180,8 +192,14 @@ export function canOccupy(
 export function effectiveStats(s: PracticeState, p: PracticePlayer) {
   const power = p.powerUntil > s.time;
   return {
-    speed: p.speed + (power ? C.powerSpeedBonus : 0),
-    range: p.range + (power ? C.powerRangeBonus : 0),
+    speed:
+      p.status === "trapped"
+        ? C.movementTilesPerSecond * C.trappedSpeedMultiplier
+        : p.speed + (power ? C.powerSpeedBonus : 0),
+    range:
+      (p.ultraUntil ?? 0) > s.time
+        ? C.maxRange
+        : p.range + (power ? C.powerRangeBonus : 0),
     capacity: p.capacity + (power ? C.powerCapacityBonus : 0),
   };
 }
@@ -219,6 +237,7 @@ export function movePlayer(
   p: PracticePlayer,
   raw: LocalInput,
   dt: number,
+  interact = true,
 ) {
   let x = Number.isFinite(raw.x) ? Math.max(-1, Math.min(1, raw.x)) : 0;
   let y = Number.isFinite(raw.y) ? Math.max(-1, Math.min(1, raw.y)) : 0;
@@ -241,6 +260,36 @@ export function movePlayer(
     oldY = p.position.y;
   const dx = x * distance,
     dy = y * distance;
+  const target = {
+    x: Math.floor(oldX + dx + Math.sign(x) * C.playerRadius),
+    y: Math.floor(oldY + dy + Math.sign(y) * C.playerRadius),
+  };
+  const obstacle = s.balloons.find(
+    (b) =>
+      b.x === target.x && b.y === target.y && !b.passThrough.includes(p.id),
+  );
+  if (
+    interact &&
+    obstacle &&
+    p.status === "active" &&
+    ((p.gloveUntil ?? 0) > s.time || (p.shoesUntil ?? 0) > s.time)
+  ) {
+    const stepX = Math.abs(x) >= Math.abs(y) ? Math.sign(x) : 0;
+    const stepY = stepX ? 0 : Math.sign(y);
+    const reach = (p.gloveUntil ?? 0) > s.time ? 2 : 1;
+    const tx = obstacle.x + stepX * reach,
+      ty = obstacle.y + stepY * reach;
+    if (
+      (stepX || stepY) &&
+      s.map[ty]?.[tx] === "floor" &&
+      !s.balloons.some((b) => b.x === tx && b.y === ty) &&
+      (reach === 2 || s.map[ty]?.[tx] === "floor")
+    ) {
+      obstacle.x = tx;
+      obstacle.y = ty;
+      obstacle.passThrough = [];
+    }
+  }
   if (canOccupy(s, p, oldX + dx, oldY)) p.position.x += dx;
   if (canOccupy(s, p, p.position.x, oldY + dy)) p.position.y += dy;
   // Gently align to a corridor when only slightly off its center. Every nudge is collision-checked.
@@ -359,9 +408,16 @@ function explode(s: PracticeState) {
     s.map[y][x] = "floor";
     s.mapRevision++;
     if (random(s) < C.itemDropChance) {
-      const kind = (["balloon", "range", "speed"] as const)[
-        Math.floor(random(s) * 3)
-      ];
+      const drops = [
+        "balloon",
+        "range",
+        "speed",
+        "ultra",
+        "glove",
+        "shoes",
+        "ghost",
+      ] as const;
+      const kind = drops[Math.floor(random(s) * drops.length)];
       s.items.push({
         id: s.nextId++,
         kind,
@@ -435,13 +491,14 @@ function tick(s: PracticeState, inputs: readonly LocalInput[]) {
       p.deaths++;
     }
     if (p.status === "respawning" && s.time >= p.statusUntil) respawn(s, p);
-    if (p.status === "active") {
+    if (p.status === "active" || p.status === "trapped") {
       movePlayer(s, p, input, dt);
       // Remove the pass-through permission once the entire body has left the cell.
       for (const b of s.balloons)
         if (!overlapsCell(p.position, b))
           b.passThrough = b.passThrough.filter((id) => id !== p.id);
-      if (input.balloon && !p.bombDown) placeBalloon(s, p);
+      if (p.status === "active" && input.balloon && !p.bombDown)
+        placeBalloon(s, p);
     }
     p.bombDown = Boolean(input.balloon);
   }

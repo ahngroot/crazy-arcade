@@ -56,7 +56,7 @@ describe("server room lifecycle", () => {
     h.advance(C.countdownMs - 100);
     expect(game.time).toBe(0);
     expect(game.players[0].position.y).toBe(1.5);
-    expect(game.players[0].inventory).toEqual(["shield", "power"]);
+    expect(game.players[0].inventory).toEqual([]);
     expect(game.balloons).toHaveLength(0);
     h.advance(200);
     expect(h.service.current("a")?.phase).toBe("PLAYING");
@@ -223,6 +223,7 @@ describe("validated authoritative inputs", () => {
     const h = pair();
     start(h);
     const game = h.service.current("a")!.game!;
+    for (const player of game.players) player.inventory = ["shield", "power"];
     expect(h.service.input("a", { ...packet(1), y: 0, useItem: 1 })).toBe(
       false,
     );

@@ -8,6 +8,7 @@ export type Cue =
   | "golden"
   | "pickup"
   | "trap"
+  | "breath"
   | "defeat"
   | "respawn"
   | "finish"
@@ -25,6 +26,7 @@ type PlayerRecord = {
   score: number;
   upgrades: number[];
   buffs: number;
+  breath: number;
 };
 interface FrameRecord {
   time: number;
@@ -75,6 +77,13 @@ export class PresentationTracker {
               ),
             ],
             buffs: p.shieldUntil + p.powerUntil,
+            breath:
+              p.status === "trapped"
+                ? Math.floor(
+                    (5000 - (p.statusUntil - state.time)) /
+                      (p.statusUntil - state.time < 2000 ? 250 : 700),
+                  )
+                : -1,
           },
         ]),
       ),
@@ -112,6 +121,11 @@ export class PresentationTracker {
       const before = old.players.get(p.id);
       if (!before) continue;
       const position = { ...p.position };
+      if (
+        p.status === "trapped" &&
+        next.players.get(p.id)!.breath !== before.breath
+      )
+        events.push({ kind: "breath", position, team: p.team });
       if (before.status !== p.status) {
         if (p.status === "trapped")
           events.push({ kind: "trap", position, team: p.team });

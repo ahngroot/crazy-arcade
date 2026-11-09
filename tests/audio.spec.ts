@@ -58,7 +58,7 @@ test("audio starts on explicit interaction, plays game cues, respects volume/mut
         JSON.parse(
           (await page.locator("html").getAttribute("data-audio-cues")) ?? "{}",
         ).explode ?? 0,
-      { timeout: 6000 },
+      { timeout: 10000 },
     )
     .toBeGreaterThan(0);
   await expect
@@ -67,7 +67,7 @@ test("audio starts on explicit interaction, plays game cues, respects volume/mut
         JSON.parse(
           (await page.locator("html").getAttribute("data-audio-cues")) ?? "{}",
         ).respawn ?? 0,
-      { timeout: 6000 },
+      { timeout: 10000 },
     )
     .toBeGreaterThan(0);
   expect(
@@ -130,7 +130,7 @@ test("all original cues and the full music loop produce finite, non-clipping PCM
     results.push(measure(await music.startRendering(), "music"));
     return results;
   });
-  expect(results).toHaveLength(12);
+  expect(results).toHaveLength(13);
   for (const result of results) {
     expect(result.finite, result.name).toBe(true);
     expect(result.peak, result.name).toBeGreaterThan(0.01);

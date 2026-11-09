@@ -95,9 +95,20 @@ export function mountArtGallery(parent: HTMLElement) {
           .setOrigin(0.5);
       }
       for (const [index, kind] of (
-        ["balloon", "range", "speed", "needle", "shield", "power"] as const
+        [
+          "balloon",
+          "range",
+          "speed",
+          "needle",
+          "shield",
+          "power",
+          "ultra",
+          "glove",
+          "shoes",
+          "ghost",
+        ] as const
       ).entries()) {
-        const x = 75 + index * 127,
+        const x = 45 + index * 80,
           y = 635;
         this.add.image(x, y, `art-item-${kind}`).setDisplaySize(49, 52);
         this.add

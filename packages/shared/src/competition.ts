@@ -69,7 +69,6 @@ export function createCompetition(
     nextSpawnCheckAt: 0,
     events: [],
   };
-  for (const p of s.players) p.inventory = ["shield", "power"];
   // Initial positions are mirrored, not independently randomized, for equal starts.
   for (let i = 0; i < C.monsterInitialPerTeam; i++) {
     const red = spawnMonster(s, "red", "normal");

@@ -1,0 +1,50 @@
+import { test, expect } from "./fixtures";
+
+test("trapped solo player moves slowly, shows dwindling breath and dies once before respawning", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.locator("#practice").click();
+  await expect(page.locator("#game-arena")).toHaveAttribute(
+    "data-start-phase",
+    "playing",
+    { timeout: 10000 },
+  );
+  const self = page.locator("[data-player=p1]");
+  await expect(self.locator('[data-stat="inventory-count"]')).toHaveText(
+    "0 / 2",
+  );
+  await page.keyboard.press("Space");
+  await expect(self).toHaveAttribute("data-status", "trapped", {
+    timeout: 6000,
+  });
+  await expect(self.locator('[data-stat="speed"]')).toHaveText("1.2칸/초");
+  await page.keyboard.down("ArrowDown");
+  await expect
+    .poll(async () => Number(await self.getAttribute("data-y")))
+    .toBeGreaterThan(2);
+  await page.keyboard.up("ArrowDown");
+  await page.keyboard.press("Space");
+  await expect(self.locator('[data-stat="balloon"]')).toHaveText("0 / 1");
+  await page.screenshot({
+    path: "test-results/trapped-moving.png",
+    fullPage: true,
+  });
+  await expect(self.locator(".player-status")).toContainText("1초", {
+    timeout: 6000,
+  });
+  await page.screenshot({
+    path: "test-results/trapped-last-breath.png",
+    fullPage: true,
+  });
+  await expect(self).toHaveAttribute("data-status", "respawning", {
+    timeout: 3000,
+  });
+  await page.waitForTimeout(850);
+  await page.screenshot({
+    path: "test-results/trapped-death.png",
+    fullPage: true,
+  });
+  await expect(self).toHaveAttribute("data-status", "active");
+  await expect(self.locator('[data-stat="deaths"]')).toHaveText("1회");
+});
