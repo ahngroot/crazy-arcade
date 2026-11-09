@@ -91,13 +91,15 @@ it("real sockets enforce 2 seats, share server snapshots, recover identity and r
   // Controlled server fixture: verify a real engine kill becomes a nonzero
   // score on both sockets, rather than merely comparing two zero-score rooms.
   const game = app.rooms.current(a.id!)!.game!;
+  const balloon = game.balloons.find((balloon) => balloon.owner === "p1")!;
+  const hitPosition = { x: balloon.x + 0.5, y: balloon.y + 0.5 };
   game.round!.monsters = [
     {
       id: game.nextId++,
       team: "red",
       kind: "normal",
-      position: { x: 1.5, y: 1.5 },
-      home: { x: 1.5, y: 1.5 },
+      position: { ...hitPosition },
+      home: { ...hitPosition },
       target: null,
       bornAt: -1000,
     },

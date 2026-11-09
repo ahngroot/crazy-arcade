@@ -1,4 +1,5 @@
 import { test, expect } from "./fixtures";
+import { moveSome } from "./map-helpers";
 
 test("trapped solo player moves slowly, shows dwindling breath and dies once before respawning", async ({
   page,
@@ -19,11 +20,7 @@ test("trapped solo player moves slowly, shows dwindling breath and dies once bef
     timeout: 6000,
   });
   await expect(self.locator('[data-stat="speed"]')).toHaveText("1.2칸/초");
-  await page.keyboard.down("ArrowDown");
-  await expect
-    .poll(async () => Number(await self.getAttribute("data-y")))
-    .toBeGreaterThan(2);
-  await page.keyboard.up("ArrowDown");
+  await moveSome(page, "p1", 0.25);
   await page.keyboard.press("Space");
   await expect(self.locator('[data-stat="balloon"]')).toHaveText("0 / 1");
   await page.screenshot({

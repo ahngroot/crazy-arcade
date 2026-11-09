@@ -12,6 +12,12 @@ import {
   type CompetitionRound,
 } from "./competition.js";
 import { rollCrateItem } from "./drops.js";
+import {
+  configureArena,
+  teamCanUseCell,
+  arenaSpawnCells,
+  reachableArenaCells,
+} from "./maps.js";
 
 export type Facing = "up" | "down" | "left" | "right";
 export type ItemKind =
@@ -94,7 +100,8 @@ export interface PracticeState {
   mapRevision: number;
   accumulator: number;
   map: Tile[][];
-  terrain?: "garden" | "battle";
+  terrain?: "garden" | "battle" | "themed";
+  arenaId?: string;
   players: PracticePlayer[];
   balloons: Balloon[];
   blasts: Blast[];
@@ -152,6 +159,20 @@ export function createSoloPractice(seed = 2701): PracticeState {
   state.terrain = "battle";
   state.players = state.players.slice(0, 1);
   return state;
+}
+
+export function createArenaPractice(
+  seed: number,
+  previousId?: string,
+  id?: string,
+): PracticeState {
+  const s = createSoloPractice(seed);
+  configureArena(s, () => random(s), {
+    previousId,
+    id,
+    minSpawnDistance: C.arenaSpawnMinDistance,
+  });
+  return s;
 }
 
 export function random(s: PracticeState) {
@@ -445,12 +466,14 @@ export function defeatPlayer(s: PracticeState, p: PracticePlayer) {
   );
   for (let n = 0; n < speedSteps; n++) drops.push("speed");
   if (drops.length) {
+    const reachable = s.arenaId ? reachableArenaCells(s.map, p.position) : null;
     const floors: Position[] = [];
-    for (let y = 1; y < C.rows - 1; y++)
-      for (let x = 1; x < C.columns - 1; x++)
+    for (let y = s.arenaId ? 0 : 1; y < C.rows - (s.arenaId ? 0 : 1); y++)
+      for (let x = s.arenaId ? 0 : 1; x < C.columns - (s.arenaId ? 0 : 1); x++)
         if (
           s.map[y][x] === "floor" &&
-          (!s.round || (p.team === "red" ? x < 7 : x > 7))
+          (!reachable || reachable.has(`${x},${y}`)) &&
+          (!s.round || teamCanUseCell(s, p.team, x))
         )
           floors.push({ x, y });
     const preferred = floors.filter(
@@ -501,9 +524,20 @@ export function defeatPlayer(s: PracticeState, p: PracticePlayer) {
 
 function respawn(s: PracticeState, p: PracticePlayer) {
   const candidates: Position[] = [];
-  for (let y = 1; y < C.rows - 1; y++)
-    for (let x = 1; x < C.columns - 1; x++) {
-      if ((p.team === "red" ? x < 7 : x > 7) && s.map[y][x] === "floor")
+  const valid = s.arenaId
+    ? new Set(
+        arenaSpawnCells(s.map).map(
+          (pos) => `${Math.floor(pos.x)},${Math.floor(pos.y)}`,
+        ),
+      )
+    : null;
+  for (let y = s.arenaId ? 0 : 1; y < C.rows - (s.arenaId ? 0 : 1); y++)
+    for (let x = s.arenaId ? 0 : 1; x < C.columns - (s.arenaId ? 0 : 1); x++) {
+      if (
+        teamCanUseCell(s, p.team, x) &&
+        s.map[y][x] === "floor" &&
+        (!valid || valid.has(`${x},${y}`))
+      )
         candidates.push({ x: x + 0.5, y: y + 0.5 });
     }
   candidates.sort(

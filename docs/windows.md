@@ -1,5 +1,9 @@
 # Windows 포터블 EXE 배포
 
+최신 랜덤 맵 ZIP: 연습/온라인 모두 사진 기반 테마 7종과 빈 타일의 시작 위치를 무작위로 사용한다. 시작·초기화·재대결마다 직전 맵을 제외하며 사망/재접속은 같은 맵을 유지한다. 맵 이름 표시, 타일 시트·큰 문양·돛대 리소스를 포함한다. [maps.md](maps.md)에 추가 방법과 재현 범위를 정리했다.
+
+검증: 타입 검사·제품 빌드·Vitest 121개 통과. Chromium 32개 항목을 확인했으며 전체 실행 후 온라인 카운트다운 동시 관찰로 수정한 1개를 재검사했다. Node/PATH 없는 한글 폴더의 Linux 포터블 파일에서도 랜덤 맵·시작 위치·연습/재시작·온라인 두 브라우저·방향키/Space/Ctrl을 확인했다. Windows ZIP은 42,613,740바이트이며 CRC·SHA-256 검증 완료다. Linux 실행은 Windows 실제 실행 검증과 구분한다.
+
 최신 이름 변경 ZIP: 사용자 지정 캐릭터 이름 13개를 선택 화면·대기실·연습 HUD에 반영했다. 노랑 후드는 슈퍼 케피로 변경했다. 외형과 스펙, 저장된 선택 ID는 같다.
 
 검증: 타입 검사·제품 빌드·Vitest 115개·캐릭터/메뉴 Chromium 검사 4개 통과. 긴 이름의 줄바꿈과 작은 화면의 가로 넘침 없음, 케피 선택·저장·연습, 모스 온라인 참가를 확인했다. Windows ZIP 재생성·압축 CRC·SHA-256 검증을 따른다.
@@ -72,7 +76,7 @@ Windows 자동 빌드도 [실행 41958014533](https://github.com/ahngroot/crazy-
 
 공개 인터넷 서버는 계속 미배포 상태다. 아래 과거 단계/빌드 기록은 당시 기능과 검증 범위다.
 
-**[Windows 게임 ZIP 바로 다운로드](https://github.com/ahngroot/crazy-arcade/raw/refs/heads/main/crazy-myangcade-windows-x64.zip)** — 저장소 루트에 배포 ZIP과 SHA-256을 직접 보관한다.
+**[Windows 게임 ZIP 바로 다운로드](https://raw.githubusercontent.com/ahngroot/crazy-arcade/main/crazy-myangcade-windows-x64.zip)** — 저장소 루트에 배포 ZIP과 SHA-256을 직접 보관한다.
 
 ## 플레이하기
 

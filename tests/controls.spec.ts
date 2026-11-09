@@ -1,4 +1,5 @@
 import { test, expect } from "./fixtures";
+import { readPosition, moveSome, freeDirection } from "./map-helpers";
 
 for (const guest of [false, true]) {
   test(`${guest ? "green guest" : "red host"} uses arrows, Space and either Ctrl for only their own character`, async ({
@@ -8,6 +9,10 @@ for (const guest of [false, true]) {
     await duel(page, { guest });
     const self = page.locator(`[data-player=${guest ? "p2" : "p1"}]`);
     const other = page.locator(`[data-player=${guest ? "p1" : "p2"}]`);
+    const selfId = guest ? "p2" : "p1",
+      otherId = guest ? "p1" : "p2";
+    const start = await readPosition(page, selfId),
+      otherStart = await readPosition(page, otherId);
     await expect(self.locator("h3")).toContainText("나 ·");
     await expect(other.locator("h3")).toContainText("상대 ·");
     const arena = await page.locator("#game-arena canvas").boundingBox();
@@ -17,14 +22,10 @@ for (const guest of [false, true]) {
     await page.keyboard.press("Enter");
     await page.waitForTimeout(250);
     await page.keyboard.up("s");
-    await expect(self).toHaveAttribute("data-y", "1.500");
+    expect(await readPosition(page, selfId)).toEqual(start);
     await expect(self.locator('[data-stat="balloon"]')).toHaveText("0 / 1");
-    await page.keyboard.down("ArrowDown");
-    await expect
-      .poll(async () => Number(await self.getAttribute("data-y")))
-      .toBeGreaterThan(2);
-    await page.keyboard.up("ArrowDown");
-    await expect(other).toHaveAttribute("data-y", "1.500");
+    await moveSome(page, selfId);
+    expect(await readPosition(page, otherId)).toEqual(otherStart);
 
     await page.keyboard.down("ControlLeft");
     await expect(self.locator('[data-stat="inventory-count"]')).toHaveText(
@@ -63,30 +64,37 @@ test("keyup and blur clear movement, UI controls retain focus and leaving remove
   const self = page.locator("[data-player=p1]");
   const dialog = page.locator("#game-dialog");
   const scroll = await dialog.evaluate((el) => el.scrollTop);
-  await page.keyboard.down("ArrowDown");
-  await expect
-    .poll(async () => Number(await self.getAttribute("data-y")))
-    .toBeGreaterThan(2);
-  await page.keyboard.up("ArrowDown");
+  await moveSome(page);
   await page.waitForTimeout(400);
-  const y = Number(await self.getAttribute("data-y"));
+  const released = await readPosition(page);
   await page.waitForTimeout(200);
-  expect(Number(await self.getAttribute("data-y"))).toBeCloseTo(y, 1);
+  // Online correction can settle by <0.005 tile after keyup; held movement travels 0.6 tile here.
+  const afterRelease = await readPosition(page);
+  for (const axis of ["x", "y"] as const)
+    expect(afterRelease[axis]).toBeCloseTo(released[axis], 2);
   expect(await dialog.evaluate((el) => el.scrollTop)).toBe(scroll);
-  await page.keyboard.down("ArrowDown");
+  const direction = await freeDirection(page);
+  await page.keyboard.down(direction.key);
   await expect
-    .poll(async () => Number(await self.getAttribute("data-y")))
-    .toBeGreaterThan(y + 0.2);
+    .poll(
+      async () =>
+        direction.sign *
+        ((await readPosition(page))[direction.axis] - direction.from),
+    )
+    .toBeGreaterThan(0.2);
   await page.evaluate(() => window.dispatchEvent(new Event("blur")));
   await page.waitForTimeout(400);
-  const blurred = Number(await self.getAttribute("data-y"));
+  const blurred = await readPosition(page);
   await page.waitForTimeout(200);
-  expect(Number(await self.getAttribute("data-y"))).toBeCloseTo(blurred, 1);
-  await page.keyboard.up("ArrowDown");
+  const afterBlur = await readPosition(page);
+  for (const axis of ["x", "y"] as const)
+    expect(afterBlur[axis]).toBeCloseTo(blurred[axis], 2);
+  await page.keyboard.up(direction.key);
+  const beforeSlider = await readPosition(page);
   await page.locator("#game-audio [data-sound-volume]").focus();
   await page.keyboard.press("ArrowRight");
   await expect(page.locator("#game-audio output")).toHaveText("36%");
-  await expect(self).toHaveAttribute("data-x", "1.500");
+  expect(await readPosition(page)).toEqual(beforeSlider);
   await page
     .getByRole("button", { name: "메뉴로 돌아가기", exact: true })
     .click();

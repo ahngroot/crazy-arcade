@@ -7,6 +7,7 @@ import {
   type PracticeState,
   type ItemKind,
 } from "./game.js";
+import { configureArena, teamCanUseCell, reachableArenaCells } from "./maps.js";
 
 export type MonsterKind = "normal" | "chaser" | "golden";
 export interface Monster {
@@ -46,19 +47,21 @@ const dirs = [
   [0, 1],
   [0, -1],
 ];
-const belongs = (team: Team, x: number) =>
-  team === "red"
-    ? x < Math.floor(C.columns / 2)
-    : x > Math.floor(C.columns / 2);
 const cellKey = (p: Position) => `${Math.floor(p.x)},${Math.floor(p.y)}`;
 
 export function createCompetition(
   seed: number = C.competitionSeed,
   durationMs: number = C.roundMs,
+  arena?: { previousId?: string; id?: string },
 ): PracticeState {
   if (!Number.isFinite(durationMs) || durationMs < C.fixedStepMs)
     throw new Error("Invalid round duration");
   const s = createPractice(seed);
+  if (arena)
+    configureArena(s, () => random(s), {
+      ...arena,
+      minSpawnDistance: C.arenaSpawnMinDistance,
+    });
   s.round = {
     phase: "PLAYING",
     durationMs,
@@ -70,10 +73,11 @@ export function createCompetition(
     nextSpawnCheckAt: 0,
     events: [],
   };
-  // Initial positions are mirrored, not independently randomized, for equal starts.
+  // Legacy fixtures mirror monsters; shared arenas select safe cells independently.
   for (let i = 0; i < C.monsterInitialPerTeam; i++) {
     const red = spawnMonster(s, "red", "normal");
-    if (red)
+    if (arena) spawnMonster(s, "green", "normal");
+    else if (red)
       spawnMonster(s, "green", "normal", {
         x: C.columns - red.position.x,
         y: red.position.y,
@@ -86,7 +90,7 @@ function walkable(s: PracticeState, team: Team, pos: Position) {
   const x = Math.floor(pos.x),
     y = Math.floor(pos.y);
   return (
-    belongs(team, x) &&
+    teamCanUseCell(s, team, x) &&
     s.map[y]?.[x] === "floor" &&
     !s.balloons.some((b) => b.x === x && b.y === y)
   );
@@ -128,8 +132,12 @@ export function spawnMonster(
       }
     }
   }
+  const permanentReachable = s.arenaId
+    ? reachableArenaCells(s.map, s.players[0].position)
+    : null;
   const safe = (pos: Position) =>
     walkable(s, team, pos) &&
+    (!permanentReachable || permanentReachable.has(cellKey(pos))) &&
     (!reachable || reachable.has(cellKey(pos))) &&
     !r.monsters.some(
       (m) =>
@@ -152,8 +160,12 @@ export function spawnMonster(
     if (safe(preferred)) cells.push(preferred);
     else return null;
   } else
-    for (let y = 1; y < C.rows - 1; y++)
-      for (let x = 1; x < C.columns - 1; x++) {
+    for (let y = s.arenaId ? 0 : 1; y < C.rows - (s.arenaId ? 0 : 1); y++)
+      for (
+        let x = s.arenaId ? 0 : 1;
+        x < C.columns - (s.arenaId ? 0 : 1);
+        x++
+      ) {
         const pos = { x: x + 0.5, y: y + 0.5 };
         if (safe(pos)) cells.push(pos);
       }

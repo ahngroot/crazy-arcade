@@ -1,7 +1,7 @@
 import Phaser from "phaser";
 import {
   GAME_CONFIG as C,
-  createSoloPractice,
+  createArenaPractice,
   stepPractice,
   type PracticeState,
   type LocalInput,
@@ -107,6 +107,7 @@ export interface GameController {
   destroy(removeCanvas: boolean): void;
   reset(): void;
 }
+let previousSoloArenaId: string | undefined;
 
 export function mountGame(
   parent: HTMLElement,
@@ -126,7 +127,9 @@ export function mountGame(
     observedView: RoomView | null = null;
   const characterId = selectedCharacter();
   const solo = () => {
-    const state = createSoloPractice();
+    const seed = crypto.getRandomValues(new Uint32Array(1))[0];
+    const state = createArenaPractice(seed, previousSoloArenaId);
+    previousSoloArenaId = state.arenaId;
     state.players[0].characterId = characterId;
     return state;
   };

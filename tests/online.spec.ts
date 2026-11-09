@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { moveSome } from "./map-helpers";
 async function lobby(page: Page, name: string) {
   await page.goto("/");
   await page.getByRole("button", { name: /온라인 대전/ }).click();
@@ -58,8 +59,11 @@ test("two independent browsers share a room, reconnect and rematch; a third is r
     await page.getByRole("button", { name: "READY", exact: true }).click();
     await b.getByRole("button", { name: "READY", exact: true }).click();
     for (const text of ["3", "2", "1", "Game Start!"]) {
-      await expect(page.locator(".game-start-overlay")).toHaveText(text);
-      await expect(b.locator(".game-start-overlay")).toHaveText(text);
+      // Observe both short-lived cues together; the two renderers can finish loading at different times.
+      await Promise.all([
+        expect(page.locator(".game-start-overlay")).toHaveText(text),
+        expect(b.locator(".game-start-overlay")).toHaveText(text),
+      ]);
       if (text === "1")
         await page.screenshot({
           path: "test-results/countdown-online.png",
@@ -126,13 +130,7 @@ test("two independent browsers share a room, reconnect and rematch; a third is r
     );
     await b.keyboard.up("Space");
 
-    await b.keyboard.down("ArrowDown");
-    await expect
-      .poll(async () =>
-        Number(await b.locator("[data-player=p2]").getAttribute("data-y")),
-      )
-      .toBeGreaterThan(2);
-    await b.keyboard.up("ArrowDown");
+    await moveSome(b, "p2");
     await expect(c.locator("#lobby-status")).toContainText("상대 입장");
     await expect(c.locator("#game-dialog")).not.toBeVisible();
     const base = new URL(page.url()).origin;

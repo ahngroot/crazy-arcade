@@ -105,7 +105,7 @@ describe("server room lifecycle", () => {
     ).toBe(false);
     h.advance(C.countdownMs - 100);
     expect(game.time).toBe(0);
-    expect(game.players[0].position.y).toBe(1.5);
+    expect(game.players[0].position).toEqual(game.players[0].spawn);
     expect(game.players[0].inventory).toEqual([]);
     expect(game.balloons).toHaveLength(0);
     h.advance(200);
@@ -257,12 +257,14 @@ describe("server room lifecycle", () => {
     h.advance(30_100);
     expect(h.service.current("a")?.phase).toBe("FINISHED");
     const old = h.service.current("a")!.roundId;
+    const oldMap = h.service.current("a")!.game!.arenaId;
     h.service.ready("a", true);
     h.advance(500);
     expect(h.service.current("a")?.roundId).toBe(old);
     h.service.ready("b", true);
     h.advance(C.countdownMs + 50);
     expect(h.service.current("a")?.roundId).toBe(old + 1);
+    expect(h.service.current("a")!.game!.arenaId).not.toBe(oldMap);
     expect(
       h.service.current("a")!.game!.players.every((p) => p.score === 0),
     ).toBe(true);
@@ -312,20 +314,33 @@ describe("validated authoritative inputs", () => {
   it("does not accept client positions or score and expires held input without heartbeats", () => {
     const h = pair();
     start(h);
+    const game = h.service.current("a")!.game!,
+      p = game.players[0];
+    const origin = { ...p.position },
+      x = Math.floor(origin.x),
+      y0 = Math.floor(origin.y);
+    const [dx, dy] = [
+      [1, 0],
+      [-1, 0],
+      [0, 1],
+      [0, -1],
+    ].find(([dx, dy]) => game.map[y0 + dy]?.[x + dx] === "floor")!;
     h.service.input("a", {
       ...packet(1),
+      x: dx,
+      y: dy,
       score: 999999,
       position: { x: 99, y: 99 },
     });
     h.advance(100);
-    const p = h.service.current("a")!.game!.players[0];
     expect(p.score).toBe(0);
-    expect(p.position.x).toBe(1.5);
-    expect(p.position.y).toBeGreaterThan(1.5);
+    expect(
+      Math.hypot(p.position.x - origin.x, p.position.y - origin.y),
+    ).toBeGreaterThan(0);
     h.advance(500);
-    const y = p.position.y;
+    const stopped = { ...p.position };
     h.advance(500);
-    expect(p.position.y).toBe(y);
+    expect(p.position).toEqual(stopped);
     expect(h.service.current("a")?.players[0].ack).toBe(1);
   });
   it("latches a quick balloon tap once and keeps all placement/damage server-side", () => {
@@ -364,14 +379,23 @@ describe("validated authoritative inputs", () => {
     start(h);
     const game = h.service.current("a")!.game!;
     game.players[0].capacity = 3;
+    const cells = game.map.flatMap((row, y) =>
+      row.flatMap((tile, x) =>
+        tile === "floor" &&
+        (x !== Math.floor(game.players[0].position.x) ||
+          y !== Math.floor(game.players[0].position.y))
+          ? [{ x: x + 0.5, y: y + 0.5 }]
+          : [],
+      ),
+    );
     h.service.input("a", { ...packet(1), y: 0, balloon: true });
     h.advance(40);
-    game.players[0].position = { x: 1.5, y: 2.5 };
+    game.players[0].position = cells[0];
     h.service.input("a", { ...packet(2), y: 0, balloon: false });
     h.service.input("a", { ...packet(3), y: 0, balloon: true });
     h.advance(40);
     expect(game.balloons).toHaveLength(2);
-    game.players[0].position = { x: 1.5, y: 3.5 };
+    game.players[0].position = cells[1];
     h.service.input("a", { ...packet(4), y: 0, balloon: true });
     h.advance(40);
     expect(game.balloons).toHaveLength(2);

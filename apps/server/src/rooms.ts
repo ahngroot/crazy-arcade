@@ -32,6 +32,7 @@ interface Seat {
   inputCount: number;
 }
 interface Room {
+  previousArenaId?: string;
   code: string;
   phase: RoomPhase;
   roundId: number;
@@ -256,7 +257,10 @@ export class RoomService {
       room.countdown = this.now() + C.countdownMs;
       room.roundId++;
       room.tick = 0;
-      room.game = createCompetition(randomInt(0x7fffffff), room.durationMs);
+      room.game = createCompetition(randomInt(0x7fffffff), room.durationMs, {
+        previousId: room.previousArenaId,
+      });
+      room.previousArenaId = room.game.arenaId;
       for (const player of room.game.players)
         player.characterId = room.seats.find(
           (s) => s.id === player.id,

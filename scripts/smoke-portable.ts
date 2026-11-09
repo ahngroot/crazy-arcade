@@ -14,6 +14,7 @@ import { setTimeout as delay } from "node:timers/promises";
 import { chromium, expect } from "@playwright/test";
 import { io as connect, type Socket } from "socket.io-client";
 import type { ClientEvents, ServerEvents, RoomView } from "@bubble/shared";
+import { assertEmptySpawn, moveSome, readPosition } from "../tests/map-helpers";
 
 const executable = resolve(
   process.argv[2] ??
@@ -171,7 +172,7 @@ try {
   );
   await expect(page.locator("#game-arena")).toHaveAttribute(
     "data-map-theme",
-    "battle",
+    "themed",
   );
   for (const text of ["3", "2", "1", "Game Start!"])
     await expect(page.locator(".game-start-overlay")).toHaveText(text);
@@ -181,13 +182,8 @@ try {
     { timeout: 10000 },
   );
   await expect(page.locator("[data-player=p2]")).toBeHidden();
-  await page.keyboard.down("ArrowDown");
-  await expect
-    .poll(async () =>
-      Number(await page.locator("[data-player=p1]").getAttribute("data-y")),
-    )
-    .toBeGreaterThan(2);
-  await page.keyboard.up("ArrowDown");
+  await assertEmptySpawn(page);
+  await moveSome(page);
   await page.keyboard.press("ControlLeft");
   await expect(
     page.locator("[data-player=p1] [data-stat=inventory-count]"),
@@ -203,10 +199,7 @@ try {
   await page
     .getByRole("button", { name: "처음부터 다시", exact: true })
     .click();
-  await expect(page.locator("[data-player=p1]")).toHaveAttribute(
-    "data-y",
-    "1.500",
-  );
+  await assertEmptySpawn(page);
   await expect(
     page.locator("[data-player=p1] [data-stat=inventory-count]"),
   ).toHaveText("0 / 2");
@@ -271,24 +264,10 @@ try {
   await expect(peer.locator("[data-player=p2] [data-stat=balloon]")).toHaveText(
     "1 / 1",
   );
-  await page.keyboard.down("ArrowDown");
-  await expect
-    .poll(async () =>
-      Number(await page.locator("[data-player=p1]").getAttribute("data-y")),
-    )
-    .toBeGreaterThan(2);
-  await page.keyboard.up("ArrowDown");
-  await expect(peer.locator("[data-player=p2]")).toHaveAttribute(
-    "data-y",
-    "1.500",
-  );
-  await peer.keyboard.down("ArrowDown");
-  await expect
-    .poll(async () =>
-      Number(await peer.locator("[data-player=p2]").getAttribute("data-y")),
-    )
-    .toBeGreaterThan(2);
-  await peer.keyboard.up("ArrowDown");
+  const guestStart = await readPosition(peer, "p2");
+  await moveSome(page);
+  assert.deepEqual(await readPosition(peer, "p2"), guestStart);
+  await moveSome(peer, "p2");
   mkdirSync("test-results/portable", { recursive: true });
   await page.screenshot({
     path: "test-results/portable/game.png",
@@ -312,7 +291,8 @@ try {
       soloPractice: true,
       soloRestart: true,
       countdown: true,
-      classicBattleMap: true,
+      randomArena: true,
+      emptyRandomSpawns: true,
     }),
   );
 } finally {

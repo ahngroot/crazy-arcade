@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import {
   GAME_CONFIG as C,
+  arenaById,
   type PracticeState,
   type PracticePlayer,
   type Position,
@@ -51,6 +52,7 @@ export class GameRenderer {
     { kind: string; image: Phaser.GameObjects.Image }
   >();
   private floors: Phaser.GameObjects.Image[] = [];
+  private decorations: Phaser.GameObjects.Image[] = [];
   private particles: Particle[] = [];
   private rings: Ring[] = [];
   private popups: Popup[] = [];
@@ -120,21 +122,52 @@ export class GameRenderer {
       }
   }
   private blocksFrom(state: PracticeState) {
-    const terrain = state.terrain ?? "garden";
+    this.parent.dataset.mapRevision = String(state.mapRevision);
+    const arena = arenaById(state.arenaId);
+    const terrain = state.arenaId ?? state.terrain ?? "garden";
     if (terrain !== this.terrain) {
       this.terrain = terrain;
-      this.parent.dataset.mapTheme = terrain;
+      this.parent.dataset.mapTheme = arena ? "themed" : terrain;
+      this.parent.dataset.mapId = arena?.id ?? "legacy";
+      this.parent.dataset.mapName =
+        arena?.name ?? (terrain === "battle" ? "일반 연습 맵" : "클로버 정원");
       this.floors.forEach((floor, i) => {
         const x = i % C.columns,
           y = Math.floor(i / C.columns);
         floor.setTexture(
-          terrain === "battle"
-            ? `art-ground-battle-${(x + y) % 2}`
-            : `art-ground-${x < 7 ? "red" : "green"}-${(x + y) % 2}`,
+          arena
+            ? `art-arena-${arena.theme}-${(arena.id === "toy-village" && x >= 6 && x <= 8) || arena.rows[y][x] === "r" ? 7 : arena.theme >= 3 && (x + y) % 2 === 0 ? 7 : 0}`
+            : terrain === "battle"
+              ? `art-ground-battle-${(x + y) % 2}`
+              : `art-ground-${x < 7 ? "red" : "green"}-${(x + y) % 2}`,
         );
+        floor.setTint(arena?.theme === 6 ? 0x9b9fa4 : 0xffffff);
       });
       for (const block of this.blocks.values()) block.image.destroy();
       this.blocks.clear();
+      for (const image of this.decorations) image.destroy();
+      this.decorations = [];
+      for (const decoration of arena?.decorations ?? []) {
+        const key =
+          decoration.kind === "pond"
+            ? `art-arena-${arena!.theme}-4`
+            : `art-arena-${decoration.kind}`;
+        this.decorations.push(
+          this.scene.add
+            .image(decoration.x * C.tileSize, decoration.y * C.tileSize, key)
+            .setOrigin(0, 0)
+            .setDisplaySize(
+              decoration.width * C.tileSize,
+              decoration.height * C.tileSize,
+            )
+            .setDepth(
+              decoration.kind === "mast"
+                ? (decoration.y + decoration.height) * C.tileSize - 4
+                : 0.5,
+            )
+            .setAlpha(decoration.kind === "lion" ? 0.65 : 1),
+        );
+      }
       this.revision = -1;
     }
     if (state.mapRevision === this.revision) return;
@@ -157,11 +190,15 @@ export class GameRenderer {
                 (y + 1) * C.tileSize,
                 safeTexture(
                   this.scene,
-                  terrain === "battle"
-                    ? tile === "wall"
-                      ? "art-wall-battle"
-                      : `art-crate-battle-${(x + y) % 3}`
-                    : `art-${tile}`,
+                  arena
+                    ? "mp".includes(arena.rows[y][x])
+                      ? "art-arena-hidden"
+                      : `art-arena-${arena.theme}-${arena.theme === 3 && arena.rows[y][x] === "c" ? 1 : (({ b: 1, c: 2, t: 5, w: 3, h: 4, d: 6, v: 3 } as Record<string, number>)[arena.rows[y][x]] ?? (tile === "wall" ? 3 : 1))}`
+                    : terrain === "battle"
+                      ? tile === "wall"
+                        ? "art-wall-battle"
+                        : `art-crate-battle-${(x + y) % 3}`
+                      : `art-${tile}`,
                 ),
               )
               .setOrigin(0.5, 1)
@@ -629,6 +666,7 @@ export class GameRenderer {
   destroy() {
     this.reset();
     for (const floor of this.floors) floor.destroy();
+    for (const image of this.decorations) image.destroy();
     for (const block of this.blocks.values()) block.image.destroy();
     this.blocks.clear();
     this.water.destroy();

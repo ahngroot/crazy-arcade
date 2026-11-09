@@ -32,6 +32,8 @@ it.each([60, 10])(
       ),
     );
     game.round!.monsters = [];
+    game.players[0].position = { x: 1.5, y: 1.5 };
+    game.players[0].spawn = { x: 1.5, y: 1.5 };
     game.round!.nextSpawnAt = 1e9;
     game.round!.nextSpawnCheckAt = 1e9;
     const inputQueue: { at: number; packet: NetworkInput }[] = [],

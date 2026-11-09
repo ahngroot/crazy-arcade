@@ -34,6 +34,7 @@ export const GAME_CONFIG = Object.freeze({
   monsterRadius: 0.23,
   monsterSpawnProtectionMs: 600,
   monsterSpawnSafeDistance: 1.7,
+  arenaSpawnMinDistance: 4,
   monsterSpawnCheckMs: 250,
   monsterEarlyIntervalMs: 7000,
   monsterMiddleIntervalMs: 4000,
@@ -79,6 +80,7 @@ export interface Position {
 
 export * from "./game.js";
 export * from "./characters.js";
+export * from "./maps.js";
 export * from "./competition.js";
 export * from "./network.js";
 export interface PlayerState {

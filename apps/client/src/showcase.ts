@@ -2,11 +2,46 @@
 import Phaser from "phaser";
 import {
   createCompetition,
+  createArenaPractice,
   type PracticeState,
   type Facing,
 } from "@bubble/shared";
 import { installArt, keyPlayer, safeTexture, type Pose } from "./art";
 import { GameRenderer } from "./renderer";
+
+/** Reference map QA, uses the same catalogue and renderer as both product modes. */
+export function mountArenaFixture(parent: HTMLElement, id: string) {
+  let resolveReady!: () => void;
+  const ready = new Promise<void>((resolve) => (resolveReady = resolve));
+  const state = createArenaPractice(38459, undefined, id);
+  state.players[0].characterId = 0;
+  class ArenaScene extends Phaser.Scene {
+    private view!: GameRenderer;
+    constructor() {
+      super("arena-fixture");
+    }
+    create() {
+      this.view = new GameRenderer(this, parent, false);
+      this.events.once(Phaser.Scenes.Events.SHUTDOWN, () =>
+        this.view.destroy(),
+      );
+      this.game.events.once(Phaser.Core.Events.POST_RENDER, resolveReady);
+    }
+    update(_time: number, delta: number) {
+      this.view.update(state, delta);
+    }
+  }
+  const game = new Phaser.Game({
+    type: Phaser.AUTO,
+    parent,
+    width: 600,
+    height: 520,
+    scene: new ArenaScene(),
+    audio: { noAudio: true },
+    fps: { smoothStep: false },
+  });
+  return { ready, state, destroy: () => game.destroy(true) };
+}
 
 export function mountArtGallery(parent: HTMLElement) {
   let resolveReady!: () => void;

@@ -5,6 +5,8 @@ import charactersUrl from "./assets/characters.png";
 import passiveItemsUrl from "./assets/passive-items.png";
 import placedBalloonUrl from "./assets/placed-balloon.png";
 import speedUrl from "./assets/speed.png";
+import arenaTilesUrl from "./assets/arena-tiles.png";
+import arenaLandmarksUrl from "./assets/arena-landmarks.png";
 
 // One reference-based sheet supplies both world pickups and inventory icons.
 const activeItemsImage = new Image();
@@ -22,6 +24,11 @@ await placedBalloonImage.decode();
 const speedImage = new Image();
 speedImage.src = speedUrl;
 await speedImage.decode();
+const arenaTilesImage = new Image();
+arenaTilesImage.src = arenaTilesUrl;
+const arenaLandmarksImage = new Image();
+arenaLandmarksImage.src = arenaLandmarksUrl;
+await Promise.all([arenaTilesImage.decode(), arenaLandmarksImage.decode()]);
 const passiveIndex: Partial<Record<ItemKind, number>> = {
   balloon: 0,
   ultra: 1,
@@ -598,6 +605,45 @@ export function installArt(scene: Phaser.Scene) {
     draw(ctx);
     scene.textures.addCanvas(key, canvas);
   };
+  for (let theme = 0; theme < 7; theme++)
+    for (let column = 0; column < 8; column++)
+      make(
+        `art-arena-${theme}-${column}`,
+        40,
+        column === 0 || column === 7 ? 40 : 48,
+        (c) => {
+          const cell = arenaTilesImage.naturalWidth / 8;
+          c.imageSmoothingEnabled = false;
+          c.drawImage(
+            arenaTilesImage,
+            column * cell + 0.5,
+            theme * cell + 0.5,
+            cell - 1,
+            cell - 1,
+            0,
+            0,
+            40,
+            column === 0 || column === 7 ? 40 : 48,
+          );
+        },
+      );
+  make("art-arena-hidden", 40, 48, () => {});
+  for (const [index, kind] of ["lion", "mast"].entries())
+    make(`art-arena-${kind}`, 512, 512, (c) => {
+      const cell = arenaLandmarksImage.naturalWidth / 2;
+      c.imageSmoothingEnabled = false;
+      c.drawImage(
+        arenaLandmarksImage,
+        index * cell,
+        0,
+        cell,
+        arenaLandmarksImage.naturalHeight,
+        0,
+        0,
+        512,
+        512,
+      );
+    });
   for (const team of ["red", "green"] as const)
     for (const pose of [
       "idle",

@@ -1,4 +1,5 @@
 import { test, expect } from "./fixtures";
+import { readPosition, moveSome, assertEmptySpawn } from "./map-helpers";
 
 test("solo countdown displays 3, 2, 1 and Game Start while gameplay stays frozen", async ({
   page,
@@ -10,15 +11,13 @@ test("solo countdown displays 3, 2, 1 and Game Start while gameplay stays frozen
   await expect(arena).toHaveAttribute("data-ready", "true");
   await expect(cue).toHaveText("3");
   const initialTick = await arena.getAttribute("data-tick");
+  const initialPosition = await assertEmptySpawn(page);
   await page.keyboard.down("ArrowDown");
   await page.keyboard.down("Space");
   await page.keyboard.down("ControlLeft");
   await expect(cue).toHaveText("2");
   await expect(arena).toHaveAttribute("data-tick", initialTick!);
-  await expect(page.locator("[data-player=p1]")).toHaveAttribute(
-    "data-y",
-    "1.500",
-  );
+  expect(await readPosition(page)).toEqual(initialPosition);
   await expect(
     page.locator("[data-player=p1] [data-stat=inventory-count]"),
   ).toHaveText("0 / 2");
@@ -40,13 +39,7 @@ test("solo countdown displays 3, 2, 1 and Game Start while gameplay stays frozen
     fullPage: true,
   });
   await expect(cue).toBeHidden();
-  await page.keyboard.down("ArrowRight");
-  await expect
-    .poll(async () =>
-      Number(await page.locator("[data-player=p1]").getAttribute("data-x")),
-    )
-    .toBeGreaterThan(2);
-  await page.keyboard.up("ArrowRight");
+  await moveSome(page);
   await page
     .getByRole("button", { name: "처음부터 다시", exact: true })
     .click();

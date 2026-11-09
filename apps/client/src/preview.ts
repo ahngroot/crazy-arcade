@@ -1,61 +1,17 @@
 import Phaser from "phaser";
-import {
-  createCompetition,
-  GAME_CONFIG as C,
-  type Monster,
-} from "@bubble/shared";
+import { createCompetition, GAME_CONFIG as C, arenaById } from "@bubble/shared";
 import { GameRenderer } from "./renderer";
 
 export function mountPreview(parent: HTMLElement) {
   class PreviewScene extends Phaser.Scene {
     private view!: GameRenderer;
-    private state = createCompetition();
+    private state = createCompetition(2701, C.roundMs, { id: "pirate-lion" });
+    private elapsed = 0;
     constructor() {
       super("preview");
     }
     create() {
-      const seeds: Pick<Monster, "id" | "kind" | "team" | "position">[] = [
-        { id: 101, kind: "normal", team: "red", position: { x: 1.5, y: 3.5 } },
-        {
-          id: 102,
-          kind: "normal",
-          team: "green",
-          position: { x: 13.5, y: 3.5 },
-        },
-        { id: 103, kind: "golden", team: "red", position: { x: 3.5, y: 5.5 } },
-        {
-          id: 104,
-          kind: "chaser",
-          team: "green",
-          position: { x: 11.5, y: 5.5 },
-        },
-      ];
-      this.state.round!.monsters = seeds.map((m) => ({
-        ...m,
-        home: { ...m.position },
-        target: null,
-        bornAt: 0,
-      }));
-      this.state.balloons = [
-        {
-          id: 201,
-          owner: "p1",
-          x: 3,
-          y: 7,
-          range: 1,
-          explodesAt: Infinity,
-          passThrough: [],
-        },
-        {
-          id: 202,
-          owner: "p2",
-          x: 11,
-          y: 7,
-          range: 1,
-          explodesAt: Infinity,
-          passThrough: [],
-        },
-      ];
+      this.state.players.forEach((p, i) => (p.characterId = i ? 7 : 0));
       this.view = new GameRenderer(this, parent, false);
       this.events.once(Phaser.Scenes.Events.SHUTDOWN, () =>
         this.view.destroy(),
@@ -65,7 +21,20 @@ export function mountPreview(parent: HTMLElement) {
       );
     }
     update(_time: number, delta: number) {
+      this.elapsed += delta;
+      if (this.elapsed > 8000) {
+        this.state = createCompetition(
+          crypto.getRandomValues(new Uint32Array(1))[0],
+          C.roundMs,
+          { previousId: this.state.arenaId },
+        );
+        this.state.players.forEach((p, i) => (p.characterId = i ? 7 : 0));
+        this.view.reset();
+        this.elapsed = 0;
+      }
       this.view.update(this.state, delta);
+      const label = document.querySelector("#preview-map-name");
+      if (label) label.textContent = arenaById(this.state.arenaId)!.name;
     }
   }
   return new Phaser.Game({

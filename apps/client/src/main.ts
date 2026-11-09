@@ -14,7 +14,7 @@ import {
   bindCharacterPicker,
   characterPortrait,
 } from "./character-selection";
-import { CHARACTERS } from "@bubble/shared";
+import { CHARACTERS, ARENAS, arenaById } from "@bubble/shared";
 import "./style.css";
 
 function soundControls(id: string) {
@@ -29,7 +29,7 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
       <div class="eyebrow"><span></span> THE LITTLE ARCADE CLUB</div>
       <section class="intro"><div><h1>크레이지<br />먕케이드<span>.</span></h1><p>톡, 놓고 · 쏙, 피하고 · 팡, 터뜨려요.<br />혼자 연습하고, 친구와 온라인에서 대결해요.</p></div><div class="intro-note"><span>✳</span><p>A LITTLE SPLASH.<br />A LOT OF FUN.</p></div></section>
       <section class="game-layout" aria-label="게임 시작">
-        <div class="arena-card"><div class="arena-top"><span><i></i> CLOVER GARDEN</span><span>맵 미리보기 <b>01</b></span></div><div class="arena-wrap"><div id="arena" role="img" aria-label="빨강과 초록 진영, 캐릭터와 물풍선이 있는 대칭형 정원 맵"></div><div class="preview-label">PHASER 4 · LIVE PREVIEW</div></div><div class="arena-bottom"><span><i class="red-dot"></i> RED TEAM</span><span>작은 정원에서 만나요</span><span><i class="green-dot"></i> GREEN TEAM</span></div></div>
+        <div class="arena-card"><div class="arena-top"><span><i></i> RANDOM ARENA</span><span id="preview-map-name">${ARENAS.length}가지 맵 미리보기</span></div><div class="arena-wrap"><div id="arena" role="img" aria-label="다양한 테마의 게임 맵 미리보기"></div><div class="preview-label">PHASER 4 · LIVE PREVIEW</div></div><div class="arena-bottom"><span><i class="red-dot"></i> RED TEAM</span><span>시작할 때마다 새로운 맵</span><span><i class="green-dot"></i> GREEN TEAM</span></div></div>
         <aside class="menu-card"><span class="section-number">LET’S GET STARTED</span><h2>어떻게 시작할까요?</h2><p class="menu-caption">혼자 연습하거나 친구와 대결해요.</p>
           ${characterPicker()}
           <button id="practice" class="mode primary"><span class="mode-icon">✳</span><span><strong>1인 연습 모드</strong><small>혼자서 이동·물풍선·아이템 연습</small></span><span class="arrow">↗</span></button>
@@ -47,6 +47,7 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
     <p id="network-message" role="status" hidden></p>
     <div id="round-bar" hidden><span>RED <b id="red-score">0</b></span><div><time id="round-clock">03:00</time><small id="round-warning" role="status"></small></div><span><b id="green-score">0</b> GREEN</span></div>
     <p id="special-controls" hidden>아이템 합계 최대 2개 · 획득 순서대로 사용. 왼쪽·오른쪽 Ctrl 모두 사용할 수 있어요. 바늘은 갇혔을 때 사용해요.</p>
+    <p id="current-map" class="map-caption" role="status" aria-label="현재 맵"></p>
     <div class="match-layout"><div class="competition-stage"><div id="game-arena" aria-label="온라인 1:1 대전 경기장"></div><section id="result-panel" aria-label="경기 결과" hidden><span>ROUND COMPLETE</span><div class="result-friends"><span class="portrait result-red">${portraitSvg("red")}</span><svg class="result-trophy" viewBox="0 0 64 64" aria-hidden="true"><path d="M20 13H9v11q0 14 17 14m18-25h11v11q0 14-17 14" fill="none" stroke="#d6aa4f" stroke-width="4"/><path d="M17 7h30v19q0 15-15 17-15-2-15-17Z" fill="#ffdb79" stroke="#af8d4c" stroke-width="2"/><path d="M32 43v11M22 57h20" fill="none" stroke="#af8d4c" stroke-width="5" stroke-linecap="round"/><path d="m32 14 3 6 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1Z" fill="#fff8d9"/></svg><span class="portrait result-green">${portraitSvg("green")}</span></div><h3 id="result-title"></h3><p id="result-score"></p><p>아래 재대결 버튼으로 다시 시작해요.</p></section></div><aside class="game-hud" aria-label="플레이어 능력치">
       <div class="player-panel red-panel" data-player="p1"><div class="player-profile"><span class="portrait">${portraitSvg("red")}</span><div><h3>RED</h3><span class="profile-name">루비</span><p class="player-status" role="status"></p></div></div><dl><dt>물풍선</dt><dd data-stat="balloon"></dd><dt>물줄기</dt><dd data-stat="range"></dd><dt>이동속도</dt><dd data-stat="speed"></dd><dt>재생성</dt><dd data-stat="deaths"></dd></dl>${extraStats}</div>
       <div class="player-panel green-panel" data-player="p2"><div class="player-profile"><span class="portrait">${portraitSvg("green")}</span><div><h3>GREEN</h3><span class="profile-name">모모</span><p class="player-status" role="status"></p></div></div><dl><dt>물풍선</dt><dd data-stat="balloon"></dd><dt>물줄기</dt><dd data-stat="range"></dd><dt>이동속도</dt><dd data-stat="speed"></dd><dt>재생성</dt><dd data-stat="deaths"></dd></dl>${extraStats}</div>
@@ -81,6 +82,9 @@ let previewGeneration = 0;
 let onlineGame = false;
 let controlledPlayerId: string | null = null;
 function updateGameHud(state: PracticeState) {
+  const mapLabel = document.querySelector("#current-map")!;
+  const mapName = `맵 · ${arenaById(state.arenaId)?.name ?? "연습 맵"}`;
+  if (mapLabel.textContent !== mapName) mapLabel.textContent = mapName;
   document.querySelector<HTMLElement>("#game-arena")!.dataset.tick = String(
     state.tick,
   );
@@ -105,7 +109,7 @@ function updateGameHud(state: PracticeState) {
           ? "마지막 15초!"
           : r.warning === "rush"
             ? "마지막 30초 · 몬스터 급증!"
-            : "몬스터를 잡아 상대 정원으로!";
+            : "몬스터를 잡아 점수를 올리세요!";
     document.querySelector("#red-score")!.textContent = String(
       state.players[0].score,
     );
@@ -308,7 +312,7 @@ const online = setupOnline(socket, {
     document.querySelector("#special-controls")!.textContent =
       "왼쪽/오른쪽 Ctrl로 다음 아이템 1개 사용. 바늘은 갇혔을 때 사용해요. 각자 자신의 캐릭터만 조작합니다.";
     document.querySelector("#mode-note")!.textContent =
-      "꼬물이를 잡아 상대 정원으로 보내세요. 시간이 끝나면 점수가 높은 팀이 승리합니다.";
+      "무작위 맵에서 꼬물이를 잡아 점수를 올리세요. 시간이 끝나면 점수가 높은 팀이 승리합니다.";
     for (const element of document.querySelectorAll<HTMLElement>(
       "#round-bar,#special-controls,.competition-stats,#network-message",
     ))
@@ -364,7 +368,7 @@ document.querySelector("#practice")!.addEventListener("click", async () => {
   dialog.classList.add("solo-mode");
   document.querySelector("#game-title")!.textContent = "1인 연습 모드";
   document.querySelector("#game-dialog .section-number")!.textContent =
-    "SOLO PRACTICE · CLASSIC ARENA";
+    "SOLO PRACTICE · RANDOM ARENA";
   document
     .querySelector("#game-arena")!
     .setAttribute("aria-label", "1인 연습 경기장");
@@ -373,7 +377,7 @@ document.querySelector("#practice")!.addEventListener("click", async () => {
   document.querySelector("#special-controls")!.textContent =
     "아이템 없이 시작해요. 액체·롤러스케이트·울트라 물풍선은 획득 즉시 적용됩니다. 사용 아이템은 최대 2개 · Ctrl로 사용해요.";
   document.querySelector("#mode-note")!.textContent =
-    "일반 대결형 맵에서 시간제한 없이 연습합니다. 중앙 구분 없이 상자를 부수며 길을 넓히세요.";
+    `시작할 때마다 ${ARENAS.length}종 맵 중 하나와 빈 타일의 시작 위치를 무작위로 고릅니다. 상자를 부수며 길을 넓히세요.`;
   document.querySelector('[data-player="p1"] .profile-name')!.textContent =
     "루비";
   for (const id of ["#round-bar", "#network-message"])

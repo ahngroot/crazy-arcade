@@ -1,4 +1,5 @@
 import { test, expect } from "./fixtures";
+import { assertEmptySpawn, moveSome, walkToCrate } from "./map-helpers";
 
 async function start(page: import("@playwright/test").Page) {
   await page.getByRole("button", { name: /1인 연습 모드/ }).click();
@@ -14,7 +15,7 @@ async function start(page: import("@playwright/test").Page) {
   await expect(page.locator("#round-bar")).toBeHidden();
   await expect(page.locator("#game-arena")).toHaveAttribute(
     "data-map-theme",
-    "battle",
+    "themed",
   );
   await expect(page.locator("#game-arena")).toHaveAttribute(
     "data-start-phase",
@@ -32,11 +33,8 @@ test("solo practice works without an online connection and uses one character, a
   await page.goto("/");
   await start(page);
   const self = page.locator("[data-player=p1]");
-  await page.keyboard.down("ArrowDown");
-  await expect
-    .poll(async () => Number(await self.getAttribute("data-y")))
-    .toBeGreaterThan(2);
-  await page.keyboard.up("ArrowDown");
+  await assertEmptySpawn(page);
+  await moveSome(page);
   await page.keyboard.press("ControlLeft");
   await expect(self.locator('[data-stat="inventory-count"]')).toHaveText(
     "0 / 2",
@@ -51,7 +49,7 @@ test("solo practice works without an online connection and uses one character, a
   await page
     .getByRole("button", { name: "처음부터 다시", exact: true })
     .click();
-  await expect(self).toHaveAttribute("data-y", "1.500");
+  await assertEmptySpawn(page);
   await expect(self.locator('[data-stat="balloon"]')).toHaveText("0 / 1");
   await expect(self.locator('[data-stat="inventory-count"]')).toHaveText(
     "0 / 2",
@@ -65,21 +63,19 @@ test("solo practice works without an online connection and uses one character, a
     .click();
   await expect(page.locator("#game-arena canvas")).toHaveCount(0);
   await start(page);
-  await expect(self).toHaveAttribute("data-y", "1.500");
+  await assertEmptySpawn(page);
   expect(errors).toEqual([]);
 });
 
-test("solo balloon explosion, respawn and crate pickup work; restart restores the map", async ({
+test("solo balloon explosion destroys a nearby crate and respawns at base stats; restart chooses a fresh map", async ({
   page,
 }) => {
   await page.goto("/");
   await start(page);
   const self = page.locator("[data-player=p1]");
-  await page.keyboard.down("ArrowRight");
-  await expect
-    .poll(async () => Number(await self.getAttribute("data-x")))
-    .toBeGreaterThan(2.2);
-  await page.keyboard.up("ArrowRight");
+  const arena = page.locator("#game-arena"),
+    oldId = await arena.getAttribute("data-map-id");
+  await walkToCrate(page);
   await page.keyboard.press("Space");
   await expect(self).toHaveAttribute("data-status", "trapped", {
     timeout: 6000,
@@ -88,13 +84,15 @@ test("solo balloon explosion, respawn and crate pickup work; restart restores th
     timeout: 6000,
   });
   await expect(self).toHaveAttribute("data-status", "active");
-  await page.keyboard.down("ArrowRight");
-  await expect(self.locator('[data-stat="range"]')).toHaveText("2칸");
-  await page.keyboard.up("ArrowRight");
+  expect(Number(await arena.getAttribute("data-map-revision"))).toBeGreaterThan(
+    0,
+  );
+  await expect(self.locator('[data-stat="range"]')).toHaveText("1칸");
   await page
     .getByRole("button", { name: "처음부터 다시", exact: true })
     .click();
-  await expect(self).toHaveAttribute("data-x", "1.500");
+  await expect(arena).not.toHaveAttribute("data-map-id", oldId!);
+  await assertEmptySpawn(page);
   await expect(self.locator('[data-stat="deaths"]')).toHaveText("0회");
   await expect(self.locator('[data-stat="balloon"]')).toHaveText("0 / 1");
 });

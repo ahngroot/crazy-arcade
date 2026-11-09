@@ -738,6 +738,12 @@ dialog p {
   margin: 12px 0;
   min-width: 0;
 }
+.map-caption {
+  color: #507365;
+  font-size: 12px;
+  font-weight: 700;
+  margin: 4px 0 10px;
+}
 .character-picker legend {
   color: #355b45;
   font-weight: 700;
@@ -1101,7 +1107,7 @@ dialog p {
 .competition-stage,
 .competition-mode .competition-stage {
   width: 100%;
-  max-width: calc(max(250px, 100dvh - 380px) * 15 / 13);
+  max-width: calc(max(250px, 100dvh - 420px) * 15 / 13);
   justify-self: center;
 }
 #game-arena {
