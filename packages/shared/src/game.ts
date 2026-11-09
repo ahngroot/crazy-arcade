@@ -229,7 +229,7 @@ export function collectItem(p: PracticePlayer, kind: ItemKind): boolean {
   else if (kind === "ultra") {
     p.range = C.maxRange;
   } else {
-    if (p.inventory.length >= C.inventoryLimit) return false;
+    while (p.inventory.length >= C.inventoryLimit) p.inventory.shift();
     p.inventory.push(kind);
   }
   return true;

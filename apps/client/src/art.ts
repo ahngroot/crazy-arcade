@@ -4,6 +4,7 @@ import activeItemsUrl from "./assets/active-items.png";
 import charactersUrl from "./assets/characters.png";
 import passiveItemsUrl from "./assets/passive-items.png";
 import placedBalloonUrl from "./assets/placed-balloon.png";
+import speedUrl from "./assets/speed.png";
 
 // One reference-based sheet supplies both world pickups and inventory icons.
 const activeItemsImage = new Image();
@@ -18,6 +19,9 @@ await passiveItemsImage.decode();
 const placedBalloonImage = new Image();
 placedBalloonImage.src = placedBalloonUrl;
 await placedBalloonImage.decode();
+const speedImage = new Image();
+speedImage.src = speedUrl;
+await speedImage.decode();
 const passiveIndex: Partial<Record<ItemKind, number>> = {
   balloon: 0,
   ultra: 1,
@@ -497,6 +501,11 @@ function tile(
 }
 
 function item(c: Ctx, kind: ItemKind) {
+  if (kind === "speed") {
+    c.imageSmoothingEnabled = false;
+    c.drawImage(speedImage, 0, 0, 36, 36);
+    return;
+  }
   const index = passiveIndex[kind];
   if (index !== undefined) {
     passiveIcon(c, index, 36);
@@ -536,13 +545,6 @@ function item(c: Ctx, kind: ItemKind) {
     );
     oval(c, 0, -12, 5, 2, "#ffad34");
     line(c, [-3, 1, -5, 7, -2, 8], "#dcfaff", 2);
-  } else if (kind === "speed") {
-    rounded(c, -10, -7, 11, 12, 3, "#faab64", COLORS.ink);
-    rounded(c, -10, 1, 19, 7, 3, "#fac47b", COLORS.ink);
-    line(c, [-12, -5, -17, -5], "#77bed1", 2);
-    line(c, [-12, 0, -18, 0], "#77bed1", 2);
-    oval(c, -6, 10, 4, 4, "#ee3827", "#8d381f");
-    oval(c, 7, 10, 4, 4, "#ee3827", "#8d381f");
   } else if (kind === "ultra") {
     star(c, 0, 0, 15, "#6d35c6");
     oval(c, 0, 0, 9, 11, "#ffdc38", "#6938b0");
@@ -699,6 +701,8 @@ export function portraitSvg(team: Team) {
 }
 
 export function itemSvg(kind: ItemKind) {
+  if (kind === "speed")
+    return `<svg viewBox="0 0 ${speedImage.naturalWidth} ${speedImage.naturalHeight}" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><image href="${speedUrl}" width="${speedImage.naturalWidth}" height="${speedImage.naturalHeight}" style="image-rendering:pixelated"/></svg>`;
   const index = passiveIndex[kind];
   if (index !== undefined) {
     const cell = passiveItemsImage.naturalWidth / 3;
@@ -708,7 +712,10 @@ export function itemSvg(kind: ItemKind) {
     const half = activeItemsImage.naturalWidth / 2;
     return `<svg viewBox="${kind === "needle" ? 0 : half} 0 ${half} ${activeItemsImage.naturalHeight}" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><image href="${activeItemsUrl}" width="${activeItemsImage.naturalWidth}" height="${activeItemsImage.naturalHeight}" style="image-rendering:pixelated"/></svg>`;
   }
-  const icons: Record<Exclude<ItemKind, "needle" | "shield">, string> = {
+  const icons: Record<
+    Exclude<ItemKind, "needle" | "shield" | "speed">,
+    string
+  > = {
     ultra:
       '<path d="M18 2l4 8 10-3-4 11 5 8-11-1-4 9-5-9-10 1 5-9-4-9 10 2Z" fill="#7534c7"/><ellipse cx="18" cy="18" rx="8" ry="10" fill="#ffdb37"/>',
     glove:
@@ -721,8 +728,6 @@ export function itemSvg(kind: ItemKind) {
       '<ellipse cx="18" cy="17" rx="9" ry="10" fill="#72d4ef" stroke="#397fa5"/><ellipse cx="15" cy="13" rx="3" ry="2" fill="#fff"/><path d="M16 27l2-3 2 3" fill="#72d4ef" stroke="#397fa5"/>',
     range:
       '<path d="M14 6h8v12l8 11q-12 9-24 0l8-11Z" fill="#29c9ff" stroke="#2472b5"/><ellipse cx="18" cy="6" rx="6" ry="3" fill="#ffaa30"/><path d="M14 19l-3 7 4 2" fill="none" stroke="#dcfaff" stroke-width="3"/>',
-    speed:
-      '<path d="M12 6h12v13l6 2v6H8V17h4Z" fill="#ef4535" stroke="#983c2a"/><ellipse cx="18" cy="6" rx="7" ry="3" fill="#ddd" stroke="#888"/><circle cx="12" cy="29" r="4" fill="#ffbf26" stroke="#9b6a20"/><circle cx="26" cy="29" r="4" fill="#ffbf26" stroke="#9b6a20"/>',
     power:
       '<path d="M17 14Q3 5 11 4q10 1 6 10M19 14Q20 0 29 4q2 8-10 10" fill="#abd77f" stroke="#699873"/><path d="M12 13l13 1-5 14-5 3-2-9Z" fill="#ffcf75" stroke="#bf9657"/><path d="M14 24l-5 4m10-4 7 4" stroke="#bf9657" fill="none"/>',
   };

@@ -20,7 +20,7 @@ import "./style.css";
 function soundControls(id: string) {
   return `<div class="sound-controls" id="${id}" role="group" aria-label="소리 설정"><button type="button" data-sound-toggle aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l6-5v16l-6-5H4Z" fill="currentColor"/><path d="M17 8q5 4 0 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span>SOUND OFF</span></button><label for="${id}-volume">음량</label><input type="range" id="${id}-volume" data-sound-volume aria-label="전체 음량" min="0" max="100" step="1" value="35"/><output data-sound-level>35%</output><small data-sound-status>소리 없이 플레이</small></div>`;
 }
-const extraStats = `<div class="competition-stats"><dl><dt>처치 점수</dt><dd data-stat="score"></dd><dt>콤보</dt><dd data-stat="combo"></dd><dt>몬스터</dt><dd data-stat="monsters"></dd></dl><p class="inventory-caption">아이템 <b data-stat="inventory-count">0 / ${C.inventoryLimit}</b></p><div class="inventory" aria-label="획득 순서대로 사용하는 아이템">${Array.from({ length: C.inventoryLimit }, (_, i) => `<span class="item-slot" data-slot="${i}"><small class="slot-order">${i === 0 ? "1 · 다음" : "2"}</small><span class="slot-icon"></span><b class="slot-name">비어 있음</b></span>`).join("")}</div><p class="inventory-help" data-stat="item-help"></p><p data-stat="buffs"></p></div>`;
+const extraStats = `<div class="competition-stats"><dl><dt>처치 점수</dt><dd data-stat="score"></dd><dt>콤보</dt><dd data-stat="combo"></dd><dt>몬스터</dt><dd data-stat="monsters"></dd></dl><p class="inventory-caption">아이템 <b data-stat="inventory-count">0 / ${C.inventoryLimit}</b></p><div class="inventory" aria-label="획득 순서대로 사용하는 아이템">${Array.from({ length: C.inventoryLimit }, (_, i) => `<span class="item-slot" data-slot="${i}"><small class="slot-order">${i === 0 ? "1번 아이템 · 다음" : "2번 아이템"}</small><span class="slot-icon"></span><b class="slot-name">비어 있음</b></span>`).join("")}</div><p class="inventory-help" data-stat="item-help"></p><p data-stat="buffs"></p></div>`;
 
 document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
   <div class="shell">
@@ -198,7 +198,7 @@ function updateGameHud(state: PracticeState) {
           ? "상대 보유 아이템"
           : player.inventory[0] === "needle"
             ? "바늘 · 갇혔을 때 Ctrl"
-            : "Ctrl · 다음 아이템 사용",
+            : "Ctrl · 1번 아이템 사용",
       buffs: [
         ...(["glove", "shoes", "ghost"] as const).map((kind) =>
           (player[`${kind}Until`] ?? 0) > state.time
