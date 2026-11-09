@@ -585,7 +585,9 @@ export class GameRenderer {
       );
       const shimmer =
         this.clock / (b.explodesAt - state.time < 600 ? 48 : 180) + b.id * 1.7;
-      const bob = Math.sin(shimmer) * (0.6 + urgency * 0.8);
+      // A visible lift from the fixed cell, with a shadow that stays on the floor.
+      const bounce = (Math.sin(this.clock / 140 + b.id * 1.7) + 1) / 2;
+      const bob = bounce * (4 + urgency * 2);
       actor.image
         .setPosition(x, y - 1 - bob)
         .setAngle(Math.sin(shimmer * 0.7) * (0.5 + urgency))
@@ -593,8 +595,8 @@ export class GameRenderer {
         .setDepth(y);
       actor.shadow
         .setPosition(x, y + 13)
-        .setDisplaySize(26 * pulse, 9 / pulse)
-        .setAlpha(0.75)
+        .setDisplaySize((26 - bob * 0.9) * pulse, (9 - bob * 0.25) / pulse)
+        .setAlpha(0.75 - bob * 0.035)
         .setDepth(1);
       for (let glint = 0; glint < 2; glint++) {
         const light =

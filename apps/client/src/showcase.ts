@@ -292,6 +292,27 @@ export function mountRendererFixture(parent: HTMLElement) {
     ready,
     state,
     capture: () => scene.capture(),
+    balloonFrame() {
+      const images = scene.children.list.filter(
+        (obj): obj is Phaser.GameObjects.Image =>
+          obj instanceof Phaser.GameObjects.Image,
+      );
+      const balloon = images.find(
+        (image) => image.texture.key === "art-balloon",
+      )!;
+      const shadow = images.find(
+        (image) =>
+          image.texture.key === "art-shadow" &&
+          image.x === balloon.x &&
+          image.depth === 1,
+      )!;
+      return {
+        x: balloon.x,
+        y: balloon.y,
+        shadowY: shadow.y,
+        shadowWidth: shadow.displayWidth,
+      };
+    },
     trapped() {
       state.time += 100;
       state.tick++;

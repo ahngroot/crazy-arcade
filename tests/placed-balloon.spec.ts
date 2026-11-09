@@ -50,6 +50,35 @@ test("placed balloons shimmer without changing simulation state and use a separa
     path: "test-results/placed-balloon-shimmer.png",
   });
   expect(first.equals(second)).toBe(false);
+  const frames = [];
+  for (let n = 0; n < 12; n++) {
+    frames.push(
+      await page.evaluate(() =>
+        (
+          window as unknown as {
+            balloonFixture: {
+              balloonFrame: () => {
+                x: number;
+                y: number;
+                shadowY: number;
+                shadowWidth: number;
+              };
+            };
+          }
+        ).balloonFixture.balloonFrame(),
+      ),
+    );
+    await page.waitForTimeout(80);
+  }
+  const height = frames.map((frame) => frame.y);
+  expect(Math.max(...height) - Math.min(...height)).toBeGreaterThan(3);
+  expect(
+    frames.every((frame) => frame.x === 140 && frame.shadowY === 233),
+  ).toBe(true);
+  const shadowWidth = frames.map((frame) => frame.shadowWidth);
+  expect(Math.max(...shadowWidth) - Math.min(...shadowWidth)).toBeGreaterThan(
+    2,
+  );
   expect(
     await page.evaluate(() =>
       JSON.stringify(
