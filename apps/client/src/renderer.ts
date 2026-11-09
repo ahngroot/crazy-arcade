@@ -544,25 +544,40 @@ export class GameRenderer {
     }
     this.prune(this.balloons, new Set(state.balloons.map((b) => b.id)));
     for (const b of state.balloons) {
-      const actor = this.actor(
-          this.balloons,
-          b.id,
-          b.ultra ? "art-balloon-ultra" : "art-balloon",
-          37,
-          39,
-          0.5,
-        ),
+      const actor = this.actor(this.balloons, b.id, "art-balloon", 37, 39, 0.5),
         pulse =
           1 +
           Math.sin(this.clock / (b.explodesAt - state.time < 600 ? 48 : 160)) *
             0.055,
         x = (b.x + 0.5) * C.tileSize,
         y = (b.y + 0.5) * C.tileSize;
+      const urgency = Math.max(
+        0,
+        Math.min(1, 1 - (b.explodesAt - state.time) / C.balloonFuseMs),
+      );
+      const shimmer =
+        this.clock / (b.explodesAt - state.time < 600 ? 48 : 180) + b.id * 1.7;
+      const bob = Math.sin(shimmer) * (0.6 + urgency * 0.8);
       actor.image
-        .setPosition(x, y - 1)
+        .setPosition(x, y - 1 - bob)
+        .setAngle(Math.sin(shimmer * 0.7) * (0.5 + urgency))
         .setDisplaySize(37 * pulse, 39 / pulse)
         .setDepth(y);
-      actor.shadow.setPosition(x, y + 13).setDepth(1);
+      actor.shadow
+        .setPosition(x, y + 13)
+        .setDisplaySize(26 * pulse, 9 / pulse)
+        .setAlpha(0.75)
+        .setDepth(1);
+      for (let glint = 0; glint < 2; glint++) {
+        const light =
+          0.3 +
+          0.7 * Math.max(0, Math.sin(this.clock / 210 + b.id + glint * 2.7));
+        const gx = x + (glint ? 7 : -5),
+          gy = y + (glint ? 3 : -7) - bob;
+        this.overlays.lineStyle(1, 0xffffff, light);
+        this.overlays.lineBetween(gx - 2 * light, gy, gx + 2 * light, gy);
+        this.overlays.lineBetween(gx, gy - 2 * light, gx, gy + 2 * light);
+      }
     }
     this.prune(this.items, new Set(state.items.map((i) => i.id)));
     for (const item of state.items) {

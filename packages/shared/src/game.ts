@@ -36,7 +36,6 @@ export interface LocalInput {
   useItem?: boolean;
 }
 export interface PracticePlayer {
-  ultra?: boolean;
   characterId?: number;
   id: string;
   team: Team;
@@ -65,7 +64,6 @@ export interface PracticePlayer {
   ghostUntil?: number;
 }
 export interface Balloon {
-  ultra?: boolean;
   id: number;
   owner: string;
   x: number;
@@ -230,7 +228,6 @@ export function collectItem(p: PracticePlayer, kind: ItemKind): boolean {
     p.speed = Math.min(C.maxSpeed, p.speed + C.speedIncrement);
   else if (kind === "ultra") {
     p.range = C.maxRange;
-    p.ultra = true;
   } else {
     if (p.inventory.length >= C.inventoryLimit) return false;
     p.inventory.push(kind);
@@ -343,7 +340,6 @@ export function placeBalloon(s: PracticeState, p: PracticePlayer): boolean {
   )
     return false;
   s.balloons.push({
-    ultra: Boolean(p.ultra),
     id: s.nextId++,
     owner: p.id,
     x,

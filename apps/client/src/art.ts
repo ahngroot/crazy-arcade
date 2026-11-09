@@ -3,6 +3,7 @@ import type { Team, ItemKind, Facing, Tile } from "@bubble/shared";
 import activeItemsUrl from "./assets/active-items.png";
 import charactersUrl from "./assets/characters.png";
 import passiveItemsUrl from "./assets/passive-items.png";
+import placedBalloonUrl from "./assets/placed-balloon.png";
 
 // One reference-based sheet supplies both world pickups and inventory icons.
 const activeItemsImage = new Image();
@@ -14,6 +15,9 @@ await charactersImage.decode();
 const passiveItemsImage = new Image();
 passiveItemsImage.src = passiveItemsUrl;
 await passiveItemsImage.decode();
+const placedBalloonImage = new Image();
+placedBalloonImage.src = placedBalloonUrl;
+await placedBalloonImage.decode();
 const passiveIndex: Partial<Record<ItemKind, number>> = {
   balloon: 0,
   ultra: 1,
@@ -661,8 +665,10 @@ export function installArt(scene: Phaser.Scene) {
     "ghost",
   ] as const)
     make(`art-item-${kind}`, 36, 38, (c) => item(c, kind));
-  make("art-balloon", 48, 48, (c) => passiveIcon(c, 0, 48));
-  make("art-balloon-ultra", 48, 48, (c) => passiveIcon(c, 1, 48));
+  make("art-balloon", 48, 48, (c) => {
+    c.imageSmoothingEnabled = false;
+    c.drawImage(placedBalloonImage, 0, 0, 48, 48);
+  });
   make("art-shadow", 40, 16, (c) => oval(c, 20, 8, 18, 5, "#28545630"));
   make("art-drop", 24, 32, (c) => {
     c.translate(12, 14);

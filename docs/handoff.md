@@ -1,5 +1,9 @@
 # 8단계 최종 점검과 인수인계
 
+최신 설치 풍선 정정: 개수 +1 아이템과 Space 설치 외형을 분리했다. 설치 풍선은 placed-balloon.png의 보라색 구체로 통일하고 기존 ultra 외형 플래그는 제거했다. renderer의 반짝임·흔들림·회전·맥동만 바꾸고 게임 규칙은 유지한다. passive-items.png는 기존 3종 아이템용으로 유지한다.
+
+검증: 타입 검사·제품 빌드·Vitest 108개・전체 Chromium E2E 22개와 전용 시각 검사 1개 통과. 풍선 영역 캡처 `placed-balloon-first.png`, `placed-balloon-shimmer.png`의 변화와 판정 상태 불변을 확인했다. 새 Windows ZIP 생성·CRC·체크섬 확인 완료.
+
 최신 확률/이미지: 울트라만 상자당 7.5%에서 3.75%로 절반 낮추고 전체 드롭률은 유지했다. drops.ts 가중 추첨을 60개 동일 구간으로 전수 검증한다. passive-items.png의 3칸 이미지를 아이템·HUD·설치 풍선에 공유한다. 울트라 패시브 획득 시의 ultra 플래그는 보라색 설치 풍선 외형에만 사용한다.
 
 검증: 타입 검사·제품 빌드·Vitest 108개·Chromium E2E 22개 통과。새 아이템 갤러리 표시, 확률 구간 전수 검사, 일반/울트라 외형 플래그를 확인했다. Windows ZIP 재생성·CRC·체크섬 검증 완료.

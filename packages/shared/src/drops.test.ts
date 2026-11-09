@@ -20,15 +20,15 @@ it("halves ultra's exact probability while preserving crate item chance and enab
   expect(rollCrateItem(0)).toBe("balloon");
   expect(rollCrateItem(1 - Number.EPSILON)).toBe("shield");
 });
-it("uses the ultra appearance only after picking up ultra without changing passive rules", () => {
+it("keeps the same fuse while ultra changes passive range only", () => {
   const s = createSoloPractice(),
     p = s.players[0];
   placeBalloon(s, p);
-  expect(s.balloons[0].ultra).toBe(false);
+  expect(s.balloons[0].range).toBe(C.initialRange);
   s.balloons = [];
   collectItem(p, "ultra");
   placeBalloon(s, p);
-  expect(s.balloons[0].ultra).toBe(true);
+  expect(s.balloons[0].explodesAt - s.time).toBe(C.balloonFuseMs);
   expect(s.balloons[0].range).toBe(C.maxRange);
   expect(p.inventory).toEqual([]);
 });
