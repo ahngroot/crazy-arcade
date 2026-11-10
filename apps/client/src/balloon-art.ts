@@ -11,8 +11,8 @@ export const BALLOON_ART = {
   opticalDiameter: 94,
   centerX: 72,
   centerY: 96,
-  displayWidth: (((40.7 * 92) / 96) * 144) / 94,
-  displayHeight: (((42.9 * 92) / 96) * 160) / 94,
+  displayWidth: ((((40.7 * 92) / 96) * 144) / 94) * 0.9,
+  displayHeight: ((((42.9 * 92) / 96) * 160) / 94) * 0.9,
 } as const;
 const atlases = await Promise.all(
   [aUrl, bUrl, cUrl, dUrl].map(async (url) => {
