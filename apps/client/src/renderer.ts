@@ -615,7 +615,7 @@ export class GameRenderer {
     }
     this.prune(this.balloons, new Set(state.balloons.map((b) => b.id)));
     for (const b of state.balloons) {
-      const actor = this.actor(this.balloons, b.id, "art-balloon", 37, 39, 0.5),
+      const actor = this.actor(this.balloons, b.id, "art-balloon", 40.7, 42.9, 0.5),
         pulse =
           1 +
           Math.sin(this.clock / (b.explodesAt - state.time < 600 ? 48 : 160)) *
@@ -634,7 +634,7 @@ export class GameRenderer {
       actor.image
         .setPosition(x, y - 1 - bob)
         .setAngle(Math.sin(shimmer * 0.7) * (0.5 + urgency))
-        .setDisplaySize(37 * pulse, 39 / pulse)
+        .setDisplaySize(40.7 * pulse, 42.9 / pulse)
         .setDepth(y);
       actor.shadow
         .setPosition(x, y + 13)
@@ -692,7 +692,7 @@ export class GameRenderer {
             lift +
             (progress === 1 ? Math.sin(this.clock / 200 + item.id) * 1.5 : 0),
         )
-        .setDisplaySize(40.5, 42.75)
+        .setDisplaySize(42.525, 44.8875)
         .setAngle(progress < 1 ? Math.sin(progress * Math.PI * 2) * 25 : 0)
         .setAlpha(
           (progress < 1 || item.availableAt <= state.time ? 1 : 0.6) *

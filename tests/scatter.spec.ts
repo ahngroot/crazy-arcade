@@ -33,7 +33,7 @@ test("death items fly from the character to authoritative floor targets at enlar
     );
   await expect.poll(async () => (await frames()).length).toBe(3);
   const from = await frames();
-  expect(from[0].width).toBe(40.5);
+  expect(from[0].width).toBe(42.525);
   await advance(350);
   await page.waitForTimeout(80);
   const middle = await frames();
