@@ -70,7 +70,7 @@ export const ARENAS: readonly ArenaDefinition[] = [
       "chchcvcrrvbbtbb",
       "btbtbwrrcw.hchh",
       ".hchcwccrwbtbtb",
-      "w...w.rrc.w...w",
+      "w.....rrc.....w",
       "btbtbwcrrwbtbtb",
       "dcdcdwrccwhchch",
       "btbtbvccrvbtbtb",

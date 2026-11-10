@@ -1,5 +1,6 @@
 import type Phaser from "phaser";
 import type { Team, ItemKind, Facing, Tile } from "@bubble/shared";
+import villageHousesUrl from "./assets/village-houses.png";
 import { CHARACTER_SHEETS } from "./character-sheets";
 import proneUrl from "./assets/characters-prone.png";
 import motionUrl from "./assets/character-motion.png";
@@ -13,6 +14,9 @@ import arenaTilesUrl from "./assets/arena-tiles.png";
 import arenaLandmarksUrl from "./assets/arena-landmarks.png";
 
 const proneImage = new Image();
+const villageHousesImage = new Image();
+villageHousesImage.src = villageHousesUrl;
+await villageHousesImage.decode();
 proneImage.src = proneUrl;
 await proneImage.decode();
 const motionImage = new Image();
@@ -665,6 +669,22 @@ export function installArt(scene: Phaser.Scene) {
         (c) => {
           const cell = arenaTilesImage.naturalWidth / 8;
           c.imageSmoothingEnabled = false;
+          if (theme === 2 && (column === 4 || column === 6)) {
+            const size = villageHousesImage.naturalWidth / 2;
+            // Shared crop removes the export margin, preserving the original tile footprint.
+            c.drawImage(
+              villageHousesImage,
+              (column === 4 ? 0 : size) + size * 0.1,
+              size * 0.12,
+              size * 0.8,
+              size * 0.76,
+              0,
+              0,
+              40,
+              48,
+            );
+            return;
+          }
           c.drawImage(
             arenaTilesImage,
             column * cell + 0.5,
