@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 
-test("six trap appearances stay stable, show HELP, whiten and survive drowning", async ({
+test("four retained trap appearances stay stable, show HELP, whiten and survive drowning", async ({
   page,
 }) => {
   test.setTimeout(60_000);
@@ -108,12 +108,12 @@ test("six trap appearances stay stable, show HELP, whiten and survive drowning",
           ).length,
       )
       .toBe(0);
-    if (observed.size === 6) break;
+    if (observed.size === 4) break;
   }
   expect([...observed].sort()).toEqual([
     "art-trapped",
     "art-trapped-alt",
-    ...[0, 1, 2, 3].map((i) => `art-trapped-extra-${i}`),
+    ...[0, 2].map((i) => `art-trapped-extra-${i}`),
   ]);
   await page.evaluate(() => (window as any).variants.destroy());
   await expect(page.locator("#trap-variants-fixture canvas")).toHaveCount(0);

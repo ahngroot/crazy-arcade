@@ -1,5 +1,7 @@
 # Windows 포터블 EXE 배포
 
+최신 ZIP: 승인된 갇힘 외형2종을 제외해 총4종만 사용한다. 일반/흰 거품 선택 및 텍스처 등록에서 제외했다. HELP! 유지. 타입 검사·빌드·Vitest138개·관련 Chromium1개·ZIP CRC·SHA-256 확인. Windows 실기기 검증은 별도다.
+
 최신 ZIP: 갇힘 외형 기존2종+추가4종과 HELP! 표시를 포함한다. 타입 검사·빌드·Vitest138개·관련 Chromium4개·ZIP CRC·SHA-256 확인 완료. [외형과 검증 범위](trap-appearances.md)를 따른다. Windows 네이티브 실행은 별도 검증이다.
 
 최신 ZIP: 설치 물풍선10%·바닥/비행 아이템5% 표시 확대를 포함한다. 타입 검사·빌드·Vitest138개·관련 Chromium2개 통과. ZIP CRC·SHA-256 확인 완료. Windows 네이티브 실행은 별도 검증이 필요하다.

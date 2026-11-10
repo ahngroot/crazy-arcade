@@ -970,7 +970,7 @@ export function installArt(
       paintCell(c, 3, col, box, false, col >= 2),
     );
   }
-  for (let col = 0; col < 4; col++) {
+  for (const col of [0, 2]) {
     const box = bounds(0, [col], extraTrapImage, 2);
     for (let row = 0; row < 2; row++)
       make(`art-trapped-${row ? "white-" : ""}extra-${col}`, 64, 80, (c) =>

@@ -384,11 +384,11 @@ export class GameRenderer {
       for (const char of `${p.id}:${Math.round(trapUntil * 1000)}`)
         hash = Math.imul(hash ^ char.charCodeAt(0), 16777619);
       hash ^= hash >>> 16;
-      trapVariant = (hash >>> 0) % 6;
+      trapVariant = (hash >>> 0) % 4;
     }
     const suffix =
       trapVariant >= 2
-        ? `-extra-${trapVariant - 2}`
+        ? `-extra-${(trapVariant - 2) * 2}`
         : trapVariant
           ? "-alt"
           : "";
