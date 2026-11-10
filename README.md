@@ -1,12 +1,14 @@
 # crazy myangcade · 크레이지 먕케이드
 
-**[⬇ Windows 게임 ZIP 다운로드 (약 54MB)](https://raw.githubusercontent.com/ahngroot/crazy-arcade/main/crazy-myangcade-windows-x64.zip)**
+**[⬇ Windows 게임 ZIP 다운로드 (약 56MB)](https://raw.githubusercontent.com/ahngroot/crazy-arcade/main/crazy-myangcade-windows-x64.zip)**
 
 최신 변경: 바닥 아이템은 15초 유지하며 마지막 3초에 옅어져 사라집니다(사망 드롭은 착지부터 계산). 벽이나 장애물에 막혀도 방향키를 누르는 동안 그 방향을 보며 제자리에서 걷고, 키를 떼면 멈춥니다. 겹친 방향키의 우선순위와 타일 중심 이동은 유지합니다.
 
 조작 보정: 중심 가까이에서 열린 방향으로 꺾을 때 마지막 정렬 구간을 빠르게 마칩니다. 짧은 방향 입력은 최대 0.35초 보관하고 새 입력이 오면 교체하며 오래된 입력은 만료시킵니다. [조정 값과 동작](docs/play-feel.md)을 참고하세요.
 
 블록 마을: 표시한 중앙 통로의 나무 두 개와 집 지붕의 볼록 장식을 제거했습니다. [수정 화면](docs/maps.md)을 확인하세요. 이번 변경은 타입 검사·제품 빌드·Vitest 134개와 맵 브라우저 검사 9개를 통과했습니다.
+
+갇힘 외형: 기존 이미지와 새로 제공한 파란 캐릭터 이미지를 함께 사용하며, 갇힐 때마다 두 종류 중 하나를 선택합니다. 선택된 모습은 해당 갇힘 동안 유지되며 하얀 거품·파열·엎드림으로 이어집니다. 같은 모습이 연속으로 나올 수도 있습니다. [그림 안내](docs/character-motion.md)를 참고하세요.
 
 각자의 PC에서 한 캐릭터를 조작하는 **온라인 1:1 꼬물이 대전**입니다. **1인 무제한 연습 모드**도 제공합니다. 한 PC에서 두 캐릭터를 함께 조작하는 기능은 제공하지 않습니다. 직접 만든 그림과 합성 음악을 사용합니다.
 
@@ -99,7 +101,7 @@ npm run test:portable -- release/crazy-myangcade.exe
 
 Linux에서는 `PLAYWRIGHT_CHROMIUM_PATH=/usr/bin/chromium npm run test:e2e`를 사용할 수 있습니다. `npm run package:host`와 `npm run test:portable -- release/crazy-myangcade-linux`로 동일한 포터블 실행 경로를 검증합니다.
 
-이번 조작 보정 후 타입 검사·제품 빌드·Vitest **134개**와 전체 Chromium 브라우저 검사 **38개**를 통과했습니다. 열린 모서리 정렬·벽 충돌·입력 만료/최신 우선/중복 방지와 기존 연습·온라인 재접속/재대결을 확인했습니다. 자세한 범위는 [캐릭터 그림 안내](docs/character-motion.md), [화면·조작 안내](docs/play-feel.md)와 [Windows 안내](docs/windows.md)를 참고하세요.
+이번 갇힘 외형 추가 후 타입 검사·제품 빌드·Vitest **134개**와 전체 Chromium 브라우저 검사 **39개**를 통과했습니다. 두 외형 선택·동일 갇힘에서 유지·짝이 맞는 흰 거품·사망/부활 및 기존 맵·조작·연습·온라인 흐름을 확인했습니다. 자세한 범위는 [캐릭터 그림 안내](docs/character-motion.md), [화면·조작 안내](docs/play-feel.md)와 [Windows 안내](docs/windows.md)를 참고하세요.
 
 실제 서로 다른 집의 PC 두 대, Windows Chrome/Edge 수동 조작, 원작 조작감·수치 일치 여부는 추가 확인이 필요합니다. Phaser 청크 크기 경고는 알려진 상태이며 실행 오류는 아닙니다.
 

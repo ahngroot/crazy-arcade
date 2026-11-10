@@ -23,6 +23,8 @@ type Actor = {
   status: string;
   changedAt: number;
   bubblePopped?: boolean;
+  trapUntil?: number;
+  trapVariant?: number;
 };
 type Particle = {
   image: Phaser.GameObjects.Image;
@@ -362,11 +364,28 @@ export class GameRenderer {
       Math.floor(
         this.clock / (pose === "walk" ? 105 : pose === "idle" ? 450 : 170),
       ) % 4;
+    const previous = this.players.get(p.id);
+    const trapUntil =
+      p.status === "trapped"
+        ? p.statusUntil
+        : (previous?.trapUntil ?? p.statusUntil - C.respawnMs);
+    let trapVariant = previous?.trapVariant ?? 0;
+    if (pose === "trapped" && previous?.trapUntil !== trapUntil) {
+      // A visual coin toss from shared trap identity: both peers/reconnections agree.
+      // Do not consume the authoritative RNG or reroll during the same trap.
+      let hash = 2166136261;
+      for (const char of `${p.id}:${Math.round(trapUntil * 1000)}`)
+        hash = Math.imul(hash ^ char.charCodeAt(0), 16777619);
+      hash ^= hash >>> 16;
+      trapVariant = hash & 1;
+    }
+    const trappedKey = trapVariant ? "art-trapped-alt" : "art-trapped";
+    const foamKey = trapVariant ? "art-trapped-white-alt" : "art-trapped-white";
     const actor = this.actor(
       this.players,
       p.id,
       pose === "trapped"
-        ? "art-trapped"
+        ? trappedKey
         : dying
           ? `art-prone-${p.characterId ?? 0}`
           : p.characterId === undefined
@@ -379,6 +398,10 @@ export class GameRenderer {
       ART.playerWidth,
       ART.playerHeight,
     );
+    if (pose === "trapped") {
+      actor.trapUntil = trapUntil;
+      actor.trapVariant = trapVariant;
+    }
     if (actor.status !== p.status) {
       actor.status = p.status;
       actor.changedAt = this.clock;
@@ -434,12 +457,11 @@ export class GameRenderer {
         );
       let foam = this.foam.get(p.id);
       if (!foam) {
-        foam = this.scene.add
-          .image(0, 0, "art-trapped-white")
-          .setOrigin(0.5, 0.9);
+        foam = this.scene.add.image(0, 0, foamKey).setOrigin(0.5, 0.9);
         this.foam.set(p.id, foam);
       }
       foam
+        .setTexture(foamKey)
         .setPosition(actor.image.x, actor.image.y)
         .setDisplaySize(actor.image.displayWidth, actor.image.displayHeight)
         .setDepth(actor.image.depth + 0.1)

@@ -72,8 +72,12 @@ test("reference profiles walk, whiten in a trap, burst prone and restore on resp
   await expect
     .poll(
       async () =>
-        (await frames()).filter((f) => f.key === "art-trapped" && f.visible)
-          .length,
+        (await frames()).filter(
+          (f) =>
+            f.key.startsWith("art-trapped") &&
+            !f.key.includes("white") &&
+            f.visible,
+        ).length,
     )
     .toBe(2);
   await page
@@ -84,7 +88,10 @@ test("reference profiles walk, whiten in a trap, burst prone and restore on resp
     .poll(
       async () =>
         (await frames()).filter(
-          (f) => f.key === "art-trapped-white" && f.alpha > 0.85 && f.visible,
+          (f) =>
+            f.key.startsWith("art-trapped-white") &&
+            f.alpha > 0.85 &&
+            f.visible,
         ).length,
     )
     .toBe(2);
@@ -135,7 +142,7 @@ test("reference profiles walk, whiten in a trap, burst prone and restore on resp
     .poll(
       async () =>
         (await frames()).filter(
-          (f) => f.key === "art-trapped-white" && f.visible,
+          (f) => f.key.startsWith("art-trapped-white") && f.visible,
         ).length,
     )
     .toBe(0);
