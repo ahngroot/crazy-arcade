@@ -10,7 +10,7 @@ import {
   ART,
   installArt,
   keyPlayer,
-  keyCharacter,
+  characterTexture,
   safeTexture,
   type Pose,
 } from "./art";
@@ -22,6 +22,7 @@ type Actor = {
   shadow: Phaser.GameObjects.Image;
   status: string;
   changedAt: number;
+  bubblePopped?: boolean;
 };
 type Particle = {
   image: Phaser.GameObjects.Image;
@@ -44,6 +45,7 @@ type Popup = { text: Phaser.GameObjects.Text; elapsed: number };
 export class GameRenderer {
   private tracker = new PresentationTracker();
   private players = new Map<string, Actor>();
+  private foam = new Map<string, Phaser.GameObjects.Image>();
   private monsters = new Map<number, Actor>();
   private balloons = new Map<number, Actor>();
   private items = new Map<number, Actor>();
@@ -336,9 +338,12 @@ export class GameRenderer {
       winner = state.round?.winner;
     const won = finished && winner === p.team,
       lost = finished && winner !== "draw" && winner !== p.team;
-    const drowning =
-      p.status === "respawning" &&
-      state.time < p.statusUntil - C.respawnMs + 600;
+    const deathElapsed = Math.max(
+      0,
+      C.respawnMs - (p.statusUntil - state.time),
+    );
+    const dying = p.status === "respawning";
+    const drowning = dying && deathElapsed < 600;
     const pose: Pose = drowning
       ? "trapped"
       : won
@@ -360,19 +365,29 @@ export class GameRenderer {
     const actor = this.actor(
       this.players,
       p.id,
-      p.characterId === undefined
-        ? keyPlayer(p.team, pose, facing, frame)
-        : keyCharacter(p.characterId, facing === "left", p.moving ? frame : 0),
+      pose === "trapped"
+        ? "art-trapped"
+        : dying
+          ? `art-prone-${p.characterId ?? 0}`
+          : p.characterId === undefined
+            ? keyPlayer(p.team, pose, facing, frame)
+            : characterTexture(
+                p.characterId,
+                facing,
+                pose === "walk" ? frame : 0,
+              ),
       ART.playerWidth,
       ART.playerHeight,
     );
     if (actor.status !== p.status) {
       actor.status = p.status;
       actor.changedAt = this.clock;
+      actor.bubblePopped = false;
     }
     const since = this.clock - actor.changedAt;
-    const dying = p.status === "respawning",
-      fade = dying ? Math.max(0, 1 - Math.max(0, since - 600) / 1200) : 1;
+    const fade = dying
+      ? Math.max(0, 1 - Math.max(0, deathElapsed - 1100) / 700)
+      : 1;
     const spawn =
       !dying && p.invulnerableUntil > state.time && since < 300
         ? Math.max(0.25, since / 300)
@@ -386,7 +401,7 @@ export class GameRenderer {
       .setVisible(fade > 0)
       .setPosition(p.position.x * C.tileSize, p.position.y * C.tileSize - bob)
       .setDisplaySize(ART.playerWidth * spawn, ART.playerHeight * spawn)
-      .setAngle(dying ? Math.min(90, Math.max(0, since - 600) / 6) : 0)
+      .setAngle(0)
       .setAlpha(
         fade *
           ((p.ghostUntil ?? 0) > state.time
@@ -411,8 +426,25 @@ export class GameRenderer {
         : Math.max(0, 1 - (p.statusUntil - state.time) / C.trappedMs);
       const pulse = Math.sin(this.clock / (180 - urgency * 130));
       actor.image
-        .setX(x + pulse * urgency * 3)
-        .setTint(0xffffff - Math.floor(urgency * 90) * 0x010100);
+        .clearTint()
+        .setX(x + pulse * urgency * 1.5)
+        .setDisplaySize(
+          ART.playerWidth * (1 + pulse * urgency * 0.035),
+          ART.playerHeight * (1 - pulse * urgency * 0.025),
+        );
+      let foam = this.foam.get(p.id);
+      if (!foam) {
+        foam = this.scene.add
+          .image(0, 0, "art-trapped-white")
+          .setOrigin(0.5, 0.9);
+        this.foam.set(p.id, foam);
+      }
+      foam
+        .setPosition(actor.image.x, actor.image.y)
+        .setDisplaySize(actor.image.displayWidth, actor.image.displayHeight)
+        .setDepth(actor.image.depth + 0.1)
+        .setVisible(true)
+        .setAlpha(Math.min(1, urgency * urgency * (drowning ? 1 : 0.95)));
       for (let i = 0; i < 5; i++) {
         const rise = (this.clock / (18 - urgency * 10) + i * 11) % 50;
         this.overlays.lineStyle(1, 0xd9faff, 0.8);
@@ -422,21 +454,17 @@ export class GameRenderer {
           1 + urgency * 2,
         );
       }
-      this.overlays.fillStyle(0xa4e7ff, 0.24);
-      this.overlays.lineStyle(2, 0x56b4e1, 0.95);
-      this.overlays.fillEllipse(x, y, 44, 50);
-      this.overlays.strokeEllipse(x, y, 44, 50);
-      this.overlays.lineStyle(3, 0xe7fcff, 0.9);
-      this.overlays.beginPath();
-      this.overlays.arc(x, y, 18, 3.7, 4.8);
-      this.overlays.strokePath();
-      this.overlays.fillStyle(0xffffff, 0.8);
-      this.overlays.fillCircle(x - 13, y - 13, 3);
     } else {
+      this.foam.get(p.id)?.setVisible(false);
       actor.image.clearTint();
-      if (dying && since >= 600 && since < 1050) {
-        this.overlays.lineStyle(2, 0xa4e7ff, 1 - (since - 600) / 450);
-        this.overlays.strokeCircle(x, y, 22 + (since - 600) / 14);
+      if (dying && !actor.bubblePopped) {
+        actor.bubblePopped = true;
+        this.burst(p.position, "art-drop", 18, 0xe7fbff);
+        this.ring(p.position, 0xf5ffff, 450);
+      }
+      if (dying && deathElapsed >= 600 && deathElapsed < 1050) {
+        this.overlays.lineStyle(2, 0xa4e7ff, 1 - (deathElapsed - 600) / 450);
+        this.overlays.strokeCircle(x, y, 22 + (deathElapsed - 600) / 14);
       }
     }
     if (p.shieldUntil > state.time) {
@@ -519,7 +547,13 @@ export class GameRenderer {
     this.blocksFrom(state);
     this.overlays.clear();
     this.blasts(state);
-    this.prune(this.players, new Set(state.players.map((p) => p.id)));
+    const playerIds = new Set(state.players.map((p) => p.id));
+    for (const [id, image] of this.foam)
+      if (!playerIds.has(id)) {
+        image.destroy();
+        this.foam.delete(id);
+      }
+    this.prune(this.players, playerIds);
     for (const p of state.players) this.player(state, p);
     this.prune(this.monsters, new Set(state.round?.monsters.map((m) => m.id)));
     for (const m of state.round?.monsters ?? []) {
@@ -656,6 +690,8 @@ export class GameRenderer {
   }
   reset() {
     this.tracker.reset();
+    for (const image of this.foam.values()) image.destroy();
+    this.foam.clear();
     for (const image of this.streams.values()) image.destroy();
     this.streams.clear();
     this.revision = -1;

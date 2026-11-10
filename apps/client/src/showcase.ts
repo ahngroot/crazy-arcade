@@ -292,6 +292,22 @@ export function mountRendererFixture(parent: HTMLElement) {
     ready,
     state,
     capture: () => scene.capture(),
+    actorFrames() {
+      return scene.children.list
+        .filter(
+          (obj): obj is Phaser.GameObjects.Image =>
+            obj instanceof Phaser.GameObjects.Image &&
+            /art-(character|direction|trapped|prone)/.test(obj.texture.key),
+        )
+        .map((image) => ({
+          key: image.texture.key,
+          x: image.x,
+          y: image.y,
+          alpha: image.alpha,
+          visible: image.visible,
+          angle: image.angle,
+        }));
+    },
     waterFrames() {
       return scene.children.list
         .filter(
