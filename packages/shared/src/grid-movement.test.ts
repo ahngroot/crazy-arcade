@@ -1,6 +1,7 @@
 import { expect, it } from "vitest";
 import {
   createArenaPractice,
+  createPractice,
   movePlayer,
   defeatPlayer,
   EMPTY_INPUT,
@@ -12,6 +13,37 @@ function fixture() {
   p.position = { x: 4.5, y: 4.5 };
   return { s, p };
 }
+it("walks toward blocked walls in all directions without displacement and stops on release", () => {
+  for (const themed of [true, false]) {
+    const s = themed ? fixture().s : createPractice();
+    s.map = s.map.map((row) => row.map(() => "floor"));
+    const p = s.players[0];
+    p.position = { x: 4.5, y: 4.5 };
+    s.map[4][3] = s.map[4][5] = s.map[3][4] = s.map[5][4] = "wall";
+    for (const [x, y, facing] of [
+      [1, 0, "right"],
+      [-1, 0, "left"],
+      [0, -1, "up"],
+      [0, 1, "down"],
+    ] as const) {
+      for (let i = 0; i < 60; i++)
+        movePlayer(s, p, { ...EMPTY_INPUT, x, y }, 16);
+      const blocked = { ...p.position };
+      for (let i = 0; i < 10; i++) {
+        movePlayer(s, p, { ...EMPTY_INPUT, x, y }, 16);
+        expect(p.moving).toBe(true);
+        expect(p.facing).toBe(facing);
+        expect(p.position).toEqual(blocked);
+      }
+      expect(s.map[Math.floor(p.position.y)][Math.floor(p.position.x)]).toBe(
+        "floor",
+      );
+      movePlayer(s, p, EMPTY_INPUT, 16);
+      expect(p.moving).toBe(false);
+      expect(p.facing).toBe(facing);
+    }
+  }
+});
 it("finishes one tile after a short press and stops exactly at its center", () => {
   const { s, p } = fixture();
   movePlayer(s, p, { ...EMPTY_INPUT, x: 1 }, 20);

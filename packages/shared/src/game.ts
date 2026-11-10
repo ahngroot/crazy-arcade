@@ -355,7 +355,8 @@ export function movePlayer(
       if (canOccupy(s, p, p.position.x, oldY + dy)) p.position.y += dy;
     }
   }
-  p.moving = p.position.x !== oldX || p.position.y !== oldY;
+  // Walking is an animation intent, even when collision prevents displacement.
+  p.moving = Boolean(x || y) || p.position.x !== oldX || p.position.y !== oldY;
 }
 
 function moveOnGrid(
@@ -399,12 +400,12 @@ function moveOnGrid(
         x: Math.floor(p.position.x) + 0.5 + dx,
         y: Math.floor(p.position.y) + 0.5 + dy,
       };
+      p.facing = dx ? (dx > 0 ? "right" : "left") : dy > 0 ? "down" : "up";
       if (!canOccupy(s, p, target.x, target.y)) {
         if (queued) continue;
         break;
       }
       p.moveTarget = target;
-      p.facing = dx ? (dx > 0 ? "right" : "left") : dy > 0 ? "down" : "up";
     }
     const target = p.moveTarget;
     const dx = target.x - p.position.x,
@@ -430,7 +431,8 @@ function moveOnGrid(
       p.moveTarget = undefined;
     }
   }
-  p.moving = p.position.x !== before.x || p.position.y !== before.y;
+  p.moving =
+    Boolean(x || y) || p.position.x !== before.x || p.position.y !== before.y;
 }
 
 export function placeBalloon(s: PracticeState, p: PracticePlayer): boolean {
