@@ -14,6 +14,7 @@ import {
   bindCharacterPicker,
   characterPortrait,
 } from "./character-selection";
+import { balloonPicker, bindBalloonPicker } from "./balloon-selection";
 import { CHARACTERS, ARENAS, arenaById } from "@bubble/shared";
 import "./style.css";
 
@@ -32,6 +33,7 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
         <div class="arena-card"><div class="arena-top"><span><i></i> RANDOM ARENA</span><span id="preview-map-name">${ARENAS.length}가지 맵 미리보기</span></div><div class="arena-wrap"><div id="arena" role="img" aria-label="다양한 테마의 게임 맵 미리보기"></div><div class="preview-label">PHASER 4 · LIVE PREVIEW</div></div><div class="arena-bottom"><span><i class="red-dot"></i> RED TEAM</span><span>시작할 때마다 새로운 맵</span><span><i class="green-dot"></i> GREEN TEAM</span></div></div>
         <aside class="menu-card"><span class="section-number">LET’S GET STARTED</span><h2>어떻게 시작할까요?</h2><p class="menu-caption">혼자 연습하거나 친구와 대결해요.</p>
           ${characterPicker()}
+          ${balloonPicker()}
           <button id="practice" class="mode primary"><span class="mode-icon">✳</span><span><strong>1인 연습 모드</strong><small>혼자서 이동·물풍선·아이템 연습</small></span><span class="arrow">↗</span></button>
           <button id="online" class="mode secondary"><span class="mode-icon">◎</span><span><strong>온라인 대전</strong><small>방 만들기 · 친구의 방 참가하기</small></span><span class="arrow">↗</span></button>
           ${soundControls("menu-audio")}
@@ -60,6 +62,7 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
 `;
 arcadeAudio.bind();
 bindCharacterPicker();
+bindBalloonPicker();
 
 const socket: Socket<ServerEvents, ClientEvents> = io({ timeout: 5000 });
 function connection(ready: boolean) {
@@ -148,6 +151,7 @@ function updateGameHud(state: PracticeState) {
     )!;
     const self = player.id === controlledPlayerId;
     panel.dataset.character = String(player.characterId ?? 0);
+    panel.dataset.balloonSkin = String(player.balloonSkinId ?? 0);
     const portrait = panel.querySelector<HTMLElement>(".portrait")!;
     if (portrait.dataset.character !== String(player.characterId)) {
       portrait.innerHTML = characterPortrait(player.characterId ?? 0);

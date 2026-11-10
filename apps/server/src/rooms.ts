@@ -3,6 +3,7 @@ import {
   GAME_CONFIG as C,
   createCompetition,
   isCharacterId,
+  isBalloonSkinId,
   stepPractice,
   EMPTY_INPUT,
   type LocalInput,
@@ -16,6 +17,7 @@ import {
 } from "@bubble/shared";
 
 interface Seat {
+  balloonSkinId: number;
   characterId: number;
   id: string;
   token: string;
@@ -97,8 +99,10 @@ export class RoomService {
     socketId: string,
     name: string,
     characterId: number,
+    balloonSkinId: number,
   ) {
     const seat: Seat = {
+      balloonSkinId,
       characterId,
       id: room.seats.some((s) => s.id === "p1") ? "p2" : "p1",
       token: randomBytes(32).toString("hex"),
@@ -126,6 +130,11 @@ export class RoomService {
     if (this.bindings.has(socketId))
       return fail("현재 방에서 먼저 나가 주세요.");
     if (!record(request)) return fail("잘못된 방 생성 요청입니다.");
+    if (
+      request.balloonSkinId !== undefined &&
+      !isBalloonSkinId(request.balloonSkinId)
+    )
+      return fail("잘못된 물풍선입니다.");
     if (
       request.characterId !== undefined &&
       !isCharacterId(request.characterId)
@@ -156,6 +165,7 @@ export class RoomService {
       socketId,
       name,
       Number(request.characterId ?? 0),
+      Number(request.balloonSkinId ?? 0),
     );
     return {
       ok: true,
@@ -170,6 +180,11 @@ export class RoomService {
     if (this.bindings.has(socketId))
       return fail("현재 방에서 먼저 나가 주세요.");
     if (!record(request)) return fail("잘못된 입장 요청입니다.");
+    if (
+      request.balloonSkinId !== undefined &&
+      !isBalloonSkinId(request.balloonSkinId)
+    )
+      return fail("잘못된 물풍선입니다.");
     if (
       request.characterId !== undefined &&
       !isCharacterId(request.characterId)
@@ -194,6 +209,7 @@ export class RoomService {
       socketId,
       name,
       Number(request.characterId ?? 0),
+      Number(request.balloonSkinId ?? 0),
     );
     room.phase = "WAITING";
     return {
@@ -261,10 +277,11 @@ export class RoomService {
         previousId: room.previousArenaId,
       });
       room.previousArenaId = room.game.arenaId;
-      for (const player of room.game.players)
-        player.characterId = room.seats.find(
-          (s) => s.id === player.id,
-        )!.characterId;
+      for (const player of room.game.players) {
+        const seat = room.seats.find((s) => s.id === player.id)!;
+        player.characterId = seat.characterId;
+        player.balloonSkinId = seat.balloonSkinId;
+      }
     }
     return { ok: true };
   }
@@ -448,6 +465,7 @@ export class RoomService {
       id: s.id,
       nickname: s.nickname,
       characterId: s.characterId,
+      balloonSkinId: s.balloonSkinId,
       team: s.id === "p1" ? "red" : "green",
       connected: !!s.socketId,
       ready: s.ready,

@@ -738,6 +738,10 @@ dialog p {
   margin: 12px 0;
   min-width: 0;
 }
+.balloon-picker img {
+  object-fit: contain;
+  image-rendering: pixelated;
+}
 .map-caption {
   color: #507365;
   font-size: 12px;

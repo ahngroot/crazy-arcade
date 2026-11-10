@@ -4,7 +4,11 @@ test("selects one of 13 equal-stat characters before solo play and keeps it thro
   page,
 }) => {
   await page.goto("/");
-  await expect(page.getByRole("radio")).toHaveCount(13);
+  await expect(
+    page
+      .getByRole("radiogroup", { name: "캐릭터 선택", exact: true })
+      .getByRole("radio"),
+  ).toHaveCount(13);
   await page.getByRole("radio", { name: "케피", exact: true }).click();
   await expect(
     page.getByRole("radio", { name: "케피", exact: true }),

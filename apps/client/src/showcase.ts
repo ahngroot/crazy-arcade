@@ -315,7 +315,9 @@ export function mountRendererFixture(parent: HTMLElement, playerId = "p1") {
         .filter(
           (obj): obj is Phaser.GameObjects.Image =>
             obj instanceof Phaser.GameObjects.Image &&
-            /art-(character|direction|trapped|trap-help|prone)/.test(obj.texture.key),
+            /art-(character|direction|trapped|trap-help|prone)/.test(
+              obj.texture.key,
+            ),
         )
         .map((image) => ({
           key: image.texture.key,
@@ -396,6 +398,28 @@ export function mountRendererFixture(parent: HTMLElement, playerId = "p1") {
         shadowY: shadow.y,
         shadowWidth: shadow.displayWidth,
       };
+    },
+    balloonTextureUrl(key: string) {
+      return (
+        scene.textures.get(key).getSourceImage() as HTMLCanvasElement
+      ).toDataURL();
+    },
+    balloonFrames() {
+      return scene.children.list
+        .filter(
+          (o): o is Phaser.GameObjects.Image =>
+            o instanceof Phaser.GameObjects.Image &&
+            (o.texture.key === "art-balloon" ||
+              o.texture.key.startsWith("art-balloon-skin-")),
+        )
+        .map((o) => ({
+          key: o.texture.key,
+          x: o.x,
+          y: o.y,
+          angle: o.angle,
+          width: o.displayWidth,
+          height: o.displayHeight,
+        }));
     },
     trapped() {
       state.time += 100;

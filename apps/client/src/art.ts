@@ -13,6 +13,8 @@ import activeItemsUrl from "./assets/active-items.png";
 import charactersUrl from "./assets/characters.png";
 import passiveItemsUrl from "./assets/passive-items.png";
 import placedBalloonUrl from "./assets/placed-balloon.png";
+import { balloonSkins, balloonTexture } from "./balloon-skins";
+const skinImages = balloonSkins.filter((s) => s.id !== 0);
 import speedUrl from "./assets/speed.png";
 import arenaTilesUrl from "./assets/arena-tiles.png";
 import arenaLandmarksUrl from "./assets/arena-landmarks.png";
@@ -1074,6 +1076,14 @@ export function installArt(
     c.imageSmoothingEnabled = false;
     c.drawImage(placedBalloonImage, 0, 0, 48, 48);
   });
+  for (const { id, image } of skinImages)
+    make(balloonTexture(id), 48, 48, (c) => {
+      c.imageSmoothingEnabled = false;
+      const scale = Math.min(48 / image.width, 48 / image.height);
+      const w = image.width * scale,
+        h = image.height * scale;
+      c.drawImage(image, (48 - w) / 2, (48 - h) / 2, w, h);
+    });
   make("art-shadow", 40, 16, (c) => oval(c, 20, 8, 18, 5, "#28545630"));
   make("art-drop", 24, 32, (c) => {
     c.translate(12, 14);

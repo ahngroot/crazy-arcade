@@ -6,6 +6,7 @@ export interface NetworkInput extends LocalInput {
   roundId: number;
 }
 export interface RoomMember {
+  balloonSkinId?: number;
   characterId?: number;
   id: string;
   nickname: string;

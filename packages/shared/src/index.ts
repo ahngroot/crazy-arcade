@@ -86,6 +86,7 @@ export interface Position {
 
 export * from "./game.js";
 export * from "./characters.js";
+export * from "./balloon-skins.js";
 export * from "./maps.js";
 export * from "./competition.js";
 export * from "./network.js";

@@ -39,6 +39,7 @@ export interface LocalInput {
   turnId?: number;
 }
 export interface PracticePlayer {
+  balloonSkinId?: number;
   characterId?: number;
   id: string;
   team: Team;
@@ -76,6 +77,7 @@ export interface PracticePlayer {
   ghostUntil?: number;
 }
 export interface Balloon {
+  skinId?: number;
   id: number;
   owner: string;
   x: number;
@@ -479,6 +481,7 @@ export function placeBalloon(s: PracticeState, p: PracticePlayer): boolean {
   )
     return false;
   s.balloons.push({
+    skinId: p.balloonSkinId ?? 0,
     id: s.nextId++,
     owner: p.id,
     x,

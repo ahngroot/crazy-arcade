@@ -3,7 +3,12 @@ import { io, type Socket } from "socket.io-client";
 import type { ClientEvents, ServerEvents } from "@bubble/shared";
 
 type Opponent = Socket<ServerEvents, ClientEvents>;
-type DuelOptions = { guest?: boolean; navigate?: boolean; durationMs?: number };
+type DuelOptions = {
+  guest?: boolean;
+  navigate?: boolean;
+  durationMs?: number;
+  opponentBalloonSkinId?: number;
+};
 
 /** A real socket peer keeps UI tests on the production online path. */
 export const test = base.extend<{
@@ -27,6 +32,7 @@ export const test = base.extend<{
       });
       if (options.guest) {
         const created = await opponent.timeout(3000).emitWithAck("createRoom", {
+          balloonSkinId: options.opponentBalloonSkinId ?? 0,
           nickname: "Opponent",
           durationMs: options.durationMs ?? 180000,
         });
@@ -45,6 +51,7 @@ export const test = base.extend<{
           /^[A-HJ-NP-Z2-9]{8}$/,
         );
         const joined = await opponent.timeout(3000).emitWithAck("joinRoom", {
+          balloonSkinId: options.opponentBalloonSkinId ?? 0,
           nickname: "Opponent",
           code: await page.locator("#room-code").textContent(),
         });

@@ -12,6 +12,7 @@ import { GameRenderer } from "./renderer";
 import { arcadeAudio } from "./audio";
 import { createStartOverlay, startCue, START_MESSAGE_MS } from "./countdown";
 import { selectedCharacter } from "./character-selection";
+import { selectedBalloon } from "./balloon-selection";
 
 const GAME_KEYS = new Set([
   "ArrowUp",
@@ -148,11 +149,13 @@ export function mountGame(
     observedAt = introAt,
     observedView: RoomView | null = null;
   const characterId = selectedCharacter();
+  const balloonSkinId = selectedBalloon();
   const solo = () => {
     const seed = crypto.getRandomValues(new Uint32Array(1))[0];
     const state = createArenaPractice(seed, previousSoloArenaId);
     previousSoloArenaId = state.arenaId;
     state.players[0].characterId = characterId;
+    state.players[0].balloonSkinId = balloonSkinId;
     return state;
   };
   let state = session?.initial ?? solo(),

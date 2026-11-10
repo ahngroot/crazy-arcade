@@ -1,0 +1,89 @@
+{
+  "uploaded_archive": "물풍선 이미지.zip",
+  "files": [
+    {
+      "id": 1,
+      "uploaded_file": "14.png",
+      "asset": "01.png",
+      "sha256": "463ed62b281f01e12dc36118171be1db93d27e5bced0b4b342daab4fea85d800"
+    },
+    {
+      "id": 2,
+      "uploaded_file": "13.png",
+      "asset": "02.png",
+      "sha256": "e6a873fe57eb1a810ba0105c436e8e06798096465d49162d59a6b42024d13dd7"
+    },
+    {
+      "id": 3,
+      "uploaded_file": "12.png",
+      "asset": "03.png",
+      "sha256": "3e99047d64cfe4af395d065406416175c801711075b32a2d1a866e927bff926d"
+    },
+    {
+      "id": 4,
+      "uploaded_file": "11.png",
+      "asset": "04.png",
+      "sha256": "72c187efb854e3dacc8de7242b8b35f9c65949457f091481fe170cf75c9ebd1c"
+    },
+    {
+      "id": 5,
+      "uploaded_file": "10.png",
+      "asset": "05.png",
+      "sha256": "289f3bf55414c6a557cf4201d8909c953c4c85159862b730582a2332954f09c1"
+    },
+    {
+      "id": 6,
+      "uploaded_file": "9.png",
+      "asset": "06.png",
+      "sha256": "35f421ac90b789de3e33b34a0886095fda3414afcd55c1f179a28591051471ac"
+    },
+    {
+      "id": 7,
+      "uploaded_file": "8.png",
+      "asset": "07.png",
+      "sha256": "212f55b8960b181d314adbbf319a41bbad211579bbadd07108398e24859e1d0c"
+    },
+    {
+      "id": 8,
+      "uploaded_file": "7.png",
+      "asset": "08.png",
+      "sha256": "41ad0f5507ef7fbc9020801a5aa9cb4d3b97f232606bd22797a4f55b2863115a"
+    },
+    {
+      "id": 9,
+      "uploaded_file": "6.png",
+      "asset": "09.png",
+      "sha256": "340fa9d64a5672cd7f7c18936e246b1ffceae9cbc6d82dac52eb2bdcb776c3ac"
+    },
+    {
+      "id": 10,
+      "uploaded_file": "5.png",
+      "asset": "10.png",
+      "sha256": "f5b0cc6e7e6dcece1ac38fe488bdbbac745ea69b3c5159f18c36b7f138e01080"
+    },
+    {
+      "id": 11,
+      "uploaded_file": "4.png",
+      "asset": "11.png",
+      "sha256": "e3c80b749504342f03506d49f10aca79416d7cb1e79694dcf284d3fc2f174e17"
+    },
+    {
+      "id": 12,
+      "uploaded_file": "3.png",
+      "asset": "12.png",
+      "sha256": "ce7fff5eb672e8d6256bdc2376d52156015c7c22875374dc589b007342ce98f8"
+    },
+    {
+      "id": 13,
+      "uploaded_file": "2.png",
+      "asset": "13.png",
+      "sha256": "e9ebeec5101d9b92901e2a78e6c5ad5271cb46ced6866862478b3fe3952a4dd1"
+    },
+    {
+      "id": 14,
+      "uploaded_file": "1.png",
+      "asset": "14.png",
+      "sha256": "bef3032d1f72b7d911e320f6f4692a41b53a9d39025064ec9ddbb455d6d6375a"
+    }
+  ]
+}

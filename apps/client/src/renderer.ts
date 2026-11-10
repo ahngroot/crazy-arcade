@@ -17,6 +17,7 @@ import {
 } from "./art";
 import { PresentationTracker, type PresentationEvent } from "./presentation";
 import { arcadeAudio } from "./audio";
+import { balloonTexture } from "./balloon-skins";
 
 type Actor = {
   image: Phaser.GameObjects.Image;
@@ -649,7 +650,7 @@ export class GameRenderer {
       const actor = this.actor(
           this.balloons,
           b.id,
-          "art-balloon",
+          balloonTexture(b.skinId ?? 0),
           40.7,
           42.9,
           0.5,
@@ -671,6 +672,8 @@ export class GameRenderer {
       const bob = bounce * (4 + urgency * 2);
       actor.image
         .setPosition(x, y - 1 - bob)
+        // Separate quads keep varied uploaded textures intact on WebGL renderers.
+        .setRenderNodeRole("BatchHandler", "BatchHandlerQuadSingle")
         .setAngle(Math.sin(shimmer * 0.7) * (0.5 + urgency))
         .setDisplaySize(40.7 * pulse, 42.9 / pulse)
         .setDepth(y);

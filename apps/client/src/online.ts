@@ -7,6 +7,7 @@ import type {
 } from "@bubble/shared";
 import { OnlineTimeline, hasActionTransition } from "./netcode";
 import { selectedCharacter } from "./character-selection";
+import { selectedBalloon } from "./balloon-selection";
 import { CHARACTERS } from "@bubble/shared";
 
 export function setupOnline(
@@ -254,6 +255,7 @@ export function setupOnline(
     () =>
       void admission("createRoom", {
         characterId: selectedCharacter(),
+        balloonSkinId: selectedBalloon(),
         nickname: document.querySelector<HTMLInputElement>("#nickname")!.value,
         durationMs: Number(
           document.querySelector<HTMLSelectElement>("#online-duration")!.value,
@@ -265,6 +267,7 @@ export function setupOnline(
     () =>
       void admission("joinRoom", {
         characterId: selectedCharacter(),
+        balloonSkinId: selectedBalloon(),
         nickname: document.querySelector<HTMLInputElement>("#nickname")!.value,
         code: document
           .querySelector<HTMLInputElement>("#join-code")!
