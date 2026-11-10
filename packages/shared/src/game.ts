@@ -51,6 +51,7 @@ export interface PracticePlayer {
   /** Finish the current tile before accepting a turn or stopping. */
   moveTarget?: Position;
   queuedTurn?: Facing;
+  queuedTurnRemainingMs?: number;
   lastTurnId?: number;
   spawn: Position;
   facing: Facing;
@@ -371,12 +372,21 @@ function moveOnGrid(
   const y = Number.isFinite(raw.y) ? Math.sign(raw.y) : 0;
   if (raw.turn && raw.turnId !== undefined && raw.turnId !== p.lastTurnId) {
     p.queuedTurn = raw.turn;
+    p.queuedTurnRemainingMs = C.turnBufferMs;
     p.lastTurnId = raw.turnId;
+  }
+  if (p.queuedTurn) {
+    p.queuedTurnRemainingMs = (p.queuedTurnRemainingMs ?? C.turnBufferMs) - dt;
+    if (p.queuedTurnRemainingMs <= 0) {
+      p.queuedTurn = undefined;
+      p.queuedTurnRemainingMs = undefined;
+    }
   }
   while (remaining > 1e-8) {
     if (!p.moveTarget) {
       const queued = p.queuedTurn;
       p.queuedTurn = undefined;
+      p.queuedTurnRemainingMs = undefined;
       if (!queued && !x && !y) break;
       const dx = queued
         ? queued === "right"
@@ -411,7 +421,20 @@ function moveOnGrid(
     const dx = target.x - p.position.x,
       dy = target.y - p.position.y;
     const distance = Math.hypot(dx, dy);
-    const step = Math.min(remaining, distance);
+    // Complete the final few pixels a little faster before an open perpendicular turn.
+    // Still pass through the center, collision-check alignment, and never cut a diagonal.
+    const turn = p.queuedTurn;
+    const tx = turn ? (turn === "right" ? 1 : turn === "left" ? -1 : 0) : x;
+    const ty = turn ? (turn === "down" ? 1 : turn === "up" ? -1 : 0) : y;
+    const perpendicular =
+      Math.abs(dx) > 1e-8 ? tx === 0 && ty !== 0 : ty === 0 && tx !== 0;
+    const assist =
+      distance <= C.gridTurnAssistTiles &&
+      perpendicular &&
+      canOccupy(s, p, target.x + tx, target.y + ty)
+        ? C.gridTurnAssistSpeed
+        : 1;
+    const step = Math.min(remaining * assist, distance);
     if (distance < 1e-8) {
       p.moveTarget = undefined;
       continue;
@@ -425,7 +448,7 @@ function moveOnGrid(
       break;
     }
     p.position = next;
-    remaining -= step;
+    remaining -= step / assist;
     if (step >= distance - 1e-8) {
       p.position = { ...target };
       p.moveTarget = undefined;
@@ -608,6 +631,7 @@ export function defeatPlayer(s: PracticeState, p: PracticePlayer) {
   p.inventory = [];
   p.moveTarget = undefined;
   p.queuedTurn = undefined;
+  p.queuedTurnRemainingMs = undefined;
   p.capacity = C.initialBalloons;
   p.range = C.initialRange;
   p.speed = C.movementTilesPerSecond;
@@ -663,6 +687,7 @@ function respawn(s: PracticeState, p: PracticePlayer) {
     p.position = safe;
     p.moveTarget = undefined;
     p.queuedTurn = undefined;
+    p.queuedTurnRemainingMs = undefined;
     p.status = "active";
     p.invulnerableUntil = s.time + C.invulnerableMs;
     p.pickupBlockedUntil = s.time + C.deathDropPickupDelayMs;

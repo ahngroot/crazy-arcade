@@ -13,6 +13,48 @@ function fixture() {
   p.position = { x: 4.5, y: 4.5 };
   return { s, p };
 }
+it("assists an open corner near the center without diagonal cutting or crossing walls", () => {
+  for (const blocked of [false, true]) {
+    const { s, p } = fixture();
+    p.position = { x: 4.4, y: 4.5 };
+    p.moveTarget = { x: 4.5, y: 4.5 };
+    p.facing = "right";
+    if (blocked) s.map[3][4] = "wall";
+    movePlayer(s, p, { ...EMPTY_INPUT, y: -1 }, 20);
+    expect(p.position.y).toBe(4.5);
+    expect(p.position.x).toBeCloseTo(blocked ? 4.46 : 4.496);
+    for (let i = 0; i < 20; i++)
+      movePlayer(s, p, { ...EMPTY_INPUT, y: -1 }, 16);
+    expect(p.position.x).toBe(4.5);
+    expect(blocked ? p.position.y === 4.5 : p.position.y < 4.5).toBe(true);
+  }
+});
+it("expires an old quick turn without rearming the same input ID", () => {
+  const { s, p } = fixture();
+  p.status = "trapped";
+  movePlayer(s, p, { ...EMPTY_INPUT, y: 1 }, 100);
+  const held = { ...EMPTY_INPUT, y: 1, turn: "right" as const, turnId: 20 };
+  movePlayer(s, p, held, 16);
+  expect(p.queuedTurn).toBe("right");
+  for (let i = 0; i < 70; i++) movePlayer(s, p, held, 16);
+  expect(p.queuedTurn).toBeUndefined();
+  expect(p.position.x).toBe(4.5);
+  expect(p.position.y).toBeGreaterThan(5.5);
+});
+it("uses the newest buffered direction and clears it on death", () => {
+  const { s, p } = fixture();
+  movePlayer(s, p, { ...EMPTY_INPUT, y: 1 }, 100);
+  movePlayer(s, p, { ...EMPTY_INPUT, x: 1, turn: "right", turnId: 1 }, 16);
+  movePlayer(s, p, { ...EMPTY_INPUT, x: -1, turn: "left", turnId: 2 }, 16);
+  for (let i = 0; i < 25; i++) movePlayer(s, p, EMPTY_INPUT, 16);
+  expect(p.position.x).toBeLessThan(4.5);
+  expect(p.position.y).toBe(5.5);
+  p.queuedTurn = "up";
+  p.queuedTurnRemainingMs = 300;
+  defeatPlayer(s, p);
+  expect(p.queuedTurn).toBeUndefined();
+  expect(p.queuedTurnRemainingMs).toBeUndefined();
+});
 it("walks toward blocked walls in all directions without displacement and stops on release", () => {
   for (const themed of [true, false]) {
     const s = themed ? fixture().s : createPractice();
