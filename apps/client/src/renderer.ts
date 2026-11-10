@@ -49,6 +49,7 @@ export class GameRenderer {
   private tracker = new PresentationTracker();
   private players = new Map<string, Actor>();
   private foam = new Map<string, Phaser.GameObjects.Image>();
+  private help = new Map<string, Phaser.GameObjects.Image>();
   private monsters = new Map<number, Actor>();
   private balloons = new Map<number, Actor>();
   private items = new Map<number, Actor>();
@@ -377,16 +378,22 @@ export class GameRenderer {
         : (previous?.trapUntil ?? p.statusUntil - C.respawnMs);
     let trapVariant = previous?.trapVariant ?? 0;
     if (pose === "trapped" && previous?.trapUntil !== trapUntil) {
-      // A visual coin toss from shared trap identity: both peers/reconnections agree.
+      // A visual selection from shared trap identity: both peers/reconnections agree.
       // Do not consume the authoritative RNG or reroll during the same trap.
       let hash = 2166136261;
       for (const char of `${p.id}:${Math.round(trapUntil * 1000)}`)
         hash = Math.imul(hash ^ char.charCodeAt(0), 16777619);
       hash ^= hash >>> 16;
-      trapVariant = hash & 1;
+      trapVariant = (hash >>> 0) % 6;
     }
-    const trappedKey = trapVariant ? "art-trapped-alt" : "art-trapped";
-    const foamKey = trapVariant ? "art-trapped-white-alt" : "art-trapped-white";
+    const suffix =
+      trapVariant >= 2
+        ? `-extra-${trapVariant - 2}`
+        : trapVariant
+          ? "-alt"
+          : "";
+    const trappedKey = `art-trapped${suffix}`;
+    const foamKey = `art-trapped-white${suffix}`;
     const actor = this.actor(
       this.players,
       p.id,
@@ -448,6 +455,19 @@ export class GameRenderer {
       .setDepth(p.position.y * C.tileSize - 1);
     const x = p.position.x * C.tileSize,
       y = p.position.y * C.tileSize - 13;
+    let help = this.help.get(p.id);
+    if (p.status === "trapped") {
+      if (!help) {
+        help = this.scene.add
+          .image(0, 0, "art-trap-help")
+          .setDisplaySize(64, 32);
+        this.help.set(p.id, help);
+      }
+      help
+        .setPosition(x, Math.max(16, p.position.y * C.tileSize - 62))
+        .setDepth(23001)
+        .setVisible(true);
+    } else help?.setVisible(false);
     if (p.id === this.playerId && !dying)
       this.selfArrow
         .setVisible(true)
@@ -581,6 +601,11 @@ export class GameRenderer {
     this.overlays.clear();
     this.blasts(state);
     const playerIds = new Set(state.players.map((p) => p.id));
+    for (const [id, image] of this.help)
+      if (!playerIds.has(id)) {
+        image.destroy();
+        this.help.delete(id);
+      }
     for (const [id, image] of this.foam)
       if (!playerIds.has(id)) {
         image.destroy();
@@ -615,7 +640,14 @@ export class GameRenderer {
     }
     this.prune(this.balloons, new Set(state.balloons.map((b) => b.id)));
     for (const b of state.balloons) {
-      const actor = this.actor(this.balloons, b.id, "art-balloon", 40.7, 42.9, 0.5),
+      const actor = this.actor(
+          this.balloons,
+          b.id,
+          "art-balloon",
+          40.7,
+          42.9,
+          0.5,
+        ),
         pulse =
           1 +
           Math.sin(this.clock / (b.explodesAt - state.time < 600 ? 48 : 160)) *
@@ -723,6 +755,8 @@ export class GameRenderer {
     this.effects(delta);
   }
   reset() {
+    for (const image of this.help.values()) image.destroy();
+    this.help.clear();
     this.selfArrow.setVisible(false);
     this.tracker.reset();
     for (const image of this.foam.values()) image.destroy();

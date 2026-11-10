@@ -2,6 +2,8 @@ import type Phaser from "phaser";
 import type { Team, ItemKind, Facing, Tile } from "@bubble/shared";
 import villageHousesUrl from "./assets/village-houses.png";
 import alternateTrapUrl from "./assets/trapped-alternate.png";
+import extraTrapUrl from "./assets/trapped-extra.png";
+import trapHelpUrl from "./assets/trapped-help.png";
 import selfArrowUrl from "./assets/self-arrow.png";
 import { CHARACTER_SHEETS } from "./character-sheets";
 import proneUrl from "./assets/characters-prone.png";
@@ -20,6 +22,12 @@ const selfArrowImage = new Image();
 selfArrowImage.src = selfArrowUrl;
 await selfArrowImage.decode();
 const alternateTrapImage = new Image();
+const extraTrapImage = new Image();
+extraTrapImage.src = extraTrapUrl;
+await extraTrapImage.decode();
+const trapHelpImage = new Image();
+trapHelpImage.src = trapHelpUrl;
+await trapHelpImage.decode();
 alternateTrapImage.src = alternateTrapUrl;
 await alternateTrapImage.decode();
 const villageHousesImage = new Image();
@@ -962,6 +970,17 @@ export function installArt(
       paintCell(c, 3, col, box, false, col >= 2),
     );
   }
+  for (let col = 0; col < 4; col++) {
+    const box = bounds(0, [col], extraTrapImage, 2);
+    for (let row = 0; row < 2; row++)
+      make(`art-trapped-${row ? "white-" : ""}extra-${col}`, 64, 80, (c) =>
+        paintCell(c, row, col, box, false, false, extraTrapImage, 2),
+      );
+  }
+  make("art-trap-help", 80, 40, (c) => {
+    c.imageSmoothingEnabled = false;
+    c.drawImage(trapHelpImage, 0, 0, 80, 40);
+  });
   for (const [column, key] of [
     [0, "art-trapped-alt"],
     [1, "art-trapped-white-alt"],

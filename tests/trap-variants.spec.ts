@@ -1,8 +1,9 @@
 import { test, expect } from "@playwright/test";
 
-test("both trap appearances stay stable, whiten with matching art and survive drowning", async ({
+test("six trap appearances stay stable, show HELP, whiten and survive drowning", async ({
   page,
 }) => {
+  test.setTimeout(60_000);
   await page.goto("/");
   await page.evaluate(async () => {
     const path = "/src/showcase.ts";
@@ -28,7 +29,7 @@ test("both trap appearances stay stable, whiten with matching art and survive dr
         }[],
     );
   const observed = new Set<string>();
-  for (let n = 0; n < 20; n++) {
+  for (let n = 0; n < 60; n++) {
     await page.evaluate((n) => {
       const f = (window as any).variants;
       f.state.time = 100;
@@ -44,6 +45,9 @@ test("both trap appearances stay stable, whiten with matching art and survive dr
         !f.key.includes("white"),
     )!.key;
     observed.add(key);
+    expect(
+      (await frames()).some((f) => f.visible && f.key === "art-trap-help"),
+    ).toBe(true);
     await page.waitForTimeout(55);
     expect((await frames()).some((f) => f.visible && f.key === key)).toBe(true);
     expect(
@@ -60,8 +64,7 @@ test("both trap appearances stay stable, whiten with matching art and survive dr
       const f = (window as any).variants;
       f.state.time = f.state.players[0].statusUntil - 10;
     });
-    const white =
-      key === "art-trapped-alt" ? "art-trapped-white-alt" : "art-trapped-white";
+    const white = key.replace("art-trapped", "art-trapped-white");
     await expect
       .poll(async () =>
         (await frames()).some(
@@ -91,6 +94,9 @@ test("both trap appearances stay stable, whiten with matching art and survive dr
         (await frames()).some((f) => f.visible && f.key === "art-prone-0"),
       )
       .toBe(true);
+    expect(
+      (await frames()).some((f) => f.visible && f.key === "art-trap-help"),
+    ).toBe(false);
     await page.evaluate(
       () => ((window as any).variants.state.players[0].status = "active"),
     );
@@ -102,9 +108,13 @@ test("both trap appearances stay stable, whiten with matching art and survive dr
           ).length,
       )
       .toBe(0);
-    if (observed.size === 2) break;
+    if (observed.size === 6) break;
   }
-  expect([...observed].sort()).toEqual(["art-trapped", "art-trapped-alt"]);
+  expect([...observed].sort()).toEqual([
+    "art-trapped",
+    "art-trapped-alt",
+    ...[0, 1, 2, 3].map((i) => `art-trapped-extra-${i}`),
+  ]);
   await page.evaluate(() => (window as any).variants.destroy());
   await expect(page.locator("#trap-variants-fixture canvas")).toHaveCount(0);
 });
