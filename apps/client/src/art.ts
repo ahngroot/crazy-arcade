@@ -1,5 +1,6 @@
 import type Phaser from "phaser";
 import type { Team, ItemKind, Facing, Tile } from "@bubble/shared";
+import { CHARACTER_SHEETS } from "./character-sheets";
 import proneUrl from "./assets/characters-prone.png";
 import motionUrl from "./assets/character-motion.png";
 import waterStreamUrl from "./assets/water-stream.png";
@@ -17,6 +18,14 @@ await proneImage.decode();
 const motionImage = new Image();
 motionImage.src = motionUrl;
 await motionImage.decode();
+const directionSheets = await Promise.all(
+  CHARACTER_SHEETS.map(async (sheet) => {
+    const image = new Image();
+    image.src = sheet.url;
+    await image.decode();
+    return { ...sheet, image };
+  }),
+);
 
 const waterStreamImage = new Image();
 waterStreamImage.src = waterStreamUrl;
@@ -66,14 +75,11 @@ function passiveIcon(c: Ctx, index: number, size: number) {
 export const keyCharacter = (id: number, left: boolean, frame: number) =>
   `art-character-${id}-${left ? 1 : 0}-${frame}`;
 
-/** Only supplied directional references have new silhouettes. Other IDs retain their art. */
+/** Every character has a real side/back silhouette; front art keeps its original identity. */
 export function characterTexture(id: number, dir: Facing, frame: number) {
-  if (
-    (id === 0 && dir !== "down") ||
-    (id === 5 && (dir === "left" || dir === "right"))
-  )
-    return `art-direction-${id}-${dir}-${frame}`;
-  return keyCharacter(id, dir === "left", frame);
+  return dir === "down"
+    ? keyCharacter(id, false, frame)
+    : `art-direction-${id}-${dir}-${frame}`;
 }
 
 export const ART = {
@@ -749,15 +755,13 @@ export function installArt(scene: Phaser.Scene) {
           c.save();
           c.translate(32, 40);
           c.scale(left ? -1 : 1, 1);
-          if (id !== 0 && id !== 5)
-            c.rotate(frame === 1 ? -0.035 : frame === 3 ? 0.035 : 0);
           const bounds = characterBounds[id];
           const scale = Math.min(60 / bounds.width, 74 / bounds.height);
           const width = bounds.width * scale,
             height = bounds.height * scale;
           const sx = (id % 4) * cell + bounds.left,
             sy = Math.floor(id / 4) * cell + bounds.top;
-          if (id === 0 || id === 5) {
+          {
             const split = 0.79,
               swing = [0, 1, 0, -1][frame] * 3;
             c.drawImage(
@@ -785,26 +789,18 @@ export function installArt(scene: Phaser.Scene) {
                 height * (1 - split) + Math.min(0, lift) * 0.2,
               );
             }
-          } else
-            c.drawImage(
-              charactersImage,
-              sx,
-              sy,
-              bounds.width,
-              bounds.height,
-              -width / 2,
-              38 - height - (frame % 2 ? 2 : 0),
-              width,
-              height,
-            );
+          }
           c.restore();
         });
   // Equal atlas cells, shared bounds across each walk cycle keep the feet anchored.
-  const cellW = motionImage.naturalWidth / 4;
-  const cellH = motionImage.naturalHeight / 4;
-  const bounds = (row: number, columns: number[], image = motionImage) => {
+  const bounds = (
+    row: number,
+    columns: number[],
+    image = motionImage,
+    rows = 4,
+  ) => {
     const cellW = image.naturalWidth / 4,
-      cellH = image.naturalHeight / 4;
+      cellH = image.naturalHeight / rows;
     const scan = document.createElement("canvas");
     scan.width = Math.ceil(cellW);
     scan.height = Math.ceil(cellH);
@@ -850,7 +846,11 @@ export function installArt(scene: Phaser.Scene) {
     box: ReturnType<typeof bounds>,
     flip = false,
     prone = false,
+    image = motionImage,
+    rows = 4,
   ) => {
+    const cellW = image.naturalWidth / 4,
+      cellH = image.naturalHeight / rows;
     const scale = Math.min(60 / box.w, (prone ? 45 : 74) / box.h);
     const w = box.w * scale,
       h = box.h * scale;
@@ -859,7 +859,7 @@ export function installArt(scene: Phaser.Scene) {
     c.translate(32, 78);
     c.scale(flip ? -1 : 1, 1);
     c.drawImage(
-      motionImage,
+      image,
       col * cellW + box.x,
       row * cellH + box.y,
       box.w,
@@ -889,6 +889,19 @@ export function installArt(scene: Phaser.Scene) {
           ),
         );
   }
+  for (const sheet of directionSheets)
+    sheet.ids.forEach((id, index) => {
+      for (const dir of ["right", "left", "up"] as const) {
+        // Keep Shu's existing user-approved profiles; only her back is new.
+        if (id === 5 && dir !== "up") continue;
+        const row = index * 2 + (dir === "up" ? 1 : 0);
+        const box = bounds(row, [0, 1, 2, 3], sheet.image, 6);
+        for (let f = 0; f < 4; f++)
+          make(`art-direction-${id}-${dir}-${f}`, 64, 80, (c) =>
+            paintCell(c, row, f, box, dir === "left", false, sheet.image, 6),
+          );
+      }
+    });
   for (const [col, key] of [
     [0, "trapped"],
     [1, "trapped-white"],

@@ -308,6 +308,32 @@ export function mountRendererFixture(parent: HTMLElement) {
           angle: image.angle,
         }));
     },
+    characterTextureInfo() {
+      return scene.textures
+        .getTextureKeys()
+        .filter((key) => /^art-(direction|character)-/.test(key))
+        .map((key) => {
+          const source = scene.textures
+            .get(key)
+            .getSourceImage() as HTMLCanvasElement;
+          const ctx = source.getContext("2d")!;
+          const pixels = ctx.getImageData(
+            0,
+            0,
+            source.width,
+            source.height,
+          ).data;
+          let visible = 0,
+            footHash = 2166136261;
+          for (let i = 0; i < pixels.length; i += 4) {
+            if (pixels[i + 3] > 80) visible++;
+            if (i >= source.width * 58 * 4)
+              for (let k = 0; k < 4; k++)
+                footHash = Math.imul(footHash ^ pixels[i + k], 16777619);
+          }
+          return { key, visible, footHash };
+        });
+    },
     waterFrames() {
       return scene.children.list
         .filter(
