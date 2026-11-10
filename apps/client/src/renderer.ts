@@ -481,6 +481,12 @@ export class GameRenderer {
       actor.image
         .clearTint()
         .setX(x + pulse * urgency * 1.5)
+        // Gentle visual lift only; the authoritative position and floor shadow stay put.
+        .setY(
+          p.position.y * C.tileSize -
+            2 -
+            Math.sin(this.clock / 280 + trapVariant) * 2,
+        )
         .setDisplaySize(
           ART.playerWidth * (1 + pulse * urgency * 0.035),
           ART.playerHeight * (1 - pulse * urgency * 0.025),

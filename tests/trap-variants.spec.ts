@@ -26,6 +26,7 @@ test("four retained trap appearances stay stable, show HELP, whiten and survive 
           key: string;
           visible: boolean;
           alpha: number;
+          y: number;
         }[],
     );
   const observed = new Set<string>();
@@ -45,6 +46,25 @@ test("four retained trap appearances stay stable, show HELP, whiten and survive 
         !f.key.includes("white"),
     )!.key;
     observed.add(key);
+    if (observed.size === 1) {
+      const heights: number[] = [];
+      for (let sample = 0; sample < 12; sample++) {
+        const current = await frames();
+        const bubble = current.find((f) => f.visible && f.key === key)!;
+        const foam = current.find(
+          (f) =>
+            f.visible &&
+            f.key === key.replace("art-trapped", "art-trapped-white"),
+        )!;
+        expect(foam.y).toBe(bubble.y);
+        heights.push(bubble.y);
+        await page.waitForTimeout(100);
+      }
+      expect(Math.max(...heights) - Math.min(...heights)).toBeGreaterThan(2);
+      expect(Math.max(...heights) - Math.min(...heights)).toBeLessThanOrEqual(
+        4.01,
+      );
+    }
     expect(
       (await frames()).some((f) => f.visible && f.key === "art-trap-help"),
     ).toBe(true);
