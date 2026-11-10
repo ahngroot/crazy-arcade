@@ -268,9 +268,7 @@ describe("damage, respawn and items", () => {
     expect(p.status).toBe("trapped");
     const pos = { ...p.position };
     step(s, 500, move(0, 1));
-    expect(p.position.y - pos.y).toBeCloseTo(
-      C.movementTilesPerSecond * 0.2 * 0.5,
-    );
+    expect(p.position.y - pos.y).toBeCloseTo(0.8 * 0.5);
     step(s, C.trappedMs - 500 + C.respawnMs);
     expect(p.status).toBe("active");
     expect(p.deaths).toBe(1);

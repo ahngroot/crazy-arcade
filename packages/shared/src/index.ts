@@ -18,7 +18,7 @@ export const GAME_CONFIG = Object.freeze({
   fixedStepMs: 1000 / 60,
   maxFrameMs: 250,
   trappedMs: 5000,
-  trappedSpeedMultiplier: 0.2,
+  trappedSpeedMultiplier: 0.8 / 3,
   respawnMs: 1800,
   deathDropPickupDelayMs: 500,
   deathDropRatio: 0.8,

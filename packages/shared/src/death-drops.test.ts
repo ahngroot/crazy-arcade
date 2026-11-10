@@ -41,7 +41,7 @@ it("scatters the 80% subset across the map without a corpse-distance limit", () 
     const s = upgraded(seed),
       p = s.players[0];
     defeatPlayer(s, p);
-    expect(s.items).toHaveLength(5);
+    expect(s.items).toHaveLength(7);
     subsets.add(
       s.items
         .map((i) => i.kind)
@@ -103,7 +103,7 @@ it("randomizes each respawn among unoccupied safe floor cells", () => {
   }
   expect(positions.size).toBeGreaterThan(6);
 });
-it("scatters remaining active items and applied capacity/speed upgrades on drowning, excludes all range upgrades, and respawns at base stats", () => {
+it("scatters an 80% subset including fluid and ultra, then respawns at base stats", () => {
   const s = upgraded(),
     p = s.players[0];
   p.status = "trapped";
@@ -111,14 +111,21 @@ it("scatters remaining active items and applied capacity/speed upgrades on drown
   stepPractice(s, [EMPTY_INPUT], C.fixedStepMs);
   expect(p.deaths).toBe(1);
   expect(p.status).toBe("respawning");
-  expect(s.items).toHaveLength(5); // floor(7 eligible retained items * 80%)
-  const limits = { balloon: 2, speed: 3, needle: 1, shield: 1 };
+  expect(s.items).toHaveLength(7); // floor(9 eligible retained items * 80%)
+  const limits = {
+    balloon: 2,
+    speed: 3,
+    needle: 1,
+    shield: 1,
+    range: 1,
+    ultra: 1,
+  };
   for (const [kind, max] of Object.entries(limits))
     expect(s.items.filter((i) => i.kind === kind).length).toBeLessThanOrEqual(
       max,
     );
   expect(s.items.every((i) => i.kind in limits)).toBe(true);
-  expect(new Set(s.items.map((i) => `${i.x},${i.y}`)).size).toBe(5);
+  expect(new Set(s.items.map((i) => `${i.x},${i.y}`)).size).toBe(7);
   for (const i of s.items) {
     expect(s.map[i.y][i.x]).toBe("floor");
     expect(i.availableAt).toBeGreaterThan(p.statusUntil);
@@ -161,14 +168,39 @@ it("does not scatter consumed or replaced active items, or duplicate items when 
   expect(s.items).toHaveLength(count);
   expect(p.deaths).toBe(2);
 });
-it("resets fluid and ultra without scattering either", () => {
+it("drops fluid and ultra separately and resets both acquisition records", () => {
   const s = createSoloPractice(),
     p = s.players[0];
   collectItem(p, "range");
   collectItem(p, "ultra");
   defeatPlayer(s, p);
-  expect(s.items).toEqual([]);
+  expect(s.items.map((i) => i.kind).sort()).toEqual(["range", "ultra"]);
   expect(p.range).toBe(C.initialRange);
+  expect(p.rangePickups).toBe(0);
+  expect(p.ultraPickup).toBe(false);
+});
+it("returns all of zero to three items and 80% above three", () => {
+  for (let n = 0; n <= 5; n++) {
+    const s = createSoloPractice(),
+      p = s.players[0];
+    for (let j = 0; j < n; j++) collectItem(p, "range");
+    defeatPlayer(s, p);
+    expect(s.items.length).toBe(n <= 3 ? n : Math.floor(n * 0.8));
+    expect(s.items.every((i) => i.kind === "range")).toBe(true);
+  }
+});
+it("does not turn ultra into invented fluids or duplicate repeated ultra pickups", () => {
+  const s = createSoloPractice(),
+    p = s.players[0];
+  collectItem(p, "ultra");
+  collectItem(p, "ultra");
+  collectItem(p, "range");
+  defeatPlayer(s, p);
+  expect(s.items.map((i) => i.kind)).toEqual(["ultra"]);
+  s.items = [];
+  stepPractice(s, [EMPTY_INPUT], C.respawnMs);
+  defeatPlayer(s, p);
+  expect(s.items).toEqual([]);
 });
 it("uses seeded random positions and keeps the 80% subset even when only one floor cell exists", () => {
   const a = upgraded(1),
@@ -184,7 +216,7 @@ it("uses seeded random positions and keeps the 80% subset even when only one flo
   s.map[1][1] = "floor";
   s.players[0].position = { x: 1.5, y: 1.5 };
   defeatPlayer(s, s.players[0]);
-  expect(s.items).toHaveLength(5);
+  expect(s.items).toHaveLength(7);
   expect(s.items.every((i) => i.x === 1 && i.y === 1)).toBe(true);
   stepPractice(s, [EMPTY_INPUT], C.respawnMs);
   expect(s.players[0].status).toBe("respawning"); // Only floor contains drops.
@@ -218,7 +250,7 @@ it("applies the same reset on online chaser death and keeps drops on the victim'
   expect(p.status).toBe("respawning");
   expect(p.inventory).toEqual([]);
   expect(p.range).toBe(C.initialRange);
-  expect(s.items).toHaveLength(3);
+  expect(s.items).toHaveLength(4);
   expect(s.items.every((i) => i.x < 7)).toBe(true);
   expect(other.inventory).toEqual(["power"]);
   expect(other.deaths).toBe(0);

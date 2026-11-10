@@ -56,6 +56,9 @@ export interface PracticePlayer {
   pickupBlockedUntil?: number;
   capacity: number;
   range: number;
+  /** Actual fluid upgrades, separate from ultra's synthetic range increase. */
+  rangePickups?: number;
+  ultraPickup?: boolean;
   speed: number;
   deaths: number;
   moving: boolean;
@@ -249,10 +252,17 @@ function useItems(s: PracticeState, p: PracticePlayer, input: LocalInput) {
 
 export function collectItem(p: PracticePlayer, kind: ItemKind): boolean {
   if (kind === "balloon") p.capacity = Math.min(C.maxBalloons, p.capacity + 1);
-  else if (kind === "range") p.range = Math.min(C.maxRange, p.range + 1);
-  else if (kind === "speed")
+  else if (kind === "range") {
+    if (p.range < C.maxRange) {
+      p.rangePickups =
+        (p.rangePickups ?? Math.max(0, p.range - C.initialRange)) + 1;
+      p.range++;
+    }
+  } else if (kind === "speed")
     p.speed = Math.min(C.maxSpeed, p.speed + C.speedIncrement);
   else if (kind === "ultra") {
+    p.rangePickups ??= Math.max(0, p.range - C.initialRange);
+    p.ultraPickup = true;
     p.range = C.maxRange;
   } else {
     while (p.inventory.length >= C.inventoryLimit) p.inventory.shift();
@@ -573,12 +583,16 @@ export function defeatPlayer(s: PracticeState, p: PracticePlayer) {
     ),
   );
   for (let n = 0; n < speedSteps; n++) drops.push("speed");
+  const fluids = p.rangePickups ?? Math.max(0, p.range - C.initialRange);
+  for (let n = 0; n < fluids; n++) drops.push("range");
+  if (p.ultraPickup) drops.push("ultra");
   // Sample the retained upgrades/unused inventory, never recreate consumed items.
   for (let n = drops.length - 1; n > 0; n--) {
     const j = Math.floor(random(s) * (n + 1));
     [drops[n], drops[j]] = [drops[j], drops[n]];
   }
-  drops.length = Math.floor(drops.length * C.deathDropRatio);
+  if (drops.length > 3)
+    drops.length = Math.floor(drops.length * C.deathDropRatio);
   if (drops.length) {
     const floors: Position[] = [];
     for (let y = s.arenaId ? 0 : 1; y < C.rows - (s.arenaId ? 0 : 1); y++)
@@ -628,6 +642,8 @@ export function defeatPlayer(s: PracticeState, p: PracticePlayer) {
   p.queuedTurnRemainingMs = undefined;
   p.capacity = C.initialBalloons;
   p.range = C.initialRange;
+  p.rangePickups = 0;
+  p.ultraPickup = false;
   p.speed = C.movementTilesPerSecond;
   p.shieldUntil = p.powerUntil = p.gloveUntil = p.shoesUntil = p.ghostUntil = 0;
   p.invulnerableUntil = 0;

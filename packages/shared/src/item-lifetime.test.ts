@@ -40,7 +40,6 @@ it("starts the 15-second lifetime separately at each death item's landing time",
   const s = createArenaPractice(45),
     p = s.players[0];
   p.inventory = ["shield", "needle"];
-  p.capacity++;
   defeatPlayer(s, p);
   expect(s.items.map((i) => i.expiresAt! - i.flight!.landsAt)).toEqual([
     15000, 15000,

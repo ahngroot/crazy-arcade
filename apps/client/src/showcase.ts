@@ -227,7 +227,7 @@ export function mountArtGallery(parent: HTMLElement) {
   };
 }
 
-export function mountRendererFixture(parent: HTMLElement) {
+export function mountRendererFixture(parent: HTMLElement, playerId = "p1") {
   let resolveReady!: () => void;
   const ready = new Promise<void>((resolve) => (resolveReady = resolve));
   const state: PracticeState = createCompetition();
@@ -265,7 +265,7 @@ export function mountRendererFixture(parent: HTMLElement) {
       super("renderer-fixture");
     }
     create() {
-      this.view = new GameRenderer(this, parent, false);
+      this.view = new GameRenderer(this, parent, false, playerId);
       this.events.once(Phaser.Scenes.Events.SHUTDOWN, () =>
         this.view.destroy(),
       );
@@ -308,6 +308,21 @@ export function mountRendererFixture(parent: HTMLElement) {
           alpha: image.alpha,
           visible: image.visible,
           angle: image.angle,
+        }));
+    },
+    arrowFrames() {
+      return scene.children.list
+        .filter(
+          (o): o is Phaser.GameObjects.Image =>
+            o instanceof Phaser.GameObjects.Image &&
+            o.texture.key === "art-self-arrow",
+        )
+        .map((o) => ({
+          x: o.x,
+          y: o.y,
+          visible: o.visible,
+          width: o.displayWidth,
+          height: o.displayHeight,
         }));
     },
     characterTextureInfo() {

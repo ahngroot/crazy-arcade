@@ -19,7 +19,7 @@ test("trapped solo player moves slowly, shows dwindling breath and dies once bef
   await expect(self).toHaveAttribute("data-status", "trapped", {
     timeout: 6000,
   });
-  await expect(self.locator('[data-stat="speed"]')).toHaveText("0.6칸/초");
+  await expect(self.locator('[data-stat="speed"]')).toHaveText("0.8칸/초");
   await moveSome(page, "p1", 0.25);
   await page.keyboard.press("Space");
   await expect(self.locator('[data-stat="balloon"]')).toHaveText("0 / 1");

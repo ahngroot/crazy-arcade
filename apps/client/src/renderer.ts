@@ -68,6 +68,7 @@ export class GameRenderer {
   private lastTime = -1;
   private lastPhase = "";
   private terrain = "";
+  private selfArrow: Phaser.GameObjects.Image;
   constructor(
     private scene: Phaser.Scene,
     private parent: HTMLElement,
@@ -75,6 +76,9 @@ export class GameRenderer {
     private playerId = "p1",
   ) {
     installArt(scene);
+    this.selfArrow = this.image("art-self-arrow", 14, 20)
+      .setDepth(23000)
+      .setVisible(false);
     for (let y = 0; y < C.rows; y++)
       for (let x = 0; x < C.columns; x++) {
         this.floors.push(
@@ -442,6 +446,10 @@ export class GameRenderer {
       .setDepth(p.position.y * C.tileSize - 1);
     const x = p.position.x * C.tileSize,
       y = p.position.y * C.tileSize - 13;
+    if (p.id === this.playerId && !dying)
+      this.selfArrow
+        .setVisible(true)
+        .setPosition(x, Math.max(11, p.position.y * C.tileSize - 61 - bob));
     if ((p.ghostUntil ?? 0) > state.time && p.id !== this.playerId) return;
     if (p.status === "trapped" || drowning) {
       const urgency = drowning
@@ -550,6 +558,7 @@ export class GameRenderer {
   }
 
   update(state: PracticeState, elapsed: number) {
+    this.selfArrow.setVisible(false);
     const delta = Math.min(Math.max(elapsed, 0), 100);
     this.clock += delta;
     const phase = state.round?.phase ?? "PRACTICE";
@@ -712,6 +721,7 @@ export class GameRenderer {
     this.effects(delta);
   }
   reset() {
+    this.selfArrow.setVisible(false);
     this.tracker.reset();
     for (const image of this.foam.values()) image.destroy();
     this.foam.clear();
@@ -746,5 +756,6 @@ export class GameRenderer {
     this.blocks.clear();
     this.water.destroy();
     this.overlays.destroy();
+    this.selfArrow.destroy();
   }
 }

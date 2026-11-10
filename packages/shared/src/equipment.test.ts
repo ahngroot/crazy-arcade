@@ -10,7 +10,7 @@ import {
   movePlayer,
 } from "./index";
 
-it("allows exactly five seconds of trapped movement at 20% base speed without balloons or item pickup", () => {
+it("allows exactly five seconds of trapped movement at 0.8 tiles/sec without balloons or item pickup", () => {
   const s = createSoloPractice(),
     p = s.players[0];
   s.map = s.map.map((row, y) =>
@@ -21,7 +21,7 @@ it("allows exactly five seconds of trapped movement at 20% base speed without ba
   p.speed = C.maxSpeed;
   s.items.push({ id: 99, kind: "ghost", x: 1, y: 1, availableAt: 0 });
   stepPractice(s, [{ x: 1, y: 0, balloon: true }], 1000);
-  expect(p.position.x).toBeCloseTo(2.1);
+  expect(p.position.x).toBeCloseTo(2.3);
   expect(p.inventory).toEqual([]);
   expect(s.balloons).toHaveLength(0);
   stepPractice(s, [EMPTY_INPUT], 3980);

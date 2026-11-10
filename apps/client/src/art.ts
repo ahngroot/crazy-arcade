@@ -2,6 +2,7 @@ import type Phaser from "phaser";
 import type { Team, ItemKind, Facing, Tile } from "@bubble/shared";
 import villageHousesUrl from "./assets/village-houses.png";
 import alternateTrapUrl from "./assets/trapped-alternate.png";
+import selfArrowUrl from "./assets/self-arrow.png";
 import { CHARACTER_SHEETS } from "./character-sheets";
 import proneUrl from "./assets/characters-prone.png";
 import motionUrl from "./assets/character-motion.png";
@@ -15,6 +16,9 @@ import arenaTilesUrl from "./assets/arena-tiles.png";
 import arenaLandmarksUrl from "./assets/arena-landmarks.png";
 
 const proneImage = new Image();
+const selfArrowImage = new Image();
+selfArrowImage.src = selfArrowUrl;
+await selfArrowImage.decode();
 const alternateTrapImage = new Image();
 alternateTrapImage.src = alternateTrapUrl;
 await alternateTrapImage.decode();
@@ -954,6 +958,21 @@ export function installArt(scene: Phaser.Scene) {
         60,
       );
     });
+  make("art-self-arrow", 24, 32, (c) => {
+    const size = selfArrowImage.naturalWidth;
+    c.imageSmoothingEnabled = false;
+    c.drawImage(
+      selfArrowImage,
+      size * 0.35,
+      size * 0.3,
+      size * 0.3,
+      size * 0.4,
+      0,
+      0,
+      24,
+      32,
+    );
+  });
   // Every playable character has an actual prone silhouette, not a rotated portrait.
   for (let id = 0; id < 13; id++) {
     const col = id % 4,
