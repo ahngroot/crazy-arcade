@@ -1058,7 +1058,7 @@ export function installArt(
     make(`art-crate-battle-${variant}`, 40, 48, (c) =>
       tile(c, "crate-battle", variant),
     );
-  for (const kind of [
+  const itemKinds = [
     "balloon",
     "range",
     "speed",
@@ -1069,8 +1069,60 @@ export function installArt(
     "glove",
     "shoes",
     "ghost",
-  ] as const)
+  ] as const;
+  for (const kind of itemKinds)
     make(`art-item-${kind}`, 36, 38, (c) => item(c, kind));
+  const itemBounds = (canvas: HTMLCanvasElement) => {
+    const { width, height } = canvas;
+    const data = canvas
+      .getContext("2d")!
+      .getImageData(0, 0, width, height).data;
+    let left = width,
+      top = height,
+      right = 0,
+      bottom = 0;
+    for (let y = 0; y < height; y++)
+      for (let x = 0; x < width; x++)
+        if (data[(y * width + x) * 4 + 3] > 32) {
+          left = Math.min(left, x);
+          top = Math.min(top, y);
+          right = Math.max(right, x);
+          bottom = Math.max(bottom, y);
+        }
+    return { left, top, width: right - left + 1, height: bottom - top + 1 };
+  };
+  const shield = itemBounds(
+    scene.textures.get("art-item-shield").getSourceImage() as HTMLCanvasElement,
+  );
+  const extent = Math.max(shield.width, shield.height);
+  for (const kind of itemKinds) {
+    const texture = scene.textures.get(
+      `art-item-${kind}`,
+    ) as Phaser.Textures.CanvasTexture;
+    const canvas = texture.getSourceImage() as HTMLCanvasElement;
+    const box = itemBounds(canvas),
+      scale = extent / Math.max(box.width, box.height);
+    const copy = document.createElement("canvas");
+    copy.width = canvas.width;
+    copy.height = canvas.height;
+    copy.getContext("2d")!.drawImage(canvas, 0, 0);
+    const ctx = canvas.getContext("2d")!;
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.imageSmoothingEnabled = true;
+    ctx.drawImage(
+      copy,
+      box.left,
+      box.top,
+      box.width,
+      box.height,
+      (canvas.width - box.width * scale) / 2,
+      (canvas.height - box.height * scale) / 2,
+      box.width * scale,
+      box.height * scale,
+    );
+    texture.refresh();
+  }
   for (const { id, image } of balloonSkins)
     for (let frame = 0; frame < 8; frame++)
       make(

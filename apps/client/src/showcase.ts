@@ -405,6 +405,40 @@ export function mountRendererFixture(parent: HTMLElement, playerId = "p1") {
         scene.textures.get(key).getSourceImage() as HTMLCanvasElement
       ).toDataURL();
     },
+    itemTextureExtents() {
+      return [
+        "balloon",
+        "range",
+        "speed",
+        "needle",
+        "shield",
+        "power",
+        "ultra",
+        "glove",
+        "shoes",
+        "ghost",
+      ].map((kind) => {
+        const canvas = scene.textures
+          .get(`art-item-${kind}`)
+          .getSourceImage() as HTMLCanvasElement;
+        const pixels = canvas
+          .getContext("2d")!
+          .getImageData(0, 0, canvas.width, canvas.height).data;
+        let left = canvas.width,
+          top = canvas.height,
+          right = 0,
+          bottom = 0;
+        for (let y = 0; y < canvas.height; y++)
+          for (let x = 0; x < canvas.width; x++)
+            if (pixels[(y * canvas.width + x) * 4 + 3] > 32) {
+              left = Math.min(left, x);
+              top = Math.min(top, y);
+              right = Math.max(right, x);
+              bottom = Math.max(bottom, y);
+            }
+        return { kind, extent: Math.max(right - left + 1, bottom - top + 1) };
+      });
+    },
     balloonFrames() {
       return scene.children.list
         .filter(

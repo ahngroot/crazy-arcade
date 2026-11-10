@@ -756,7 +756,7 @@ export class GameRenderer {
             lift +
             (progress === 1 ? Math.sin(this.clock / 200 + item.id) * 1.5 : 0),
         )
-        .setDisplaySize(42.525, 44.8875)
+        .setDisplaySize(42.525 * 1.05, 44.8875 * 1.05)
         .setAngle(progress < 1 ? Math.sin(progress * Math.PI * 2) * 25 : 0)
         .setAlpha(
           (progress < 1 || item.availableAt <= state.time ? 1 : 0.6) *
