@@ -77,7 +77,7 @@ test("online peers keep different balloon choices", async ({ page, duel }) => {
   ).toHaveText("1 / 1");
 });
 
-test("all 15 placed balloon textures use original pictures with clear corners and unchanged state", async ({
+test("all 15 polished balloon textures render intact with clear corners and unchanged state", async ({
   page,
 }) => {
   await page.goto("/");
@@ -121,7 +121,7 @@ test("all 15 placed balloon textures use original pictures with clear corners an
   const keys = await page.evaluate(() =>
     (window as any).balloonGallery
       .balloonFrames()
-      .map((f: any) => f.key)
+      .map((f: any) => f.key.replace(/-flow-\d+$/, ""))
       .sort(),
   );
   expect(keys).toEqual(
@@ -135,10 +135,20 @@ test("all 15 placed balloon textures use original pictures with clear corners an
     const { balloonSkins } = (await import(
       skinPath
     )) as typeof import("../apps/client/src/balloon-skins");
-    return balloonSkins.slice(1).map((s) => {
+    return balloonSkins.map((s) => {
       const c = s.image as HTMLCanvasElement;
       const p = c.getContext("2d")!.getImageData(0, 0, c.width, c.height).data;
+      let left = c.width,
+        right = 0;
+      for (let y = 92; y < 100; y++)
+        for (let x = 0; x < c.width; x++)
+          if (p[(y * c.width + x) * 4 + 3] > 128) {
+            left = Math.min(left, x);
+            right = Math.max(right, x);
+          }
       return {
+        id: s.id,
+        bodyWidth: right - left + 1,
         corner: p[3],
         opaque: Array.from(p).filter((_, i) => i % 4 === 3 && p[i] > 128)
           .length,
@@ -146,6 +156,12 @@ test("all 15 placed balloon textures use original pictures with clear corners an
     });
   });
   expect(pixels.every((p) => p.corner === 0 && p.opaque > 1500)).toBe(true);
+  const pinkWidth = pixels.find((p) => p.id === 11)!.bodyWidth;
+  for (const skin of pixels)
+    expect(
+      Math.abs(skin.bodyWidth - pinkWidth),
+      `body width for ${skin.id}`,
+    ).toBeLessThanOrEqual(2);
   await page.evaluate(() => (window as any).balloonGallery.capture());
   await page.waitForTimeout(200);
   const screenshot = await page
@@ -185,7 +201,7 @@ test("all 15 placed balloon textures use original pictures with clear corners an
           )
             continue;
           const dx = ((sx + 0.5) / texture.width - 0.5) * frame.width,
-            dy = ((sy + 0.5) / texture.height - 0.5) * frame.height;
+            dy = ((sy + 0.5) / texture.height - frame.originY) * frame.height;
           const x = Math.floor(
               frame.x + Math.cos(rad) * dx - Math.sin(rad) * dy,
             ),

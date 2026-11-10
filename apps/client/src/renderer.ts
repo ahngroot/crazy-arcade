@@ -18,6 +18,7 @@ import {
 import { PresentationTracker, type PresentationEvent } from "./presentation";
 import { arcadeAudio } from "./audio";
 import { balloonTexture } from "./balloon-skins";
+import { BALLOON_ART } from "./balloon-art";
 
 type Actor = {
   image: Phaser.GameObjects.Image;
@@ -650,15 +651,21 @@ export class GameRenderer {
       const actor = this.actor(
           this.balloons,
           b.id,
-          balloonTexture(b.skinId ?? 0),
-          40.7,
-          42.9,
-          0.5,
+          balloonTexture(
+            b.skinId ?? 0,
+            Math.floor(this.clock / 90 + b.id * 0.7) % 8,
+          ),
+          BALLOON_ART.displayWidth,
+          BALLOON_ART.displayHeight,
+          BALLOON_ART.centerY / BALLOON_ART.height,
         ),
         pulse =
           1 +
-          Math.sin(this.clock / (b.explodesAt - state.time < 600 ? 48 : 160)) *
-            0.055,
+          Math.sin(
+            this.clock / (b.explodesAt - state.time < 600 ? 70 : 180) +
+              b.id * 0.7,
+          ) *
+            (b.explodesAt - state.time < 600 ? 0.085 : 0.055),
         x = (b.x + 0.5) * C.tileSize,
         y = (b.y + 0.5) * C.tileSize;
       const urgency = Math.max(
@@ -668,20 +675,36 @@ export class GameRenderer {
       const shimmer =
         this.clock / (b.explodesAt - state.time < 600 ? 48 : 180) + b.id * 1.7;
       // A visible lift from the fixed cell, with a shadow that stays on the floor.
-      const bounce = (Math.sin(this.clock / 140 + b.id * 1.7) + 1) / 2;
-      const bob = bounce * (4 + urgency * 2);
+      const bounce = (Math.sin(this.clock / 180 + b.id * 1.7) + 1) / 2;
+      const bob = bounce * (5 + urgency * 2.5);
       actor.image
         .setPosition(x, y - 1 - bob)
         // Separate quads keep varied uploaded textures intact on WebGL renderers.
         .setRenderNodeRole("BatchHandler", "BatchHandlerQuadSingle")
-        .setAngle(Math.sin(shimmer * 0.7) * (0.5 + urgency))
-        .setDisplaySize(40.7 * pulse, 42.9 / pulse)
+        .setAngle(Math.sin(shimmer * 0.7) * (1 + urgency * 1.3))
+        .setDisplaySize(
+          BALLOON_ART.displayWidth * pulse,
+          BALLOON_ART.displayHeight / pulse,
+        )
         .setDepth(y);
       actor.shadow
         .setPosition(x, y + 13)
         .setDisplaySize((26 - bob * 0.9) * pulse, (9 - bob * 0.25) / pulse)
         .setAlpha(0.75 - bob * 0.035)
         .setDepth(1);
+      // A travelling sheen follows the curved surface, instead of a fixed sticker.
+      const sheenX = x + Math.sin(shimmer * 0.55) * 6;
+      const sheenY = y - 8 - bob + Math.cos(shimmer * 0.55) * 2;
+      this.overlays.lineStyle(1.2, 0xffffff, 0.2 + bounce * 0.12);
+      this.overlays.beginPath();
+      this.overlays.arc(
+        sheenX,
+        sheenY,
+        8 + bounce,
+        Math.PI * 1.04,
+        Math.PI * 1.38,
+      );
+      this.overlays.strokePath();
       for (let glint = 0; glint < 2; glint++) {
         const light =
           0.3 +

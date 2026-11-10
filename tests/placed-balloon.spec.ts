@@ -62,6 +62,7 @@ test("placed balloons shimmer without changing simulation state and use a separa
                 y: number;
                 shadowY: number;
                 shadowWidth: number;
+                key: string;
               };
             };
           }
@@ -71,6 +72,18 @@ test("placed balloons shimmer without changing simulation state and use a separa
     await page.waitForTimeout(80);
   }
   const height = frames.map((frame) => frame.y);
+  expect(new Set(frames.map((frame) => frame.key)).size).toBeGreaterThanOrEqual(
+    4,
+  );
+  const flowFrames = await page.evaluate(() => {
+    const fixture = (window as any).balloonFixture;
+    return Array.from({ length: 8 }, (_, frame) =>
+      fixture.balloonTextureUrl(
+        frame ? `art-balloon-flow-${frame}` : "art-balloon",
+      ),
+    );
+  });
+  expect(new Set(flowFrames).size).toBe(8);
   expect(Math.max(...height) - Math.min(...height)).toBeGreaterThan(3);
   expect(
     frames.every((frame) => frame.x === 140 && frame.shadowY === 233),

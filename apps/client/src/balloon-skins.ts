@@ -1,8 +1,8 @@
 import { isBalloonSkinId } from "@bubble/shared";
 import defaultUrl from "./assets/placed-balloon.png";
-import { balloonCutout } from "./balloon-cutout";
+import { polishedBalloonArt } from "./balloon-art";
 
-// Only actual source files appear as choices; never show generated stand-ins.
+// Source files stay untouched; the user-approved cleanup request uses refined art.
 const files = import.meta.glob<string>(
   "./assets/balloon-skins/*.{png,jpg,jpeg,webp}",
   {
@@ -20,21 +20,19 @@ const sources = [
 ].sort((a, b) => a.id - b.id);
 export const balloonSkins = await Promise.all(
   sources.map(async (skin) => {
-    const image = new Image();
-    image.src = skin.url;
-    await image.decode();
-    const canvas = skin.id === 0 ? image : balloonCutout(image, skin.id);
+    const canvas = polishedBalloonArt.get(skin.id)!;
     return {
       ...skin,
       sourceUrl: skin.url,
-      url: canvas instanceof HTMLCanvasElement ? canvas.toDataURL() : skin.url,
+      url: canvas.toDataURL(),
       image: canvas,
     };
   }),
 );
 export const balloonSkin = (id: number) =>
   balloonSkins.find((skin) => skin.id === id) ?? balloonSkins[0];
-export const balloonTexture = (id: number) => {
+export const balloonTexture = (id: number, frame = 0) => {
   const skin = balloonSkin(id);
-  return skin.id === 0 ? "art-balloon" : `art-balloon-skin-${skin.id}`;
+  const key = skin.id === 0 ? "art-balloon" : `art-balloon-skin-${skin.id}`;
+  return frame === 0 ? key : `${key}-flow-${frame}`;
 };

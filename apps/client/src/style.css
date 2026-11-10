@@ -739,8 +739,12 @@ dialog p {
   min-width: 0;
 }
 .balloon-picker img {
+  width: 100%;
+  max-width: 66px;
+  height: auto;
+  aspect-ratio: 144 / 160;
   object-fit: contain;
-  image-rendering: pixelated;
+  image-rendering: auto;
 }
 .map-caption {
   color: #507365;

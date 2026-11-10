@@ -14,7 +14,6 @@ import charactersUrl from "./assets/characters.png";
 import passiveItemsUrl from "./assets/passive-items.png";
 import placedBalloonUrl from "./assets/placed-balloon.png";
 import { balloonSkins, balloonTexture } from "./balloon-skins";
-const skinImages = balloonSkins.filter((s) => s.id !== 0);
 import speedUrl from "./assets/speed.png";
 import arenaTilesUrl from "./assets/arena-tiles.png";
 import arenaLandmarksUrl from "./assets/arena-landmarks.png";
@@ -1072,18 +1071,44 @@ export function installArt(
     "ghost",
   ] as const)
     make(`art-item-${kind}`, 36, 38, (c) => item(c, kind));
-  make("art-balloon", 48, 48, (c) => {
-    c.imageSmoothingEnabled = false;
-    c.drawImage(placedBalloonImage, 0, 0, 48, 48);
-  });
-  for (const { id, image } of skinImages)
-    make(balloonTexture(id), 48, 48, (c) => {
-      c.imageSmoothingEnabled = false;
-      const scale = Math.min(48 / image.width, 48 / image.height);
-      const w = image.width * scale,
-        h = image.height * scale;
-      c.drawImage(image, (48 - w) / 2, (48 - h) / 2, w, h);
-    });
+  for (const { id, image } of balloonSkins)
+    for (let frame = 0; frame < 8; frame++)
+      make(
+        balloonTexture(id, frame),
+        image.width / 2,
+        image.height / 2,
+        (c) => {
+          c.imageSmoothingEnabled = true;
+          c.imageSmoothingQuality = "high";
+          const phase = (frame / 8) * Math.PI * 2;
+          for (let y = 0; y < image.height; y += 2) {
+            const envelope = Math.sin((y / image.height) * Math.PI);
+            const shift =
+              (Math.sin(phase + (y / image.height) * 4) -
+                Math.sin((y / image.height) * 4)) *
+              envelope *
+              1.8;
+            const stretch =
+              1 +
+              (Math.cos(phase + (y / image.height) * 4) -
+                Math.cos((y / image.height) * 4)) *
+                envelope *
+                0.012;
+            const width = image.width * stretch;
+            c.drawImage(
+              image,
+              0,
+              y,
+              image.width,
+              2,
+              ((image.width - width) / 2 + shift) / 2,
+              y / 2,
+              width / 2,
+              1,
+            );
+          }
+        },
+      );
   make("art-shadow", 40, 16, (c) => oval(c, 20, 8, 18, 5, "#28545630"));
   make("art-drop", 24, 32, (c) => {
     c.translate(12, 14);

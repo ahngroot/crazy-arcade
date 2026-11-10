@@ -383,8 +383,8 @@ export function mountRendererFixture(parent: HTMLElement, playerId = "p1") {
         (obj): obj is Phaser.GameObjects.Image =>
           obj instanceof Phaser.GameObjects.Image,
       );
-      const balloon = images.find(
-        (image) => image.texture.key === "art-balloon",
+      const balloon = images.find((image) =>
+        /^art-balloon(?:-flow-\d+)?$/.test(image.texture.key),
       )!;
       const shadow = images.find(
         (image) =>
@@ -395,6 +395,7 @@ export function mountRendererFixture(parent: HTMLElement, playerId = "p1") {
       return {
         x: balloon.x,
         y: balloon.y,
+        key: balloon.texture.key,
         shadowY: shadow.y,
         shadowWidth: shadow.displayWidth,
       };
@@ -410,6 +411,7 @@ export function mountRendererFixture(parent: HTMLElement, playerId = "p1") {
           (o): o is Phaser.GameObjects.Image =>
             o instanceof Phaser.GameObjects.Image &&
             (o.texture.key === "art-balloon" ||
+              o.texture.key.startsWith("art-balloon-flow-") ||
               o.texture.key.startsWith("art-balloon-skin-")),
         )
         .map((o) => ({
@@ -417,6 +419,7 @@ export function mountRendererFixture(parent: HTMLElement, playerId = "p1") {
           x: o.x,
           y: o.y,
           angle: o.angle,
+          originY: o.originY,
           width: o.displayWidth,
           height: o.displayHeight,
         }));
