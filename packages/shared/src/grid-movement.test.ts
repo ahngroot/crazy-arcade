@@ -16,13 +16,13 @@ function fixture() {
 it("assists an open corner near the center without diagonal cutting or crossing walls", () => {
   for (const blocked of [false, true]) {
     const { s, p } = fixture();
-    p.position = { x: 4.4, y: 4.5 };
+    p.position = { x: 4.32, y: 4.5 };
     p.moveTarget = { x: 4.5, y: 4.5 };
     p.facing = "right";
     if (blocked) s.map[3][4] = "wall";
     movePlayer(s, p, { ...EMPTY_INPUT, y: -1 }, 20);
     expect(p.position.y).toBe(4.5);
-    expect(p.position.x).toBeCloseTo(blocked ? 4.46 : 4.496);
+    expect(p.position.x).toBeCloseTo(blocked ? 4.38 : 4.416);
     for (let i = 0; i < 20; i++)
       movePlayer(s, p, { ...EMPTY_INPUT, y: -1 }, 16);
     expect(p.position.x).toBe(4.5);
