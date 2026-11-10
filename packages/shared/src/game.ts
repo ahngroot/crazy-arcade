@@ -12,12 +12,7 @@ import {
   type CompetitionRound,
 } from "./competition.js";
 import { rollCrateItem } from "./drops.js";
-import {
-  configureArena,
-  teamCanUseCell,
-  arenaSpawnCells,
-  reachableArenaCells,
-} from "./maps.js";
+import { configureArena, teamCanUseCell, arenaSpawnCells } from "./maps.js";
 
 export type Facing = "up" | "down" | "left" | "right";
 export type ItemKind =
@@ -578,14 +573,18 @@ export function defeatPlayer(s: PracticeState, p: PracticePlayer) {
     ),
   );
   for (let n = 0; n < speedSteps; n++) drops.push("speed");
+  // Sample the retained upgrades/unused inventory, never recreate consumed items.
+  for (let n = drops.length - 1; n > 0; n--) {
+    const j = Math.floor(random(s) * (n + 1));
+    [drops[n], drops[j]] = [drops[j], drops[n]];
+  }
+  drops.length = Math.floor(drops.length * C.deathDropRatio);
   if (drops.length) {
-    const reachable = s.arenaId ? reachableArenaCells(s.map, p.position) : null;
     const floors: Position[] = [];
     for (let y = s.arenaId ? 0 : 1; y < C.rows - (s.arenaId ? 0 : 1); y++)
       for (let x = s.arenaId ? 0 : 1; x < C.columns - (s.arenaId ? 0 : 1); x++)
         if (
           s.map[y][x] === "floor" &&
-          (!reachable || reachable.has(`${x},${y}`)) &&
           (!s.round || teamCanUseCell(s, p.team, x))
         )
           floors.push({ x, y });
@@ -601,12 +600,7 @@ export function defeatPlayer(s: PracticeState, p: PracticePlayer) {
         ),
     );
     const candidates = preferred.length >= drops.length ? preferred : floors;
-    candidates.sort(
-      (a, b) =>
-        Math.hypot(a.x + 0.5 - p.position.x, a.y + 0.5 - p.position.y) -
-        Math.hypot(b.x + 0.5 - p.position.x, b.y + 0.5 - p.position.y),
-    );
-    const pool = candidates.slice(0, Math.max(12, drops.length * 2));
+    const pool = [...candidates];
     for (let n = pool.length - 1; n > 0; n--) {
       const j = Math.floor(random(s) * (n + 1));
       [pool[n], pool[j]] = [pool[j], pool[n]];
@@ -662,14 +656,11 @@ function respawn(s: PracticeState, p: PracticePlayer) {
       )
         candidates.push({ x: x + 0.5, y: y + 0.5 });
     }
-  candidates.sort(
-    (a, b) =>
-      Math.hypot(a.x - p.spawn.x, a.y - p.spawn.y) -
-      Math.hypot(b.x - p.spawn.x, b.y - p.spawn.y),
-  );
-  const safe = candidates.find(
+  const safeCells = candidates.filter(
     (pos) =>
       canOccupy(s, p, pos.x, pos.y) &&
+      !s.items.some((item) => sameCell(pos, item)) &&
+      !s.balloons.some((b) => sameCell(pos, b)) &&
       !inBlast(s, pos) &&
       !s.round?.monsters.some(
         (m) =>
@@ -683,6 +674,7 @@ function respawn(s: PracticeState, p: PracticePlayer) {
           sameCell(pos, other.position),
       ),
   );
+  const safe = safeCells[Math.floor(random(s) * safeCells.length)];
   if (safe) {
     p.position = safe;
     p.moveTarget = undefined;

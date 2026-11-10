@@ -673,6 +673,7 @@ export class GameRenderer {
             ? Math.sin(Math.PI * progress) * (65 + (item.id % 3) * 12)
             : 0;
       actor.image
+        .setData("itemId", item.id)
         .setPosition(
           x,
           y +

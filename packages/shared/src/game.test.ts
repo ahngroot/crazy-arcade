@@ -269,7 +269,7 @@ describe("damage, respawn and items", () => {
     const pos = { ...p.position };
     step(s, 500, move(0, 1));
     expect(p.position.y - pos.y).toBeCloseTo(
-      C.movementTilesPerSecond * 0.4 * 0.5,
+      C.movementTilesPerSecond * 0.2 * 0.5,
     );
     step(s, C.trappedMs - 500 + C.respawnMs);
     expect(p.status).toBe("active");
@@ -278,7 +278,7 @@ describe("damage, respawn and items", () => {
     s.blasts.push({
       id: 99,
       owner: "p2",
-      cells: [{ x: 1, y: 1 }],
+      cells: [{ x: Math.floor(p.position.x), y: Math.floor(p.position.y) }],
       expiresAt: s.time + 2000,
     });
     step(s, 100);

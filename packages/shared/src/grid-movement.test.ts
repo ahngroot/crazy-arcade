@@ -36,7 +36,7 @@ it("expires an old quick turn without rearming the same input ID", () => {
   const held = { ...EMPTY_INPUT, y: 1, turn: "right" as const, turnId: 20 };
   movePlayer(s, p, held, 16);
   expect(p.queuedTurn).toBe("right");
-  for (let i = 0; i < 70; i++) movePlayer(s, p, held, 16);
+  for (let i = 0; i < 140; i++) movePlayer(s, p, held, 16);
   expect(p.queuedTurn).toBeUndefined();
   expect(p.position.x).toBe(4.5);
   expect(p.position.y).toBeGreaterThan(5.5);
@@ -114,14 +114,14 @@ it("records authoritative death origin and staggered flight times without granti
   p.capacity = 3;
   const origin = { ...p.position };
   defeatPlayer(s, p);
-  expect(s.items).toHaveLength(4);
+  expect(s.items).toHaveLength(3);
   for (const item of s.items) {
     expect(item.flight!.from).toEqual(origin);
     expect(item.flight!.startedAt).toBe(s.time);
     expect(item.flight!.landsAt).toBeLessThan(item.availableAt);
     expect(s.map[item.y][item.x]).toBe("floor");
   }
-  expect(new Set(s.items.map((i) => i.flight!.landsAt)).size).toBe(4);
+  expect(new Set(s.items.map((i) => i.flight!.landsAt)).size).toBe(3);
   expect(p.inventory).toEqual([]);
 });
 it("remembers a quick overlapping turn until the next tile and then resumes the held direction", () => {

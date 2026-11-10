@@ -60,13 +60,15 @@ export function mountArenaFixture(parent: HTMLElement, id: string) {
         .map((o) => {
           const image = o as Phaser.GameObjects.Image;
           return {
+            id: image.getData("itemId") as number,
             x: image.x,
             y: image.y,
             width: image.displayWidth,
             height: image.displayHeight,
             alpha: image.alpha,
           };
-        });
+        })
+        .sort((a, b) => a.id - b.id);
     },
     destroy: () => game.destroy(true),
   };

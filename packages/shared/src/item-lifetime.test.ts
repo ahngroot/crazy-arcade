@@ -40,6 +40,7 @@ it("starts the 15-second lifetime separately at each death item's landing time",
   const s = createArenaPractice(45),
     p = s.players[0];
   p.inventory = ["shield", "needle"];
+  p.capacity++;
   defeatPlayer(s, p);
   expect(s.items.map((i) => i.expiresAt! - i.flight!.landsAt)).toEqual([
     15000, 15000,
@@ -48,8 +49,9 @@ it("starts the 15-second lifetime separately at each death item's landing time",
   p.statusUntil = Infinity;
   const first = s.items[0].expiresAt!,
     second = s.items[1].expiresAt!;
+  const secondId = s.items[1].id;
   stepPractice(s, [EMPTY_INPUT], first + C.fixedStepMs / 2);
-  expect(s.items.map((i) => i.kind)).toEqual(["needle"]);
+  expect(s.items.map((i) => i.id)).toEqual([secondId]);
   stepPractice(s, [EMPTY_INPUT], second - s.time + C.fixedStepMs);
   expect(s.items).toHaveLength(0);
 });

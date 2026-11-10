@@ -31,7 +31,7 @@ test("death items fly from the character to authoritative floor targets at enlar
           alpha: number;
         }[],
     );
-  await expect.poll(async () => (await frames()).length).toBe(4);
+  await expect.poll(async () => (await frames()).length).toBe(3);
   const from = await frames();
   expect(from[0].width).toBe(40.5);
   await advance(350);
@@ -55,7 +55,10 @@ test("death items fly from the character to authoritative floor targets at enlar
     expect(Math.abs(f.y - targets[n].y - 7)).toBeLessThan(2);
   });
   expect(
-    middle.some((f, n) => f.y < Math.min(from[n].y, landed[n].y) - 15),
+    middle.every((f, n) => {
+      const progress = 350 / (700 + n * 45);
+      return f.y < from[n].y * (1 - progress) + landed[n].y * progress - 40;
+    }),
   ).toBe(true);
   await page
     .locator("#scatter-fixture")
