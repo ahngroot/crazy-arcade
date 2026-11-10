@@ -13,6 +13,7 @@ import {
   characterTexture,
   safeTexture,
   type Pose,
+  type MapPalette,
 } from "./art";
 import { PresentationTracker, type PresentationEvent } from "./presentation";
 import { arcadeAudio } from "./audio";
@@ -74,8 +75,9 @@ export class GameRenderer {
     private parent: HTMLElement,
     private sound = true,
     private playerId = "p1",
+    mapPalette: MapPalette = "pastel",
   ) {
-    installArt(scene);
+    installArt(scene, mapPalette);
     this.selfArrow = this.image("art-self-arrow", 14, 20)
       .setDepth(23000)
       .setVisible(false);

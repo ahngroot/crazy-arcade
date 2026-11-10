@@ -630,7 +630,11 @@ const keyPlayer = (team: Team, pose: Pose, dir: Facing, frame: number) =>
   `art-player-${team}-${pose}-${dir}-${frame}`;
 export { keyPlayer };
 
-export function installArt(scene: Phaser.Scene) {
+export type MapPalette = "original" | "pastel";
+export function installArt(
+  scene: Phaser.Scene,
+  mapPalette: MapPalette = "pastel",
+) {
   const make = (
     key: string,
     w: number,
@@ -645,6 +649,25 @@ export function installArt(scene: Phaser.Scene) {
     if (!ctx) throw new Error("2D drawing is unavailable");
     ctx.scale(2, 2);
     draw(ctx);
+    if (
+      mapPalette === "pastel" &&
+      /^art-(arena-|ground-|wall|crate)/.test(key)
+    ) {
+      // Preview palette is baked into terrain textures only; actors/effects keep their colors.
+      const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      for (let i = 0; i < pixels.data.length; i += 4) {
+        if (!pixels.data[i + 3]) continue;
+        const luminance =
+          pixels.data[i] * 0.2126 +
+          pixels.data[i + 1] * 0.7152 +
+          pixels.data[i + 2] * 0.0722;
+        for (let channel = 0; channel < 3; channel++)
+          pixels.data[i + channel] =
+            (pixels.data[i + channel] * 0.78 + luminance * 0.22) * 0.83 +
+            255 * 0.17;
+      }
+      ctx.putImageData(pixels, 0, 0);
+    }
     scene.textures.addCanvas(key, canvas);
   };
   const unit = waterStreamImage.naturalWidth / 1254;

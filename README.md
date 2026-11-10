@@ -2,6 +2,8 @@
 
 **[⬇ Windows 게임 ZIP 다운로드 (약 56MB)](https://raw.githubusercontent.com/ahngroot/crazy-arcade/main/crazy-myangcade-windows-x64.zip)**
 
+승인된 파스텔 색감이 모든 맵에 적용됩니다. 바닥·상자·벽·장식은 부드럽게 밝히고 캐릭터·물풍선·아이템·물줄기는 기존 색상을 유지합니다. [색감 비교](docs/map-palette.md)를 참고하세요.
+
 최신 변경: 바닥 아이템은 15초 유지하며 마지막 3초에 옅어져 사라집니다(사망 드롭은 착지부터 계산). 벽이나 장애물에 막혀도 방향키를 누르는 동안 그 방향을 보며 제자리에서 걷고, 키를 떼면 멈춥니다. 겹친 방향키의 우선순위와 타일 중심 이동은 유지합니다.
 
 조작 보정: 중심 가까이에서 열린 방향으로 꺾을 때 마지막 정렬 구간을 빠르게 마칩니다. 짧은 방향 입력은 최대 0.35초 보관하고 새 입력이 오면 교체하며 오래된 입력은 만료시킵니다. [조정 값과 동작](docs/play-feel.md)을 참고하세요.
@@ -101,7 +103,7 @@ npm run test:portable -- release/crazy-myangcade.exe
 
 Linux에서는 `PLAYWRIGHT_CHROMIUM_PATH=/usr/bin/chromium npm run test:e2e`를 사용할 수 있습니다. `npm run package:host`와 `npm run test:portable -- release/crazy-myangcade-linux`로 동일한 포터블 실행 경로를 검증합니다.
 
-이번 변경 후 타입 검사·제품 빌드·Vitest **138개**와 전체 Chromium 브라우저 **40개**를 통과했습니다. 자기 캐릭터 화살표·사망 시 숨김/부활 위치 추적·0.8칸/초 갇힘 이동·물줄기/울트라 분리 드롭·3개 이하 전량 드롭과 기존 맵·조작·연습·온라인 흐름을 확인했습니다. 자세한 범위는 [화면·조작 안내](docs/play-feel.md)와 [Windows 안내](docs/windows.md)를 참고하세요.
+승인된 파스텔 색감 적용 후 타입 검사·제품 빌드·Vitest **138개**와 전체 Chromium 브라우저 **40개**를 통과했습니다. 7종 실제 렌더 비교에서 캐릭터·물풍선·아이템·물줄기·화살표의 원본 색상도 확인했습니다. 기존 맵·조작·드롭·연습·온라인 흐름을 유지합니다. 자세한 범위는 [색감 안내](docs/map-palette.md)와 [Windows 안내](docs/windows.md)를 참고하세요.
 
 실제 서로 다른 집의 PC 두 대, Windows Chrome/Edge 수동 조작, 원작 조작감·수치 일치 여부는 추가 확인이 필요합니다. Phaser 청크 크기 경고는 알려진 상태이며 실행 오류는 아닙니다.
 

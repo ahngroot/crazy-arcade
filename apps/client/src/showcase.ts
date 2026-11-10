@@ -11,7 +11,12 @@ import { installArt, keyPlayer, safeTexture, type Pose } from "./art";
 import { GameRenderer } from "./renderer";
 
 /** Reference map QA, uses the same catalogue and renderer as both product modes. */
-export function mountArenaFixture(parent: HTMLElement, id: string) {
+export function mountArenaFixture(
+  parent: HTMLElement,
+  id: string,
+  palette: "original" | "pastel" = "pastel",
+  frozen = false,
+) {
   let resolveReady!: () => void;
   const ready = new Promise<void>((resolve) => (resolveReady = resolve));
   const state = createArenaPractice(38459, undefined, id);
@@ -22,14 +27,14 @@ export function mountArenaFixture(parent: HTMLElement, id: string) {
       super("arena-fixture");
     }
     create() {
-      this.view = new GameRenderer(this, parent, false);
+      this.view = new GameRenderer(this, parent, false, "p1", palette);
       this.events.once(Phaser.Scenes.Events.SHUTDOWN, () =>
         this.view.destroy(),
       );
       this.game.events.once(Phaser.Core.Events.POST_RENDER, resolveReady);
     }
     update(_time: number, delta: number) {
-      this.view.update(state, delta);
+      this.view.update(state, frozen ? 0 : delta);
     }
   }
   const scene = new ArenaScene();
@@ -45,6 +50,17 @@ export function mountArenaFixture(parent: HTMLElement, id: string) {
   return {
     ready,
     state,
+    textureFingerprint(key: string) {
+      const canvas = scene.textures
+        .get(key)
+        .getSourceImage() as HTMLCanvasElement;
+      const pixels = canvas
+        .getContext("2d")!
+        .getImageData(0, 0, canvas.width, canvas.height).data;
+      let hash = 2166136261;
+      for (const value of pixels) hash = Math.imul(hash ^ value, 16777619);
+      return hash >>> 0;
+    },
     scatter() {
       state.players[0].inventory = ["shield", "needle"];
       state.players[0].capacity = 3;
