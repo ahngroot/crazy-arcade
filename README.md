@@ -2,7 +2,7 @@
 
 **[⬇ Windows 게임 ZIP 다운로드 (약 54MB)](https://raw.githubusercontent.com/ahngroot/crazy-arcade/main/crazy-myangcade-windows-x64.zip)**
 
-최신 변경: 바닥 아이템은 24초 유지하며 마지막 3초에 옅어져 사라집니다(사망 드롭은 착지부터 계산). 벽이나 장애물에 막혀도 방향키를 누르는 동안 그 방향을 보며 제자리에서 걷고, 키를 떼면 멈춥니다. 겹친 방향키의 우선순위와 타일 중심 이동은 유지합니다.
+최신 변경: 바닥 아이템은 22.5초 유지하며 마지막 3초에 옅어져 사라집니다(사망 드롭은 착지부터 계산). 벽이나 장애물에 막혀도 방향키를 누르는 동안 그 방향을 보며 제자리에서 걷고, 키를 떼면 멈춥니다. 겹친 방향키의 우선순위와 타일 중심 이동은 유지합니다.
 
 각자의 PC에서 한 캐릭터를 조작하는 **온라인 1:1 꼬물이 대전**입니다. **1인 무제한 연습 모드**도 제공합니다. 한 PC에서 두 캐릭터를 함께 조작하는 기능은 제공하지 않습니다. 직접 만든 그림과 합성 음악을 사용합니다.
 
@@ -95,7 +95,7 @@ npm run test:portable -- release/crazy-myangcade.exe
 
 Linux에서는 `PLAYWRIGHT_CHROMIUM_PATH=/usr/bin/chromium npm run test:e2e`를 사용할 수 있습니다. `npm run package:host`와 `npm run test:portable -- release/crazy-myangcade-linux`로 동일한 포터블 실행 경로를 검증합니다.
 
-타입 검사·제품 빌드·Vitest **131개**·Chromium E2E **38개 항목**이 통과했습니다. 벽 앞 제자리 걷기·키 해제 정지, 아이템 24초 유지·3초 페이드, 13종 방향별 걷기, 타일 중심 이동·충돌, 사망 아이템 비행/착지와 기존 연습·온라인 재접속/재대결을 확인했습니다. 자세한 범위는 [캐릭터 그림 안내](docs/character-motion.md), [화면·조작 안내](docs/play-feel.md)와 [Windows 안내](docs/windows.md)를 참고하세요.
+이번 유지 시간 조정 후 타입 검사·제품 빌드·Vitest **131개**와 아이템 비행/착지·페이드 브라우저 검사 **1개**를 통과했습니다. 이전 전체 Chromium 검사 **38개**에서는 벽 앞 제자리 걷기·키 해제 정지, 13종 방향별 걷기와 기존 연습·온라인 재접속/재대결을 확인했습니다. 자세한 범위는 [캐릭터 그림 안내](docs/character-motion.md), [화면·조작 안내](docs/play-feel.md)와 [Windows 안내](docs/windows.md)를 참고하세요.
 
 실제 서로 다른 집의 PC 두 대, Windows Chrome/Edge 수동 조작, 원작 조작감·수치 일치 여부는 추가 확인이 필요합니다. Phaser 청크 크기 경고는 알려진 상태이며 실행 오류는 아닙니다.
 

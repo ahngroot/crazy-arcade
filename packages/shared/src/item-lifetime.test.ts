@@ -6,14 +6,14 @@ import {
   EMPTY_INPUT,
   GAME_CONFIG as C,
 } from "./index";
-it("keeps a new floor item past twelve seconds and expires it at twenty-four", () => {
+it("keeps a new floor item past twelve seconds and expires it at 22.5 seconds", () => {
   const s = createArenaPractice(45);
   s.players[0].status = "trapped";
   s.players[0].statusUntil = Infinity;
   s.items.push({ id: 300, kind: "shield", x: 1, y: 1, availableAt: Infinity });
   stepPractice(s, [EMPTY_INPUT], C.fixedStepMs);
   const expiresAt = s.items[0].expiresAt!;
-  expect(expiresAt - s.time).toBe(24000);
+  expect(expiresAt - s.time).toBe(22500);
   stepPractice(s, [EMPTY_INPUT], 12000);
   expect(s.items).toHaveLength(1);
   stepPractice(s, [EMPTY_INPUT], expiresAt - s.time + C.fixedStepMs);
@@ -27,22 +27,22 @@ it("removes expired floor items before they can be collected at the expiry tick"
     kind: "needle",
     x: Math.floor(p.position.x),
     y: Math.floor(p.position.y),
-    availableAt: 25000,
-    expiresAt: 24000,
+    availableAt: 23500,
+    expiresAt: 22500,
   });
-  stepPractice(s, [EMPTY_INPUT], 23990);
+  stepPractice(s, [EMPTY_INPUT], 22490);
   expect(s.items).toHaveLength(1);
   stepPractice(s, [EMPTY_INPUT], 30);
   expect(s.items).toHaveLength(0);
   expect(p.inventory).toEqual([]);
 });
-it("starts the twenty-four-second lifetime separately at each death item's landing time", () => {
+it("starts the 22.5-second lifetime separately at each death item's landing time", () => {
   const s = createArenaPractice(45),
     p = s.players[0];
   p.inventory = ["shield", "needle"];
   defeatPlayer(s, p);
   expect(s.items.map((i) => i.expiresAt! - i.flight!.landsAt)).toEqual([
-    24000, 24000,
+    22500, 22500,
   ]);
   p.status = "trapped";
   p.statusUntil = Infinity;
