@@ -201,3 +201,32 @@ it("gives every selectable start a floor-only escape within four steps on all se
     }
   }
 });
+
+it("keeps only the mast's three base tiles solid and allows walking behind its artwork", () => {
+  const s = createArenaPractice(42, undefined, "pirate-mast"),
+    p = s.players[0];
+  const arena = ARENAS.find((a) => a.id === "pirate-mast")!;
+  const base: string[] = [];
+  arena.rows.forEach((row, y) =>
+    [...row].forEach((glyph, x) => {
+      if (glyph === "m") base.push(`${x},${y}`);
+    }),
+  );
+  expect(base).toEqual(["6,6", "7,6", "8,6"]);
+  for (const [x, y] of [
+    [7, 3],
+    [7, 4],
+    [6, 5],
+    [7, 5],
+    [8, 5],
+  ]) {
+    expect(s.map[y][x]).toBe("floor");
+    expect(canOccupy(s, p, x + 0.5, y + 0.5)).toBe(true);
+  }
+  for (const x of [6, 7, 8]) expect(canOccupy(s, p, x + 0.5, 6.5)).toBe(false);
+  p.position = { x: 7.5, y: 3.5 };
+  for (let i = 0; i < 60; i++) movePlayer(s, p, { ...EMPTY_INPUT, y: 1 }, 16);
+  expect(p.position.y).toBeGreaterThan(5.4);
+  expect(p.position.y).toBeLessThan(5.52);
+  expect(canOccupy(s, p, p.position.x, p.position.y)).toBe(true);
+});

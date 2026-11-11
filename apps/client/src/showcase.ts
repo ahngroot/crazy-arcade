@@ -326,7 +326,15 @@ export function mountRendererFixture(parent: HTMLElement, playerId = "p1") {
           alpha: image.alpha,
           visible: image.visible,
           angle: image.angle,
+          depth: image.depth,
         }));
+    },
+    mastDepth() {
+      return scene.children.list.find(
+        (obj): obj is Phaser.GameObjects.Image =>
+          obj instanceof Phaser.GameObjects.Image &&
+          obj.texture.key === "art-arena-mast",
+      )?.depth;
     },
     characterVisibleBounds() {
       return scene.children.list
