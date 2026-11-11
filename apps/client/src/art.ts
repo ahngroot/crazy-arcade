@@ -1,5 +1,6 @@
 import type Phaser from "phaser";
 import type { Team, ItemKind, Facing, Tile } from "@bubble/shared";
+import { GAME_CONFIG as C } from "@bubble/shared";
 import villageHousesUrl from "./assets/village-houses.png";
 import alternateTrapUrl from "./assets/trapped-alternate.png";
 import extraTrapUrl from "./assets/trapped-extra.png";
@@ -111,6 +112,8 @@ export const ART = {
   monsterHeight: 36,
   particleLimit: 220,
 } as const;
+// One scale per character across all directions/steps, computed from visible art.
+export const characterClearanceScale: number[] = [];
 export const COLORS = {
   ink: "#254856",
   red: "#fb806d",
@@ -1013,6 +1016,31 @@ export function installArt(
         });
       });
     }
+  }
+  for (let id = 0; id < 13; id++) {
+    let extent = 0;
+    for (const dir of ["down", "left", "right", "up"] as const)
+      for (let frame = 0; frame < 4; frame++) {
+        const source = scene.textures
+          .get(characterTexture(id, dir, frame))
+          .getSourceImage() as HTMLCanvasElement;
+        const pixels = source
+          .getContext("2d")!
+          .getImageData(0, 0, source.width, source.height).data;
+        for (let y = 0; y < source.height; y++)
+          for (let x = 0; x < source.width; x++)
+            if (pixels[(y * source.width + x) * 4 + 3] > 32)
+              extent = Math.max(
+                extent,
+                Math.abs(x - source.width / 2),
+                Math.abs(x + 1 - source.width / 2),
+              );
+      }
+    characterClearanceScale[id] = Math.min(
+      1,
+      (C.obstacleRadius * C.tileSize - 0.6) /
+        ((extent * ART.directionalWidth) / 144),
+    );
   }
   for (const [col, key] of [
     [0, "trapped"],

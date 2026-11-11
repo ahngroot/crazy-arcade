@@ -1,6 +1,7 @@
 import {
   GAME_CONFIG as C,
   movePlayer,
+  canOccupy,
   type PracticeState,
   type LocalInput,
   type NetworkInput,
@@ -181,12 +182,17 @@ export class OnlineTimeline {
       if (p.id !== this.playerId) {
         const old = a?.game.players.find((v) => v.id === p.id),
           next = b.game.players.find((v) => v.id === p.id);
+        const interpolated =
+          old?.status === p.status && next
+            ? mix(old.position, next.position)
+            : { ...p.position };
         return {
           ...p,
           position:
-            old?.status === p.status && next
-              ? mix(old.position, next.position)
-              : { ...p.position },
+            current.arenaId &&
+            !canOccupy(current, p, interpolated.x, interpolated.y)
+              ? { ...p.position }
+              : interpolated,
         };
       }
       const position = running
@@ -204,6 +210,14 @@ export class OnlineTimeline {
         x: this.visual.x + (position.x - this.visual.x) * factor,
         y: this.visual.y + (position.y - this.visual.y) * factor,
       };
+      // Smoothing a turn can cut diagonally through a crate even when both
+      // authoritative endpoints are valid. Never display that invalid shortcut.
+      if (
+        current.arenaId &&
+        !canOccupy(current, p, this.visual.x, this.visual.y) &&
+        canOccupy(current, p, position.x, position.y)
+      )
+        this.visual = { ...position };
       return {
         ...p,
         position: { ...this.visual },

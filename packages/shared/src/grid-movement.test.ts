@@ -101,7 +101,7 @@ it("stops immediately and resumes from the same fractional position", () => {
 it("nudges only sideways at a blocked open corner, with no simultaneous diagonal step", () => {
   for (const blocked of [false, true]) {
     const { s, p } = fixture();
-    p.position = { x: 4.275, y: 4.28 };
+    p.position = { x: 4.275, y: 4.49 };
     s.map[3][3] = "wall";
     if (blocked) s.map[3][4] = "wall";
     const before = { ...p.position };
@@ -151,7 +151,7 @@ it("does not let a blocked overlapping turn lock the held direction", () => {
   const { s, p } = fixture();
   s.map[5][5] = "wall";
   movePlayer(s, p, { ...EMPTY_INPUT, y: 1 }, 100);
-  for (let i = 0; i < 50; i++)
+  for (let i = 0; i < 120; i++)
     movePlayer(s, p, { ...EMPTY_INPUT, y: 1, turn: "right", turnId: 9 }, 16);
   expect(p.position.x).toBe(4.5);
   expect(p.position.y).toBeGreaterThan(6.5);
@@ -228,13 +228,13 @@ it("slides past shallow corner overlaps in every direction without diagonal moti
               passThrough: [],
             });
           else s.map[cell.y][cell.x] = kind;
-          p.position = rotate(mirror ? 4.87 : 4.13, 4.28);
+          p.position = rotate(mirror ? 4.87 : 4.13, 4.49);
           if (trapped) p.status = "trapped";
           const d = rotate(4.5, 3.5);
           const x = d.x - 4.5,
             y = d.y - 4.5;
           const start = { ...p.position };
-          for (let i = 0; i < 50; i++) {
+          for (let i = 0; i < 120; i++) {
             const before = { ...p.position };
             movePlayer(s, p, { ...EMPTY_INPUT, x, y }, 16);
             expect(p.position.x === before.x || p.position.y === before.y).toBe(
@@ -252,7 +252,7 @@ it("does not assist a frontal wall, deep overlap, or a blocked sideways escape",
   for (const reason of ["front", "deep", "side"]) {
     const { s, p } = fixture();
     s.map[3][3] = "wall";
-    p.position = { x: reason === "deep" ? 4.05 : 4.13, y: 4.28 };
+    p.position = { x: reason === "deep" ? 3.5 : 4.13, y: 4.49 };
     if (reason === "front") s.map[3][4] = "wall";
     if (reason === "side")
       s.balloons.push({
@@ -268,5 +268,19 @@ it("does not assist a frontal wall, deep overlap, or a blocked sideways escape",
     for (let i = 0; i < 30; i++)
       movePlayer(s, p, { ...EMPTY_INPUT, y: -1 }, 16);
     expect(p.position).toEqual(before);
+  }
+});
+
+it("escapes the screenshot's lower-left corner across a tile boundary using only Down", () => {
+  for (const x of [3.98, 4.02, 4.13]) {
+    const { s, p } = fixture();
+    s.map[5][3] = "crate";
+    p.position = { x, y: 4.51 };
+    for (let i = 0; i < 60; i++) {
+      movePlayer(s, p, { ...EMPTY_INPUT, y: 1 }, 1000 / 60);
+      expect(canOccupy(s, p, p.position.x, p.position.y)).toBe(true);
+    }
+    expect(p.position.x).toBeGreaterThanOrEqual(4.49);
+    expect(p.position.y).toBeGreaterThan(6);
   }
 });

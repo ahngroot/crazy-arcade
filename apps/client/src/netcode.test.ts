@@ -1,6 +1,7 @@
 import { it, expect } from "vitest";
 import {
   createCompetition,
+  canOccupy,
   GAME_CONFIG as C,
   EMPTY_INPUT,
   type RoomView,
@@ -193,4 +194,29 @@ it("caps catch-up after a long frame and keeps every received snapshot immutable
   t.receive(snapshot);
   t.frame({ ...EMPTY_INPUT, x: 1 }, 34, true);
   expect(snapshot).toEqual(before);
+});
+
+it("keeps displayed local and remote corner corrections outside crates", () => {
+  let now = 0;
+  const t = new OnlineTimeline(
+    "p1",
+    () => {},
+    () => now,
+  );
+  const a = view();
+  a.game!.arenaId = "pirate-lion";
+  a.game!.map.forEach((row) => row.fill("floor"));
+  a.game!.map[5][3] = "crate";
+  for (const p of a.game!.players) p.position = { x: 4.02, y: 4.51 };
+  t.receive(a);
+  t.frame(EMPTY_INPUT, 16, true);
+  const b = structuredClone(a);
+  b.tick = 1;
+  for (const p of b.game!.players) p.position = { x: 4.5, y: 5.5 };
+  now = 50;
+  t.receive(b);
+  now = 125;
+  const shown = t.frame(EMPTY_INPUT, 16, true)!;
+  for (const p of shown.players)
+    expect(canOccupy(shown, p, p.position.x, p.position.y)).toBe(true);
 });

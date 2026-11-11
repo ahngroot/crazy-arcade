@@ -210,7 +210,7 @@ export function canOccupy(
   x: number,
   y: number,
 ): boolean {
-  const r = C.playerRadius;
+  const r = s.arenaId ? C.obstacleRadius : C.playerRadius;
   for (let cy = Math.floor(y - r); cy <= Math.floor(y + r - 1e-8); cy++)
     for (let cx = Math.floor(x - r); cx <= Math.floor(x + r - 1e-8); cx++) {
       if (s.map[cy]?.[cx] !== "floor") return false;
@@ -407,30 +407,48 @@ function moveCardinal(
   // a later tick. This is an orthogonal nudge, never a diagonal shortcut.
   if (!blocked || remaining < (effectiveStats(s, p).speed * dt) / 1000 - 1e-8)
     return;
-  const center = x
-    ? Math.floor(p.position.y) + 0.5
-    : Math.floor(p.position.x) + 0.5;
-  const offset = center - (x ? p.position.y : p.position.x);
-  // Measure the body overlap, not the distance to the tile center. Previously
-  // 0.23 center tolerance with a 0.28 radius allowed only 0.01 tile of overlap.
-  const clearance = 0.5 - C.playerRadius - 1e-6;
-  const overlap = Math.abs(offset) - clearance;
-  const lane = center - Math.sign(offset) * clearance;
+  const lateral = x ? p.position.y : p.position.x;
+  const clearance = 0.5 - C.obstacleRadius - 1e-6;
   const probe = Math.min(remaining, 0.05);
-  if (
-    overlap > 0 &&
-    overlap <= C.cornerSlideMaxOverlap &&
-    canOccupy(
-      s,
-      p,
-      x ? p.position.x + x * probe : lane,
-      y ? p.position.y + y * probe : lane,
+  // Search both neighboring lanes too: the body may straddle the tile edge.
+  const lanes = [-1, 0, 1]
+    .map((delta) => {
+      const center = Math.floor(lateral) + 0.5 + delta;
+      return Math.max(
+        center - clearance,
+        Math.min(center + clearance, lateral),
+      );
+    })
+    .filter(
+      (lane) =>
+        Math.abs(lane - lateral) > 1e-8 &&
+        Math.abs(lane - lateral) <= C.cornerSlideMaxDistance,
     )
-  ) {
-    const nudge = Math.sign(offset) * Math.min(overlap, remaining, 0.05);
-    const nx = p.position.x + (y ? nudge : 0);
-    const ny = p.position.y + (x ? nudge : 0);
-    if (canOccupy(s, p, nx, ny)) p.position = { x: nx, y: ny };
+    .sort((a, b) => Math.abs(a - lateral) - Math.abs(b - lateral));
+  for (const lane of lanes) {
+    const clear = (v: number, forward: number) =>
+      canOccupy(
+        s,
+        p,
+        x ? p.position.x + x * forward : v,
+        y ? p.position.y + y * forward : v,
+      );
+    if (!clear(lane, probe)) continue;
+    // Validate the entire lateral route, not just the destination.
+    const offset = lane - lateral;
+    const count = Math.ceil(Math.abs(offset) / 0.05);
+    let safe = true;
+    for (let i = 1; i <= count; i++)
+      if (!clear(lateral + (offset * i) / count, 0)) {
+        safe = false;
+        break;
+      }
+    if (!safe) continue;
+    const next =
+      lateral + Math.sign(offset) * Math.min(Math.abs(offset), remaining, 0.05);
+    if (x) p.position.y = next;
+    else p.position.x = next;
+    break;
   }
 }
 
@@ -460,7 +478,12 @@ export function placeBalloon(s: PracticeState, p: PracticePlayer): boolean {
     passThrough: s.players
       .filter(
         (other) =>
-          other.status === "active" && overlapsCell(other.position, { x, y }),
+          other.status === "active" &&
+          overlapsCell(
+            other.position,
+            { x, y },
+            s.arenaId ? C.obstacleRadius : C.playerRadius,
+          ),
       )
       .map((other) => other.id),
   });
@@ -697,7 +720,13 @@ function tick(s: PracticeState, inputs: readonly LocalInput[]) {
       movePlayer(s, p, input, dt);
       // Remove the pass-through permission once the entire body has left the cell.
       for (const b of s.balloons)
-        if (!overlapsCell(p.position, b))
+        if (
+          !overlapsCell(
+            p.position,
+            b,
+            s.arenaId ? C.obstacleRadius : C.playerRadius,
+          )
+        )
           b.passThrough = b.passThrough.filter((id) => id !== p.id);
       if (p.status === "active" && input.balloon && !p.bombDown)
         placeBalloon(s, p);

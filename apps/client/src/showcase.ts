@@ -328,6 +328,39 @@ export function mountRendererFixture(parent: HTMLElement, playerId = "p1") {
           angle: image.angle,
         }));
     },
+    characterVisibleBounds() {
+      return scene.children.list
+        .filter(
+          (o): o is Phaser.GameObjects.Image =>
+            o instanceof Phaser.GameObjects.Image &&
+            /^art-(character|direction)-/.test(o.texture.key) &&
+            o.visible,
+        )
+        .map((o) => {
+          const source = o.texture.getSourceImage() as HTMLCanvasElement;
+          const pixels = source
+            .getContext("2d")!
+            .getImageData(0, 0, source.width, source.height).data;
+          let l = source.width,
+            r = 0,
+            t = source.height,
+            b = 0;
+          for (let y = 0; y < source.height; y++)
+            for (let x = 0; x < source.width; x++)
+              if (pixels[(y * source.width + x) * 4 + 3] > 32) {
+                l = Math.min(l, x);
+                r = Math.max(r, x + 1);
+                t = Math.min(t, y);
+                b = Math.max(b, y + 1);
+              }
+          return {
+            left: o.x + (l / source.width - o.originX) * o.displayWidth,
+            right: o.x + (r / source.width - o.originX) * o.displayWidth,
+            top: o.y + (t / source.height - o.originY) * o.displayHeight,
+            bottom: o.y + (b / source.height - o.originY) * o.displayHeight,
+          };
+        });
+    },
     arrowFrames() {
       return scene.children.list
         .filter(

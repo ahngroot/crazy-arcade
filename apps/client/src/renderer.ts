@@ -8,6 +8,7 @@ import {
 } from "@bubble/shared";
 import {
   ART,
+  characterClearanceScale,
   installArt,
   keyPlayer,
   characterTexture,
@@ -400,6 +401,10 @@ export class GameRenderer {
       p.characterId !== undefined && pose !== "trapped" && !dying
         ? ART.directionalWidth
         : ART.playerWidth;
+    const clearanceScale =
+      p.characterId !== undefined && pose !== "trapped" && !dying
+        ? (characterClearanceScale[p.characterId] ?? 1)
+        : 1;
     const actor = this.actor(
       this.players,
       p.id,
@@ -442,7 +447,10 @@ export class GameRenderer {
     actor.image
       .setVisible(fade > 0)
       .setPosition(p.position.x * C.tileSize, p.position.y * C.tileSize - bob)
-      .setDisplaySize(playerWidth * spawn, ART.playerHeight * spawn)
+      .setDisplaySize(
+        playerWidth * spawn * clearanceScale,
+        ART.playerHeight * spawn * clearanceScale,
+      )
       .setAngle(0)
       .setAlpha(
         fade *
