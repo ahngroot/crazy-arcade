@@ -44,6 +44,9 @@ test("all thirteen characters turn side/back, animate feet and retain their dire
         key: string;
         visible: number;
         footHash: number;
+        height: number;
+        bottom: number;
+        edgePixels: number;
       }[],
   );
   for (let id = 0; id < 13; id++)
@@ -55,6 +58,17 @@ test("all thirteen characters turn side/back, animate feet and retain their dire
       const cycle = textures.filter((t) => t.key.startsWith(prefix));
       expect(cycle, `${id}/${dir} has all four frames`).toHaveLength(4);
       expect(cycle.every((t) => t.visible > 300)).toBe(true);
+      expect(
+        cycle.every((t) => t.edgePixels === 0),
+        `${id}/${dir} is not clipped`,
+      ).toBe(true);
+      const standing = cycle.find((t) => t.key === `${prefix}0`)!;
+      const front = textures.find((t) => t.key === `art-character-${id}-0-0`)!;
+      expect(
+        Math.abs(standing.height - front.height),
+        `${id}/${dir} height`,
+      ).toBeLessThanOrEqual(1);
+      expect(standing.bottom, `${id}/${dir} foot baseline`).toBe(155);
       expect(
         new Set(cycle.map((t) => t.footHash)).size,
         `${id}/${dir} moves feet`,

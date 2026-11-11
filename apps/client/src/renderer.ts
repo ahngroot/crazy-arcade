@@ -396,6 +396,10 @@ export class GameRenderer {
           : "";
     const trappedKey = `art-trapped${suffix}`;
     const foamKey = `art-trapped-white${suffix}`;
+    const playerWidth =
+      p.characterId !== undefined && pose !== "trapped" && !dying
+        ? ART.directionalWidth
+        : ART.playerWidth;
     const actor = this.actor(
       this.players,
       p.id,
@@ -410,7 +414,7 @@ export class GameRenderer {
                 facing,
                 pose === "walk" ? frame : 0,
               ),
-      ART.playerWidth,
+      playerWidth,
       ART.playerHeight,
     );
     if (pose === "trapped") {
@@ -438,7 +442,7 @@ export class GameRenderer {
     actor.image
       .setVisible(fade > 0)
       .setPosition(p.position.x * C.tileSize, p.position.y * C.tileSize - bob)
-      .setDisplaySize(ART.playerWidth * spawn, ART.playerHeight * spawn)
+      .setDisplaySize(playerWidth * spawn, ART.playerHeight * spawn)
       .setAngle(0)
       .setAlpha(
         fade *

@@ -105,6 +105,7 @@ export function characterTexture(id: number, dir: Facing, frame: number) {
 
 export const ART = {
   playerWidth: 42,
+  directionalWidth: 42 * (72 / 64),
   playerHeight: 52.5,
   monsterWidth: 32,
   monsterHeight: 36,
@@ -962,6 +963,57 @@ export function installArt(
           );
       }
     });
+  // Match standing head-to-foot height to this character's front. One transform
+  // per direction is shared by all four steps, preserving natural walking lift.
+  const silhouette = (source: HTMLCanvasElement) => {
+    const pixels = source
+      .getContext("2d")!
+      .getImageData(0, 0, source.width, source.height).data;
+    let top = source.height,
+      bottom = 0;
+    for (let y = 0; y < source.height; y++)
+      for (let x = 0; x < source.width; x++)
+        if (pixels[(y * source.width + x) * 4 + 3] > 80) {
+          top = Math.min(top, y);
+          bottom = Math.max(bottom, y);
+        }
+    return { height: bottom - top + 1, foot: bottom + 1 };
+  };
+  for (let id = 0; id < 13; id++) {
+    const front = silhouette(
+      scene.textures
+        .get(keyCharacter(id, false, 0))
+        .getSourceImage() as HTMLCanvasElement,
+    );
+    for (const keys of [
+      Array.from({ length: 4 }, (_, f) => keyCharacter(id, false, f)),
+      Array.from({ length: 4 }, (_, f) => keyCharacter(id, true, f)),
+      ...(["right", "left", "up"] as const).map((dir) =>
+        Array.from({ length: 4 }, (_, f) => characterTexture(id, dir, f)),
+      ),
+    ]) {
+      const sources = keys.map(
+        (key) => scene.textures.get(key).getSourceImage() as HTMLCanvasElement,
+      );
+      const standing = silhouette(sources[0]);
+      const scale = front.height / standing.height;
+      keys.forEach((key, frame) => {
+        const source = sources[frame];
+        scene.textures.remove(key);
+        make(key, 72, 80, (c) => {
+          c.imageSmoothingEnabled = true;
+          c.imageSmoothingQuality = "high";
+          c.drawImage(
+            source,
+            36 - (source.width * scale) / 4,
+            78 - (standing.foot * scale) / 2,
+            (source.width * scale) / 2,
+            (source.height * scale) / 2,
+          );
+        });
+      });
+    }
+  }
   for (const [col, key] of [
     [0, "trapped"],
     [1, "trapped-white"],

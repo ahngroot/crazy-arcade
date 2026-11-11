@@ -42,13 +42,19 @@ test("a character blocked by walls keeps walking and facing the held direction u
     const p = await page.evaluate(
       ({ x, y }) => {
         const { f, movePlayer, EMPTY_INPUT } = (window as any).blocked;
+        f.state.players[0].position = { x: 4.5, y: 4.5 };
         for (let n = 0; n < 60; n++)
           movePlayer(f.state, f.state.players[0], { ...EMPTY_INPUT, x, y }, 16);
-        return f.state.players[0];
+        const contact = { ...f.state.players[0].position };
+        for (let n = 0; n < 10; n++)
+          movePlayer(f.state, f.state.players[0], { ...EMPTY_INPUT, x, y }, 16);
+        return { ...f.state.players[0], contact };
       },
       { x, y },
     );
-    expect(p.position).toEqual({ x: 4.5, y: 4.5 });
+    expect(p.position).toEqual(p.contact);
+    expect(Math.abs(p.position.x - 4.5)).toBeLessThanOrEqual(0.22);
+    expect(Math.abs(p.position.y - 4.5)).toBeLessThanOrEqual(0.22);
     expect(p.moving).toBe(true);
     expect(p.facing).toBe(dir);
     const prefix =

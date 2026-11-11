@@ -343,6 +343,11 @@ export function mountRendererFixture(parent: HTMLElement, playerId = "p1") {
           height: o.displayHeight,
         }));
     },
+    characterTextureUrl(key: string) {
+      return (
+        scene.textures.get(key).getSourceImage() as HTMLCanvasElement
+      ).toDataURL();
+    },
     characterTextureInfo() {
       return scene.textures
         .getTextureKeys()
@@ -359,14 +364,37 @@ export function mountRendererFixture(parent: HTMLElement, playerId = "p1") {
             source.height,
           ).data;
           let visible = 0,
-            footHash = 2166136261;
+            footHash = 2166136261,
+            top = source.height,
+            bottom = 0,
+            edgePixels = 0;
           for (let i = 0; i < pixels.length; i += 4) {
-            if (pixels[i + 3] > 80) visible++;
+            if (pixels[i + 3] > 80) {
+              visible++;
+              const x = (i / 4) % source.width;
+              const y = Math.floor(i / 4 / source.width);
+              top = Math.min(top, y);
+              bottom = Math.max(bottom, y);
+              if (
+                x === 0 ||
+                x === source.width - 1 ||
+                y === 0 ||
+                y === source.height - 1
+              )
+                edgePixels++;
+            }
             if (i >= source.width * 58 * 4)
               for (let k = 0; k < 4; k++)
                 footHash = Math.imul(footHash ^ pixels[i + k], 16777619);
           }
-          return { key, visible, footHash };
+          return {
+            key,
+            visible,
+            footHash,
+            height: bottom - top + 1,
+            bottom,
+            edgePixels,
+          };
         });
     },
     waterFrames() {
