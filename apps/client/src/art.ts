@@ -114,6 +114,7 @@ export const ART = {
 } as const;
 // One scale per character across all directions/steps, computed from visible art.
 export const characterClearanceScale: number[] = [];
+export const characterDisplaySize: { width: number; height: number }[] = [];
 export const COLORS = {
   ink: "#254856",
   red: "#fb806d",
@@ -1017,6 +1018,8 @@ export function installArt(
       });
     }
   }
+  const frontHeights: number[] = [];
+  const extents: number[] = [];
   for (let id = 0; id < 13; id++) {
     let extent = 0;
     for (const dir of ["down", "left", "right", "up"] as const)
@@ -1036,11 +1039,43 @@ export function installArt(
                 Math.abs(x + 1 - source.width / 2),
               );
       }
+    extents[id] = extent;
+    const frontSource = scene.textures
+      .get(characterTexture(id, "down", 0))
+      .getSourceImage() as HTMLCanvasElement;
+    const data = frontSource
+      .getContext("2d")!
+      .getImageData(0, 0, frontSource.width, frontSource.height).data;
+    let top = frontSource.height,
+      bottom = 0;
+    for (let y = 0; y < frontSource.height; y++)
+      for (let x = 0; x < frontSource.width; x++)
+        if (data[(y * frontSource.width + x) * 4 + 3] > 32) {
+          top = Math.min(top, y);
+          bottom = Math.max(bottom, y + 1);
+        }
+    frontHeights[id] = ((bottom - top) / frontSource.height) * ART.playerHeight;
     characterClearanceScale[id] = Math.min(
       1,
       (C.obstacleRadius * C.tileSize - 0.6) /
         ((extent * ART.directionalWidth) / 144),
     );
+  }
+  // Use the approved Uni +10% height for every character. Cap horizontal
+  // extent separately so wider silhouettes still clear a one-tile corridor.
+  const commonHeight = frontHeights[1] * characterClearanceScale[1] * 1.1;
+  for (let id = 0; id < 13; id++) {
+    const scale = commonHeight / frontHeights[id];
+    characterDisplaySize[id] = {
+      width:
+        ART.directionalWidth *
+        Math.min(
+          scale,
+          (C.obstacleRadius * C.tileSize - 0.6) /
+            ((extents[id] * ART.directionalWidth) / 144),
+        ),
+      height: ART.playerHeight * scale,
+    };
   }
   for (const [col, key] of [
     [0, "trapped"],

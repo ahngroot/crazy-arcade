@@ -130,6 +130,21 @@ test("all thirteen characters turn side/back, animate feet and retain their dire
       .toBe(true);
     await page.waitForTimeout(220);
     expect((await frames()).every((f) => f.key.endsWith("-0"))).toBe(true);
+    const rendered = await page.evaluate(() => {
+      const f = (window as any).walks;
+      return f.characterVisibleBounds().map((b: any, i: number) => ({
+        width: b.right - b.left,
+        height: b.bottom - b.top,
+        footError: Math.abs(
+          b.bottom - (f.state.players[i].position.y * 40 + 4),
+        ),
+      }));
+    });
+    for (const b of rendered) {
+      expect(Math.abs(b.height - 47.3733333333)).toBeLessThan(0.6);
+      expect(b.width).toBeLessThanOrEqual(38.00001);
+      expect(b.footError).toBeLessThan(0.6);
+    }
     await page
       .locator("#all-walks-fixture")
       .screenshot({ path: `test-results/all-characters-${dir}.png` });

@@ -8,7 +8,7 @@ import {
 } from "@bubble/shared";
 import {
   ART,
-  characterClearanceScale,
+  characterDisplaySize,
   installArt,
   keyPlayer,
   characterTexture,
@@ -397,14 +397,13 @@ export class GameRenderer {
           : "";
     const trappedKey = `art-trapped${suffix}`;
     const foamKey = `art-trapped-white${suffix}`;
-    const playerWidth =
-      p.characterId !== undefined && pose !== "trapped" && !dying
-        ? ART.directionalWidth
-        : ART.playerWidth;
-    const clearanceScale =
-      p.characterId !== undefined && pose !== "trapped" && !dying
-        ? (characterClearanceScale[p.characterId] ?? 1)
-        : 1;
+    const normalCharacter =
+      p.characterId !== undefined && pose !== "trapped" && !dying;
+    const size = normalCharacter
+      ? characterDisplaySize[p.characterId!]
+      : undefined;
+    const playerWidth = size?.width ?? ART.playerWidth;
+    const playerHeight = size?.height ?? ART.playerHeight;
     const actor = this.actor(
       this.players,
       p.id,
@@ -446,11 +445,12 @@ export class GameRenderer {
     const bob = won ? Math.abs(Math.sin(this.clock / 180)) * 3 : 0;
     actor.image
       .setVisible(fade > 0)
-      .setPosition(p.position.x * C.tileSize, p.position.y * C.tileSize - bob)
-      .setDisplaySize(
-        playerWidth * spawn * clearanceScale,
-        ART.playerHeight * spawn * clearanceScale,
+      .setOrigin(0.5, normalCharacter ? 0.975 : 0.9)
+      .setPosition(
+        p.position.x * C.tileSize,
+        p.position.y * C.tileSize + (normalCharacter ? 4 : 0) - bob,
       )
+      .setDisplaySize(playerWidth * spawn, playerHeight * spawn)
       .setAngle(0)
       .setAlpha(
         fade *
