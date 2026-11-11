@@ -411,17 +411,23 @@ function moveCardinal(
     ? Math.floor(p.position.y) + 0.5
     : Math.floor(p.position.x) + 0.5;
   const offset = center - (x ? p.position.y : p.position.x);
+  // Measure the body overlap, not the distance to the tile center. Previously
+  // 0.23 center tolerance with a 0.28 radius allowed only 0.01 tile of overlap.
+  const clearance = 0.5 - C.playerRadius - 1e-6;
+  const overlap = Math.abs(offset) - clearance;
+  const lane = center - Math.sign(offset) * clearance;
   const probe = Math.min(remaining, 0.05);
   if (
-    Math.abs(offset) <= C.cornerAssist &&
+    overlap > 0 &&
+    overlap <= C.cornerSlideMaxOverlap &&
     canOccupy(
       s,
       p,
-      x ? p.position.x + x * probe : center,
-      y ? p.position.y + y * probe : center,
+      x ? p.position.x + x * probe : lane,
+      y ? p.position.y + y * probe : lane,
     )
   ) {
-    const nudge = Math.sign(offset) * Math.min(Math.abs(offset), remaining, 0.05);
+    const nudge = Math.sign(offset) * Math.min(overlap, remaining, 0.05);
     const nx = p.position.x + (y ? nudge : 0);
     const ny = p.position.y + (x ? nudge : 0);
     if (canOccupy(s, p, nx, ny)) p.position = { x: nx, y: ny };

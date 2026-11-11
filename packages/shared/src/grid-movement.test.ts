@@ -3,6 +3,7 @@ import {
   createArenaPractice,
   createPractice,
   movePlayer,
+  canOccupy,
   defeatPlayer,
   EMPTY_INPUT,
 } from "./index";
@@ -203,4 +204,69 @@ it("does not reverse through a balloon after its pass-through permission is lost
   s.balloons[0].passThrough = [];
   for (let i = 0; i < 80; i++) movePlayer(s, p, { ...EMPTY_INPUT, x: -1 }, 16);
   expect(p.position.x).toBeGreaterThanOrEqual(5.28);
+});
+
+it("slides past shallow corner overlaps in every direction without diagonal motion or clipping", () => {
+  for (const turns of [0, 1, 2, 3])
+    for (const mirror of [false, true])
+      for (const kind of ["wall", "crate", "balloon"] as const)
+        for (const trapped of [false, true]) {
+          const { s, p } = fixture();
+          const rotate = (x: number, y: number) => {
+            for (let i = 0; i < turns; i++) [x, y] = [9 - y, x];
+            return { x, y };
+          };
+          const obstacle = rotate(mirror ? 5.5 : 3.5, 3.5);
+          const cell = { x: Math.floor(obstacle.x), y: Math.floor(obstacle.y) };
+          if (kind === "balloon")
+            s.balloons.push({
+              id: 1,
+              owner: p.id,
+              ...cell,
+              range: 1,
+              explodesAt: 2500,
+              passThrough: [],
+            });
+          else s.map[cell.y][cell.x] = kind;
+          p.position = rotate(mirror ? 4.87 : 4.13, 4.28);
+          if (trapped) p.status = "trapped";
+          const d = rotate(4.5, 3.5);
+          const x = d.x - 4.5,
+            y = d.y - 4.5;
+          const start = { ...p.position };
+          for (let i = 0; i < 50; i++) {
+            const before = { ...p.position };
+            movePlayer(s, p, { ...EMPTY_INPUT, x, y }, 16);
+            expect(p.position.x === before.x || p.position.y === before.y).toBe(
+              true,
+            );
+            expect(canOccupy(s, p, p.position.x, p.position.y)).toBe(true);
+          }
+          expect(
+            (p.position.x - start.x) * x + (p.position.y - start.y) * y,
+          ).toBeGreaterThan(0.25);
+          expect(p.moving).toBe(true);
+        }
+});
+it("does not assist a frontal wall, deep overlap, or a blocked sideways escape", () => {
+  for (const reason of ["front", "deep", "side"]) {
+    const { s, p } = fixture();
+    s.map[3][3] = "wall";
+    p.position = { x: reason === "deep" ? 4.05 : 4.13, y: 4.28 };
+    if (reason === "front") s.map[3][4] = "wall";
+    if (reason === "side")
+      s.balloons.push({
+        id: 1,
+        owner: p.id,
+        x: 4,
+        y: 4,
+        range: 1,
+        explodesAt: 2500,
+        passThrough: [],
+      });
+    const before = { ...p.position };
+    for (let i = 0; i < 30; i++)
+      movePlayer(s, p, { ...EMPTY_INPUT, y: -1 }, 16);
+    expect(p.position).toEqual(before);
+  }
 });

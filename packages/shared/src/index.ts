@@ -12,6 +12,7 @@ export const GAME_CONFIG = Object.freeze({
   initialRange: 1,
   playerRadius: 0.28,
   cornerAssist: 0.23,
+  cornerSlideMaxOverlap: 0.16,
   gridTurnAssistTiles: 0.2,
   gridTurnAssistSpeed: 1.6,
   turnBufferMs: 350,
