@@ -103,8 +103,8 @@ describe("local movement", () => {
   it("moves both players independently and stops immediately on key release", () => {
     const s = openArena();
     step(s, 200, move(1, 0), move(-1, 0));
-    expect(s.players[0].position.x).toBeCloseTo(2.1);
-    expect(s.players[1].position.x).toBeCloseTo(12.9);
+    expect(s.players[0].position.x).toBeCloseTo(2.3);
+    expect(s.players[1].position.x).toBeCloseTo(12.7);
     const before = { ...s.players[0].position };
     step(s, 200);
     expect(s.players[0].position).toEqual(before);
@@ -115,7 +115,7 @@ describe("local movement", () => {
       p = s.players[0];
     p.position = { x: 3.5, y: 3.5 };
     step(s, 200, move(1, 1));
-    expect(Math.hypot(p.position.x - 3.5, p.position.y - 3.5)).toBeCloseTo(0.6);
+    expect(Math.hypot(p.position.x - 3.5, p.position.y - 3.5)).toBeCloseTo(0.8);
     const before = { ...p.position };
     step(s, 100, move(NaN, Infinity));
     expect(p.position).toEqual(before);

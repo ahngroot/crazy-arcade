@@ -6,6 +6,7 @@ import {
   canOccupy,
   defeatPlayer,
   EMPTY_INPUT,
+  GAME_CONFIG as C,
 } from "./index";
 function fixture() {
   const s = createArenaPractice(1);
@@ -26,8 +27,12 @@ it("turns immediately at fractional positions in all four directions without dia
     p.moveTarget = { x: 5.5, y: 4.5 };
     const before = { ...p.position };
     movePlayer(s, p, { ...EMPTY_INPUT, x, y }, 16);
-    expect(p.position.x).toBeCloseTo(before.x + x * 0.048);
-    expect(p.position.y).toBeCloseTo(before.y + y * 0.048);
+    expect(p.position.x).toBeCloseTo(
+      before.x + x * C.movementTilesPerSecond * 0.016,
+    );
+    expect(p.position.y).toBeCloseTo(
+      before.y + y * C.movementTilesPerSecond * 0.016,
+    );
     expect(p.moveTarget).toBeUndefined();
   }
 });
