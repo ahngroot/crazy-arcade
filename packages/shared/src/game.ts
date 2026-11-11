@@ -281,7 +281,7 @@ export function movePlayer(
   interact = true,
 ) {
   if (s.arenaId) {
-    moveOnGrid(s, p, raw, dt);
+    moveCardinal(s, p, raw, dt);
     return;
   }
   let x = Number.isFinite(raw.x) ? Math.max(-1, Math.min(1, raw.x)) : 0;
@@ -367,147 +367,65 @@ export function movePlayer(
   p.moving = Boolean(x || y) || p.position.x !== oldX || p.position.y !== oldY;
 }
 
-function moveOnGrid(
+/** Cardinal free movement: tiles constrain obstacles, not turn positions. */
+function moveCardinal(
   s: PracticeState,
   p: PracticePlayer,
   raw: LocalInput,
   dt: number,
 ) {
+  p.moveTarget = undefined;
+  p.queuedTurn = undefined;
+  p.queuedTurnRemainingMs = undefined;
+  if (raw.turnId !== undefined) p.lastTurnId = raw.turnId;
+  let x = Number.isFinite(raw.x) ? Math.sign(raw.x) : 0;
+  let y = Number.isFinite(raw.y) ? Math.sign(raw.y) : 0;
+  // Keyboard sends only its newest held direction. Also sanitize dual-axis packets.
+  if (x && y) {
+    if (p.facing === "left" || p.facing === "right") y = 0;
+    else x = 0;
+  }
+  p.moving = Boolean(x || y);
+  if (!p.moving) return;
+  p.facing = x ? (x > 0 ? "right" : "left") : y > 0 ? "down" : "up";
   let remaining = (effectiveStats(s, p).speed * dt) / 1000;
-  const before = { ...p.position };
-  const x = Number.isFinite(raw.x) ? Math.sign(raw.x) : 0;
-  const y = Number.isFinite(raw.y) ? Math.sign(raw.y) : 0;
-  if (raw.turn && raw.turnId !== undefined && raw.turnId !== p.lastTurnId) {
-    p.queuedTurn = raw.turn;
-    p.queuedTurnRemainingMs = C.turnBufferMs;
-    p.lastTurnId = raw.turnId;
-  }
-  // Keep the segment for a later resume, but release stops displacement now.
-  if (!x && !y) {
-    p.queuedTurn = undefined;
-    p.queuedTurnRemainingMs = undefined;
-    p.moving = false;
-    return;
-  }
-  if (p.queuedTurn) {
-    p.queuedTurnRemainingMs = (p.queuedTurnRemainingMs ?? C.turnBufferMs) - dt;
-    if (p.queuedTurnRemainingMs <= 0) {
-      p.queuedTurn = undefined;
-      p.queuedTurnRemainingMs = undefined;
-    }
-  }
-  if (p.moveTarget) {
-    const dx = p.moveTarget.x - p.position.x;
-    const dy = p.moveTarget.y - p.position.y;
-    const turn = p.queuedTurn;
-    const tx = turn ? (turn === "right" ? 1 : turn === "left" ? -1 : 0) : x;
-    const ty = turn ? (turn === "down" ? 1 : turn === "up" ? -1 : 0) : y;
-    const perpendicular =
-      (Math.abs(dy) < 1e-8 && dx !== 0 && tx === 0 && ty !== 0) ||
-      (Math.abs(dx) < 1e-8 && dy !== 0 && ty === 0 && tx !== 0);
-    const center = {
-      x: Math.floor(p.position.x) + 0.5,
-      y: Math.floor(p.position.y) + 0.5,
-    };
-    if (
-      perpendicular &&
-      Math.hypot(center.x - p.position.x, center.y - p.position.y) <
-        Math.hypot(dx, dy) &&
-      canOccupy(s, p, center.x, center.y) &&
-      canOccupy(s, p, center.x + tx, center.y + ty)
-    ) {
-      // Align to the nearer open lane, axis by axis, without cutting a corner.
-      p.moveTarget = center;
-    }
-    if (
-      (Math.abs(dy) < 1e-8 && dx * tx < 0 && ty === 0) ||
-      (Math.abs(dx) < 1e-8 && dy * ty < 0 && tx === 0)
-    ) {
-      // Retarget the other endpoint of the current segment, even after the
-      // midpoint. Per-step collision checks still prevent reentering a balloon.
-      p.moveTarget = {
-        x: p.moveTarget.x - Math.sign(dx),
-        y: p.moveTarget.y - Math.sign(dy),
-      };
-      p.facing = tx ? (tx > 0 ? "right" : "left") : ty > 0 ? "down" : "up";
-      p.queuedTurn = undefined;
-      p.queuedTurnRemainingMs = undefined;
-    }
-  }
+  // Small swept increments keep high speeds/large prediction steps from tunneling.
+  let blocked = false;
   while (remaining > 1e-8) {
-    if (!p.moveTarget) {
-      const queued = p.queuedTurn;
-      p.queuedTurn = undefined;
-      p.queuedTurnRemainingMs = undefined;
-      if (!queued && !x && !y) break;
-      const dx = queued
-        ? queued === "right"
-          ? 1
-          : queued === "left"
-            ? -1
-            : 0
-        : x && (!y || p.facing === "left" || p.facing === "right")
-          ? x
-          : 0;
-      const dy = queued
-        ? queued === "down"
-          ? 1
-          : queued === "up"
-            ? -1
-            : 0
-        : dx
-          ? 0
-          : y;
-      const target = {
-        x: Math.floor(p.position.x) + 0.5 + dx,
-        y: Math.floor(p.position.y) + 0.5 + dy,
-      };
-      p.facing = dx ? (dx > 0 ? "right" : "left") : dy > 0 ? "down" : "up";
-      if (!canOccupy(s, p, target.x, target.y)) {
-        if (queued) continue;
-        break;
-      }
-      p.moveTarget = target;
-    }
-    const target = p.moveTarget;
-    const dx = target.x - p.position.x,
-      dy = target.y - p.position.y;
-    const distance = Math.hypot(dx, dy);
-    // Complete the final few pixels a little faster before an open perpendicular turn.
-    // Still pass through the center, collision-check alignment, and never cut a diagonal.
-    const turn = p.queuedTurn;
-    const tx = turn ? (turn === "right" ? 1 : turn === "left" ? -1 : 0) : x;
-    const ty = turn ? (turn === "down" ? 1 : turn === "up" ? -1 : 0) : y;
-    const perpendicular =
-      Math.abs(dx) > 1e-8 ? tx === 0 && ty !== 0 : ty === 0 && tx !== 0;
-    const assist =
-      distance <= C.gridTurnAssistTiles &&
-      perpendicular &&
-      canOccupy(s, p, target.x + tx, target.y + ty)
-        ? C.gridTurnAssistSpeed
-        : 1;
-    const step = Math.min(remaining * assist, distance);
-    if (distance < 1e-8) {
-      p.moveTarget = undefined;
-      continue;
-    }
-    const next = {
-      x: p.position.x + (dx / distance) * step,
-      y: p.position.y + (dy / distance) * step,
-    };
-    if (!canOccupy(s, p, next.x, next.y)) {
-      p.moveTarget = undefined;
+    const step = Math.min(remaining, 0.05);
+    const nx = p.position.x + x * step,
+      ny = p.position.y + y * step;
+    if (!canOccupy(s, p, nx, ny)) {
+      blocked = true;
       break;
     }
-    p.position = next;
-    remaining -= step / assist;
-    if (step >= distance - 1e-8) {
-      p.position = { ...target };
-      p.moveTarget = undefined;
-    }
+    p.position = { x: nx, y: ny };
+    remaining -= step;
   }
-  p.moving =
-    Boolean(x || y) || p.position.x !== before.x || p.position.y !== before.y;
+  // If forward travel occurred, don't add sideways movement in the same tick.
+  // A blocked, slightly off-center character can align first, then advance on
+  // a later tick. This is an orthogonal nudge, never a diagonal shortcut.
+  if (!blocked || remaining < (effectiveStats(s, p).speed * dt) / 1000 - 1e-8)
+    return;
+  const center = x
+    ? Math.floor(p.position.y) + 0.5
+    : Math.floor(p.position.x) + 0.5;
+  const offset = center - (x ? p.position.y : p.position.x);
+  const probe = Math.min(remaining, 0.05);
+  if (
+    Math.abs(offset) <= C.cornerAssist &&
+    canOccupy(
+      s,
+      p,
+      x ? p.position.x + x * probe : center,
+      y ? p.position.y + y * probe : center,
+    )
+  ) {
+    const nudge = Math.sign(offset) * Math.min(Math.abs(offset), remaining, 0.05);
+    const nx = p.position.x + (y ? nudge : 0);
+    const ny = p.position.y + (x ? nudge : 0);
+    if (canOccupy(s, p, nx, ny)) p.position = { x: nx, y: ny };
+  }
 }
 
 export function placeBalloon(s: PracticeState, p: PracticePlayer): boolean {

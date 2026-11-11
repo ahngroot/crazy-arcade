@@ -13,47 +13,39 @@ function fixture() {
   p.position = { x: 4.5, y: 4.5 };
   return { s, p };
 }
-it("assists an open corner near the center without diagonal cutting or crossing walls", () => {
-  for (const blocked of [false, true]) {
+it("turns immediately at fractional positions in all four directions without diagonal motion", () => {
+  for (const [x, y] of [
+    [1, 0],
+    [-1, 0],
+    [0, 1],
+    [0, -1],
+  ]) {
     const { s, p } = fixture();
-    p.position = { x: 4.32, y: 4.5 };
-    p.moveTarget = { x: 4.5, y: 4.5 };
-    p.facing = "right";
-    if (blocked) s.map[3][4] = "wall";
-    movePlayer(s, p, { ...EMPTY_INPUT, y: -1 }, 20);
-    expect(p.position.y).toBe(4.5);
-    expect(p.position.x).toBeCloseTo(blocked ? 4.38 : 4.416);
-    for (let i = 0; i < 20; i++)
-      movePlayer(s, p, { ...EMPTY_INPUT, y: -1 }, 16);
-    expect(p.position.x).toBe(4.5);
-    expect(blocked ? p.position.y === 4.5 : p.position.y < 4.5).toBe(true);
+    p.position = { x: 4.63, y: 4.37 };
+    p.moveTarget = { x: 5.5, y: 4.5 };
+    const before = { ...p.position };
+    movePlayer(s, p, { ...EMPTY_INPUT, x, y }, 16);
+    expect(p.position.x).toBeCloseTo(before.x + x * 0.048);
+    expect(p.position.y).toBeCloseTo(before.y + y * 0.048);
+    expect(p.moveTarget).toBeUndefined();
   }
 });
-it("expires an old quick turn without rearming the same input ID", () => {
+it("sanitizes simultaneous axis packets to one direction and ignores stale queued turns", () => {
   const { s, p } = fixture();
-  p.status = "trapped";
-  movePlayer(s, p, { ...EMPTY_INPUT, y: 1 }, 100);
-  const held = { ...EMPTY_INPUT, y: 1, turn: "right" as const, turnId: 20 };
-  movePlayer(s, p, held, 16);
-  expect(p.queuedTurn).toBe("right");
-  for (let i = 0; i < 140; i++) movePlayer(s, p, held, 16);
-  expect(p.queuedTurn).toBeUndefined();
-  expect(p.position.x).toBe(4.5);
-  expect(p.position.y).toBeGreaterThan(5.5);
-});
-it("uses the newest buffered direction and clears it on death", () => {
-  const { s, p } = fixture();
-  movePlayer(s, p, { ...EMPTY_INPUT, y: 1 }, 100);
-  movePlayer(s, p, { ...EMPTY_INPUT, x: 1, turn: "right", turnId: 1 }, 16);
-  movePlayer(s, p, { ...EMPTY_INPUT, x: -1, turn: "left", turnId: 2 }, 16);
-  for (let i = 0; i < 25; i++) movePlayer(s, p, { ...EMPTY_INPUT, x: -1 }, 16);
-  expect(p.position.x).toBeLessThan(4.5);
+  p.facing = "right";
+  movePlayer(s, p, { ...EMPTY_INPUT, x: 1, y: 1, turn: "up", turnId: 20 }, 16);
+  expect(p.position.x).toBeGreaterThan(4.5);
   expect(p.position.y).toBe(4.5);
-  p.queuedTurn = "up";
-  p.queuedTurnRemainingMs = 300;
-  defeatPlayer(s, p);
   expect(p.queuedTurn).toBeUndefined();
-  expect(p.queuedTurnRemainingMs).toBeUndefined();
+  defeatPlayer(s, p);
+  expect(p.moveTarget).toBeUndefined();
+});
+it("cannot tunnel through a wall even with a long high-speed step", () => {
+  const { s, p } = fixture();
+  p.speed = 6;
+  s.map[4][5] = "wall";
+  movePlayer(s, p, { ...EMPTY_INPUT, x: 1 }, 1000);
+  expect(p.position.x).toBeLessThanOrEqual(4.72);
 });
 it("walks toward blocked walls in all directions without displacement and stops on release", () => {
   for (const themed of [true, false]) {
@@ -105,19 +97,26 @@ it("stops immediately and resumes from the same fractional position", () => {
     ).toBeGreaterThan(0);
   }
 });
-it("aligns to the nearer open lane after a mid-tile stop without diagonal drift", () => {
+it("nudges only sideways at a blocked open corner, with no simultaneous diagonal step", () => {
   for (const blocked of [false, true]) {
     const { s, p } = fixture();
-    movePlayer(s, p, { ...EMPTY_INPUT, x: 1 }, 60);
-    movePlayer(s, p, EMPTY_INPUT, 16);
+    p.position = { x: 4.275, y: 4.28 };
+    s.map[3][3] = "wall";
     if (blocked) s.map[3][4] = "wall";
+    const before = { ...p.position };
     movePlayer(s, p, { ...EMPTY_INPUT, y: -1 }, 16);
-    expect(p.position.y).toBe(4.5);
-    expect(blocked ? p.position.x > 4.68 : p.position.x < 4.68).toBe(true);
-    for (let i = 0; i < 40; i++)
+    expect(p.position.y).toBe(before.y);
+    expect(blocked ? p.position.x === before.x : p.position.x > before.x).toBe(
+      true,
+    );
+    for (let i = 0; i < 20; i++) {
+      const old = { ...p.position };
       movePlayer(s, p, { ...EMPTY_INPUT, y: -1 }, 16);
-    expect(p.position.x).toBe(blocked ? 5.5 : 4.5);
-    expect(p.position.y).toBeLessThan(4.5);
+      expect(p.position.x === old.x || p.position.y === old.y).toBe(true);
+    }
+    expect(blocked ? p.position.y === before.y : p.position.y < before.y).toBe(
+      true,
+    );
   }
 });
 it("records authoritative death origin and staggered flight times without granting airborne pickups", () => {
@@ -136,18 +135,16 @@ it("records authoritative death origin and staggered flight times without granti
   expect(new Set(s.items.map((i) => i.flight!.landsAt)).size).toBe(3);
   expect(p.inventory).toEqual([]);
 });
-it("returns to the nearby lane when a quick turn is released back to the held direction", () => {
+it("resumes the held direction at the fractional position after releasing an overlapping key", () => {
   const { s, p } = fixture();
-  movePlayer(s, p, { ...EMPTY_INPUT, y: 1, turn: "down", turnId: 1 }, 100);
+  movePlayer(s, p, { ...EMPTY_INPUT, y: 1 }, 100);
   movePlayer(s, p, { ...EMPTY_INPUT, x: 1, turn: "right", turnId: 2 }, 16);
-  const held = { ...EMPTY_INPUT, y: 1, turn: "right" as const, turnId: 2 };
-  for (let i = 0; i < 43; i++) movePlayer(s, p, held, 16);
-  expect(p.position.x).toBe(4.5);
-  expect(p.position.y).toBeGreaterThan(5.5);
-  const x = p.position.x;
-  for (let i = 0; i < 25; i++) movePlayer(s, p, held, 16);
+  const x = p.position.x,
+    y = p.position.y;
+  for (let i = 0; i < 43; i++)
+    movePlayer(s, p, { ...EMPTY_INPUT, y: 1, turn: "right", turnId: 2 }, 16);
   expect(p.position.x).toBe(x);
-  expect(p.position.y).toBeGreaterThan(6.5);
+  expect(p.position.y).toBeGreaterThan(y);
 });
 it("does not let a blocked overlapping turn lock the held direction", () => {
   const { s, p } = fixture();
