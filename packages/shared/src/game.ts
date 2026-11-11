@@ -389,6 +389,27 @@ function moveOnGrid(
       p.queuedTurnRemainingMs = undefined;
     }
   }
+  if (p.moveTarget) {
+    const dx = p.moveTarget.x - p.position.x;
+    const dy = p.moveTarget.y - p.position.y;
+    const turn = p.queuedTurn;
+    const tx = turn ? (turn === "right" ? 1 : turn === "left" ? -1 : 0) : x;
+    const ty = turn ? (turn === "down" ? 1 : turn === "up" ? -1 : 0) : y;
+    if (
+      (Math.abs(dy) < 1e-8 && dx * tx < 0 && ty === 0) ||
+      (Math.abs(dx) < 1e-8 && dy * ty < 0 && tx === 0)
+    ) {
+      // Retarget the other endpoint of the current segment, even after the
+      // midpoint. Per-step collision checks still prevent reentering a balloon.
+      p.moveTarget = {
+        x: p.moveTarget.x - Math.sign(dx),
+        y: p.moveTarget.y - Math.sign(dy),
+      };
+      p.facing = tx ? (tx > 0 ? "right" : "left") : ty > 0 ? "down" : "up";
+      p.queuedTurn = undefined;
+      p.queuedTurnRemainingMs = undefined;
+    }
+  }
   while (remaining > 1e-8) {
     if (!p.moveTarget) {
       const queued = p.queuedTurn;

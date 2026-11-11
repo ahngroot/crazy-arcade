@@ -146,3 +146,51 @@ it("does not let a blocked overlapping turn lock the held direction", () => {
   expect(p.position.x).toBe(4.5);
   expect(p.position.y).toBeGreaterThan(6.5);
 });
+
+it("reverses immediately in all directions before and after the midpoint, then stops at the return center", () => {
+  for (const [x, y] of [
+    [1, 0],
+    [-1, 0],
+    [0, 1],
+    [0, -1],
+  ])
+    for (const elapsed of [60, 240]) {
+      const { s, p } = fixture();
+      movePlayer(s, p, { ...EMPTY_INPUT, x, y }, elapsed);
+      const before = { ...p.position };
+      movePlayer(s, p, { ...EMPTY_INPUT, x: -x, y: -y }, 16);
+      expect(
+        (p.position.x - before.x) * x + (p.position.y - before.y) * y,
+      ).toBeLessThan(0);
+      for (let i = 0; i < 80; i++) movePlayer(s, p, EMPTY_INPUT, 16);
+      expect(p.position).toEqual({ x: 4.5, y: 4.5 });
+    }
+});
+it("consumes a quick reverse once, continues when held, and can reverse again", () => {
+  const { s, p } = fixture();
+  movePlayer(s, p, { ...EMPTY_INPUT, x: 1, turn: "right", turnId: 1 }, 240);
+  movePlayer(s, p, { ...EMPTY_INPUT, x: -1, turn: "left", turnId: 2 }, 16);
+  const before = p.position.x;
+  movePlayer(s, p, { ...EMPTY_INPUT, x: 1, turn: "right", turnId: 3 }, 16);
+  expect(p.position.x).toBeGreaterThan(before);
+  movePlayer(s, p, { ...EMPTY_INPUT, x: -1, turn: "left", turnId: 4 }, 16);
+  for (let i = 0; i < 60; i++)
+    movePlayer(s, p, { ...EMPTY_INPUT, x: -1, turn: "left", turnId: 4 }, 16);
+  expect(p.position.x).toBeLessThan(4.5);
+});
+it("does not reverse through a balloon after its pass-through permission is lost", () => {
+  const { s, p } = fixture();
+  s.balloons.push({
+    id: 1,
+    owner: p.id,
+    x: 4,
+    y: 4,
+    range: 1,
+    explodesAt: 2500,
+    passThrough: [p.id],
+  });
+  movePlayer(s, p, { ...EMPTY_INPUT, x: 1 }, 300);
+  s.balloons[0].passThrough = [];
+  for (let i = 0; i < 80; i++) movePlayer(s, p, { ...EMPTY_INPUT, x: -1 }, 16);
+  expect(p.position.x).toBeGreaterThanOrEqual(5.28);
+});
