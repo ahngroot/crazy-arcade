@@ -502,8 +502,8 @@ export class GameRenderer {
             Math.sin(this.clock / 280 + trapVariant) * 2,
         )
         .setDisplaySize(
-          ART.playerWidth * (1 + pulse * urgency * 0.035),
-          ART.playerHeight * (1 - pulse * urgency * 0.025),
+          ART.playerWidth * 1.1 * (1 + pulse * urgency * 0.035),
+          ART.playerHeight * 1.1 * (1 - pulse * urgency * 0.025),
         );
       let foam = this.foam.get(p.id);
       if (!foam) {
