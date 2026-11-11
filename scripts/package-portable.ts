@@ -158,7 +158,7 @@ if (target === "windows") {
   Resource.IconGroupEntry.replaceIconsForResource(
     resources.entries,
     1,
-    1033,
+    0,
     icon.icons.map((entry) => entry.data),
   );
   // Keep Node's original virtual layout. Resource rewriting may shrink the
@@ -201,9 +201,13 @@ const iconBytes = (icon: Data.IconItem | Data.RawIconItem) =>
   Buffer.from(icon.isRaw() ? icon.bin : icon.generate());
 if (
   finalGroups.length !== 1 ||
+  finalGroups[0]?.lang !== 0 ||
   actualIcons.length !== expectedIcons.length ||
   actualIcons.some(
     (icon, i) => !iconBytes(icon).equals(iconBytes(expectedIcons[i]!.data)),
+  ) ||
+  actualIcons.some(
+    (icon, i) => (finalGroups[0]!.icons[i]!.width || 256) <= 64 && icon.isRaw(),
   )
 )
   throw Error("Embedded Windows icon verification failed after SEA injection");
@@ -327,7 +331,19 @@ for (const [name, bytes] of Object.entries(archiveFiles)) {
   writeFileSync(file, bytes);
 }
 const zipPath = join(out, "crazy-myangcade-windows-x64.zip");
-writeFileSync(zipPath, zipSync(archiveFiles, { level: 6 }));
+// A fresh extraction path avoids reusing Explorer's previous file-icon cache.
+writeFileSync(
+  zipPath,
+  zipSync(
+    Object.fromEntries(
+      Object.entries(archiveFiles).map(([name, bytes]) => [
+        `crazy-myangcade-bazzi/${name}`,
+        bytes,
+      ]),
+    ),
+    { level: 6 },
+  ),
+);
 const hashes =
   [zipPath, executable]
     .map(
