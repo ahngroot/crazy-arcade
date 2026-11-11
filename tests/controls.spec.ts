@@ -68,7 +68,7 @@ test("keyup and blur clear movement, UI controls retain focus and leaving remove
   await page.waitForTimeout(850);
   const released = await readPosition(page);
   await page.waitForTimeout(200);
-  // Finish the current tile after release, then allow only subpixel online correction.
+  // Allow authoritative updates and visual correction to settle after release.
   const afterRelease = await readPosition(page);
   for (const axis of ["x", "y"] as const)
     expect(afterRelease[axis]).toBeCloseTo(released[axis], 2);

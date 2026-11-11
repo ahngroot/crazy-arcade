@@ -429,6 +429,11 @@ it("validates and carries short direction presses to the authoritative tile move
     h.service.input("a", { ...packet(n), turn: "right", turnId: 2 });
     h.advance(100);
   }
-  expect(p.position.x).toBe(5.5);
+  expect(p.position.x).toBe(4.5);
   expect(p.position.y).toBeGreaterThan(6.5);
+  h.service.input("a", { ...packet(12), y: 0 });
+  h.advance(40);
+  const stopped = { ...p.position };
+  h.advance(500);
+  expect(p.position).toEqual(stopped);
 });

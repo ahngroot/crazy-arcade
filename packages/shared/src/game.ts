@@ -382,6 +382,13 @@ function moveOnGrid(
     p.queuedTurnRemainingMs = C.turnBufferMs;
     p.lastTurnId = raw.turnId;
   }
+  // Keep the segment for a later resume, but release stops displacement now.
+  if (!x && !y) {
+    p.queuedTurn = undefined;
+    p.queuedTurnRemainingMs = undefined;
+    p.moving = false;
+    return;
+  }
   if (p.queuedTurn) {
     p.queuedTurnRemainingMs = (p.queuedTurnRemainingMs ?? C.turnBufferMs) - dt;
     if (p.queuedTurnRemainingMs <= 0) {
@@ -395,6 +402,23 @@ function moveOnGrid(
     const turn = p.queuedTurn;
     const tx = turn ? (turn === "right" ? 1 : turn === "left" ? -1 : 0) : x;
     const ty = turn ? (turn === "down" ? 1 : turn === "up" ? -1 : 0) : y;
+    const perpendicular =
+      (Math.abs(dy) < 1e-8 && dx !== 0 && tx === 0 && ty !== 0) ||
+      (Math.abs(dx) < 1e-8 && dy !== 0 && ty === 0 && tx !== 0);
+    const center = {
+      x: Math.floor(p.position.x) + 0.5,
+      y: Math.floor(p.position.y) + 0.5,
+    };
+    if (
+      perpendicular &&
+      Math.hypot(center.x - p.position.x, center.y - p.position.y) <
+        Math.hypot(dx, dy) &&
+      canOccupy(s, p, center.x, center.y) &&
+      canOccupy(s, p, center.x + tx, center.y + ty)
+    ) {
+      // Align to the nearer open lane, axis by axis, without cutting a corner.
+      p.moveTarget = center;
+    }
     if (
       (Math.abs(dy) < 1e-8 && dx * tx < 0 && ty === 0) ||
       (Math.abs(dx) < 1e-8 && dy * ty < 0 && tx === 0)

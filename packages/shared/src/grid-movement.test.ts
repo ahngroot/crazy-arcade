@@ -46,9 +46,9 @@ it("uses the newest buffered direction and clears it on death", () => {
   movePlayer(s, p, { ...EMPTY_INPUT, y: 1 }, 100);
   movePlayer(s, p, { ...EMPTY_INPUT, x: 1, turn: "right", turnId: 1 }, 16);
   movePlayer(s, p, { ...EMPTY_INPUT, x: -1, turn: "left", turnId: 2 }, 16);
-  for (let i = 0; i < 25; i++) movePlayer(s, p, EMPTY_INPUT, 16);
+  for (let i = 0; i < 25; i++) movePlayer(s, p, { ...EMPTY_INPUT, x: -1 }, 16);
   expect(p.position.x).toBeLessThan(4.5);
-  expect(p.position.y).toBe(5.5);
+  expect(p.position.y).toBe(4.5);
   p.queuedTurn = "up";
   p.queuedTurnRemainingMs = 300;
   defeatPlayer(s, p);
@@ -86,27 +86,39 @@ it("walks toward blocked walls in all directions without displacement and stops 
     }
   }
 });
-it("finishes one tile after a short press and stops exactly at its center", () => {
-  const { s, p } = fixture();
-  movePlayer(s, p, { ...EMPTY_INPUT, x: 1 }, 20);
-  expect(p.position.x).toBeGreaterThan(4.5);
-  for (let i = 0; i < 60; i++) movePlayer(s, p, EMPTY_INPUT, 16);
-  expect(p.position).toEqual({ x: 5.5, y: 4.5 });
-  expect(p.moveTarget).toBeUndefined();
+it("stops immediately and resumes from the same fractional position", () => {
+  for (const [x, y] of [
+    [1, 0],
+    [-1, 0],
+    [0, 1],
+    [0, -1],
+  ]) {
+    const { s, p } = fixture();
+    movePlayer(s, p, { ...EMPTY_INPUT, x, y }, 100);
+    const stopped = { ...p.position };
+    for (let i = 0; i < 60; i++) movePlayer(s, p, EMPTY_INPUT, 16);
+    expect(p.position).toEqual(stopped);
+    expect(p.moving).toBe(false);
+    movePlayer(s, p, { ...EMPTY_INPUT, x, y }, 16);
+    expect(
+      (p.position.x - stopped.x) * x + (p.position.y - stopped.y) * y,
+    ).toBeGreaterThan(0);
+  }
 });
-it("turns at a tile center without diagonal drift and respects blocked tiles", () => {
-  const { s, p } = fixture();
-  movePlayer(s, p, { ...EMPTY_INPUT, x: 1 }, 100);
-  movePlayer(s, p, { ...EMPTY_INPUT, y: 1 }, 100);
-  expect(p.position.y).toBe(4.5);
-  movePlayer(s, p, { ...EMPTY_INPUT, y: 1 }, 200);
-  expect(p.position.x).toBe(5.5);
-  expect(p.position.y).toBeGreaterThan(4.5);
-  for (let i = 0; i < 60; i++) movePlayer(s, p, EMPTY_INPUT, 16);
-  s.map[6][5] = "wall";
-  const before = { ...p.position };
-  movePlayer(s, p, { ...EMPTY_INPUT, y: 1 }, 100);
-  expect(p.position).toEqual(before);
+it("aligns to the nearer open lane after a mid-tile stop without diagonal drift", () => {
+  for (const blocked of [false, true]) {
+    const { s, p } = fixture();
+    movePlayer(s, p, { ...EMPTY_INPUT, x: 1 }, 60);
+    movePlayer(s, p, EMPTY_INPUT, 16);
+    if (blocked) s.map[3][4] = "wall";
+    movePlayer(s, p, { ...EMPTY_INPUT, y: -1 }, 16);
+    expect(p.position.y).toBe(4.5);
+    expect(blocked ? p.position.x > 4.68 : p.position.x < 4.68).toBe(true);
+    for (let i = 0; i < 40; i++)
+      movePlayer(s, p, { ...EMPTY_INPUT, y: -1 }, 16);
+    expect(p.position.x).toBe(blocked ? 5.5 : 4.5);
+    expect(p.position.y).toBeLessThan(4.5);
+  }
 });
 it("records authoritative death origin and staggered flight times without granting airborne pickups", () => {
   const { s, p } = fixture();
@@ -124,13 +136,13 @@ it("records authoritative death origin and staggered flight times without granti
   expect(new Set(s.items.map((i) => i.flight!.landsAt)).size).toBe(3);
   expect(p.inventory).toEqual([]);
 });
-it("remembers a quick overlapping turn until the next tile and then resumes the held direction", () => {
+it("returns to the nearby lane when a quick turn is released back to the held direction", () => {
   const { s, p } = fixture();
   movePlayer(s, p, { ...EMPTY_INPUT, y: 1, turn: "down", turnId: 1 }, 100);
   movePlayer(s, p, { ...EMPTY_INPUT, x: 1, turn: "right", turnId: 2 }, 16);
   const held = { ...EMPTY_INPUT, y: 1, turn: "right" as const, turnId: 2 };
   for (let i = 0; i < 43; i++) movePlayer(s, p, held, 16);
-  expect(p.position.x).toBe(5.5);
+  expect(p.position.x).toBe(4.5);
   expect(p.position.y).toBeGreaterThan(5.5);
   const x = p.position.x;
   for (let i = 0; i < 25; i++) movePlayer(s, p, held, 16);
@@ -147,7 +159,7 @@ it("does not let a blocked overlapping turn lock the held direction", () => {
   expect(p.position.y).toBeGreaterThan(6.5);
 });
 
-it("reverses immediately in all directions before and after the midpoint, then stops at the return center", () => {
+it("reverses immediately in all directions before and after the midpoint, then stops immediately on release", () => {
   for (const [x, y] of [
     [1, 0],
     [-1, 0],
@@ -162,8 +174,9 @@ it("reverses immediately in all directions before and after the midpoint, then s
       expect(
         (p.position.x - before.x) * x + (p.position.y - before.y) * y,
       ).toBeLessThan(0);
+      const stopped = { ...p.position };
       for (let i = 0; i < 80; i++) movePlayer(s, p, EMPTY_INPUT, 16);
-      expect(p.position).toEqual({ x: 4.5, y: 4.5 });
+      expect(p.position).toEqual(stopped);
     }
 });
 it("consumes a quick reverse once, continues when held, and can reverse again", () => {
