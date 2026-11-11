@@ -1,5 +1,6 @@
 import { build } from "esbuild";
 import { inject } from "postject";
+import { NtExecutable, NtExecutableResource, Data, Resource } from "resedit";
 import { zipSync, unzipSync, strToU8 } from "fflate";
 import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
@@ -134,10 +135,41 @@ if (target === "windows") {
   });
   if (!unpacked[`${prefix}node.exe`] || !unpacked[`${prefix}LICENSE`])
     throw Error("Official Node archive is missing node.exe or LICENSE");
-  writeFileSync(
-    executable,
+  const pe = NtExecutable.from(
     unsignedWindowsImage(unpacked[`${prefix}node.exe`]),
   );
+  const originalSections = pe.getAllSections().map((section) => ({
+    virtualAddress: section.info.virtualAddress,
+    virtualSize: section.info.virtualSize,
+  }));
+  const directories = pe.newHeader.optionalHeaderDataDirectory;
+  const originalDirectories = Array.from({ length: 16 }, (_, i) => ({
+    ...directories.get(i),
+  }));
+  const originalImageSize = pe.newHeader.optionalHeader.sizeOfImage;
+  const resources = NtExecutableResource.from(pe);
+  // Remove Node's icon groups, preserving version/manifest and other resources.
+  resources.entries = resources.entries.filter(
+    (entry) => entry.type !== 3 && entry.type !== 14,
+  );
+  const icon = Data.IconFile.from(
+    readFileSync(join(root, "assets/windows/app.ico")),
+  );
+  Resource.IconGroupEntry.replaceIconsForResource(
+    resources.entries,
+    1,
+    1033,
+    icon.icons.map((entry) => entry.data),
+  );
+  // Keep Node's original virtual layout. Resource rewriting may shrink the
+  // virtual section even when raw padding is retained, confusing SEA injection.
+  resources.outputResource(pe, true);
+  pe.getAllSections().forEach((section, i) => {
+    Object.assign(section.info, originalSections[i]);
+  });
+  originalDirectories.forEach((entry, i) => directories.set(i, entry));
+  pe.newHeader.optionalHeader.sizeOfImage = originalImageSize;
+  writeFileSync(executable, Buffer.from(pe.generate()));
   nodeLicense = unpacked[`${prefix}LICENSE`];
 } else {
   copyFileSync(process.execPath, executable);
@@ -154,6 +186,27 @@ if (target === "host") {
   console.log(`Host test executable: ${executable}`);
   process.exit(0);
 }
+
+// Verify the SEA injection preserved every embedded icon image byte-for-byte.
+const finalResources = NtExecutableResource.from(
+  NtExecutable.from(readFileSync(executable)),
+);
+const finalGroups = Resource.IconGroupEntry.fromEntries(finalResources.entries);
+const expectedIcons = Data.IconFile.from(
+  readFileSync(join(root, "assets/windows/app.ico")),
+).icons;
+const actualIcons =
+  finalGroups[0]?.getIconItemsFromEntries(finalResources.entries) ?? [];
+const iconBytes = (icon: Data.IconItem | Data.RawIconItem) =>
+  Buffer.from(icon.isRaw() ? icon.bin : icon.generate());
+if (
+  finalGroups.length !== 1 ||
+  actualIcons.length !== expectedIcons.length ||
+  actualIcons.some(
+    (icon, i) => !iconBytes(icon).equals(iconBytes(expectedIcons[i]!.data)),
+  )
+)
+  throw Error("Embedded Windows icon verification failed after SEA injection");
 
 const readme = `크레이지 먕케이드 / crazy myangcade
 
