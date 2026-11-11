@@ -1,6 +1,6 @@
 # crazy myangcade · 크레이지 먕케이드
 
-**[⬇ Windows 게임 ZIP 다운로드 (약 56MB)](https://raw.githubusercontent.com/ahngroot/crazy-arcade/main/crazy-myangcade-windows-x64.zip)**
+**[⬇ Windows 게임 ZIP 다운로드 (약 59MiB)](https://raw.githubusercontent.com/ahngroot/crazy-arcade/main/crazy-myangcade-windows-x64.zip)**
 
 승인된 파스텔 색감이 모든 맵에 적용됩니다. 바닥·상자·벽·장식은 부드럽게 밝히고 캐릭터·물풍선·아이템·물줄기는 기존 색상을 유지합니다. [색감 비교](docs/map-palette.md)를 참고하세요.
 

@@ -1,4 +1,5 @@
 import type { Position, PracticeState, Team, Tile } from "./index.js";
+import { GAME_CONFIG as C } from "./index.js";
 
 /** Data-only catalogue. Add a row layout here to add it to both modes' random rotation. */
 export interface ArenaDefinition {
@@ -192,15 +193,31 @@ const neighbors = (pos: Position) =>
     [0, -1],
   ].map(([dx, dy]) => ({ x: pos.x + dx, y: pos.y + dy }));
 export function arenaSpawnCells(map: readonly Tile[][]): Position[] {
+  // A 3–5-cell floor-only route must lead outside the starting balloon's
+  // cross. Counting adjacent floors alone accepts fatal two-cell pockets or
+  // the middle of a three-cell straight corridor.
+  const hasEscape = (x: number, y: number) => {
+    const queue = [{ x, y, steps: 0 }];
+    const seen = new Set([`${x},${y}`]);
+    for (const p of queue) {
+      const inBlast =
+        (p.x === x && Math.abs(p.y - y) <= C.initialRange) ||
+        (p.y === y && Math.abs(p.x - x) <= C.initialRange);
+      if (p.steps >= 2 && !inBlast) return true;
+      if (p.steps === 4) continue;
+      for (const n of neighbors(p)) {
+        const key = `${n.x},${n.y}`;
+        if (map[n.y]?.[n.x] !== "floor" || seen.has(key)) continue;
+        seen.add(key);
+        queue.push({ ...n, steps: p.steps + 1 });
+      }
+    }
+    return false;
+  };
   const floors: Position[] = [];
   map.forEach((row, y) =>
     row.forEach((tile, x) => {
-      if (
-        y > 0 &&
-        tile === "floor" &&
-        neighbors({ x, y }).filter((n) => map[n.y]?.[n.x] === "floor").length >=
-          1
-      )
+      if (y > 0 && tile === "floor" && hasEscape(x, y))
         floors.push({ x: x + 0.5, y: y + 0.5 });
     }),
   );

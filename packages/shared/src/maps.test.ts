@@ -23,7 +23,7 @@ it("has seven extensible 15x13 themed layouts with floor, fixed obstacles and de
     expect(map.every((row) => row.length === C.columns)).toBe(true);
     for (const tile of ["floor", "wall", "crate"])
       expect(map.flat()).toContain(tile);
-    expect(arenaSpawnCells(map).length).toBeGreaterThanOrEqual(8);
+    expect(arenaSpawnCells(map).length).toBeGreaterThanOrEqual(4);
   }
 });
 it("starts both players on separate, movable empty tiles in the same eventual reachable region for every map and many seeds", () => {
@@ -93,7 +93,9 @@ it("varies spawn positions within each layout without mutating registry data", (
       positions.add(JSON.stringify(s.players[0].position));
       s.map[0][0] = "floor";
     }
-    expect(positions.size).toBeGreaterThan(4);
+    expect(positions.size).toBeGreaterThanOrEqual(
+      Math.min(5, arenaSpawnCells(createArenaMap(arena)).length),
+    );
   }
   expect(JSON.stringify(ARENAS)).toBe(source);
 });
@@ -137,5 +139,65 @@ it("retains the selected arena on death and respawns at base stats on a safe flo
       C.movementTilesPerSecond,
     ]);
     expect(p.inventory).toEqual([]);
+  }
+});
+
+it("rejects tiny pockets and trapped corridor middles, but accepts straight and bent escape routes", () => {
+  const cells = (rows: string[]) =>
+    arenaSpawnCells(
+      rows.map((row) =>
+        [...row].map((c) =>
+          c === "." ? "floor" : c === "b" ? "crate" : "wall",
+        ),
+      ),
+    );
+  expect(cells(["wwwww", "w..ww", "wwwww"])).toEqual([]);
+  expect(cells(["wwwww", "w.b.w", "wwwww"])).toEqual([]);
+  expect(cells(["wwwww", "w...w", "wwwww"])).toEqual([
+    { x: 1.5, y: 1.5 },
+    { x: 3.5, y: 1.5 },
+  ]);
+  expect(cells(["wwww", "w..w", "ww.w", "wwww"])).toEqual([
+    { x: 1.5, y: 1.5 },
+    { x: 2.5, y: 2.5 },
+  ]);
+  expect(cells(["www", "w.w", "w.w", "w.w", "www"])).toHaveLength(2);
+});
+
+it("gives every selectable start a floor-only escape within four steps on all seven maps", () => {
+  for (const arena of ARENAS) {
+    const map = createArenaMap(arena);
+    for (const start of arenaSpawnCells(map)) {
+      const x = Math.floor(start.x),
+        y = Math.floor(start.y);
+      const queue = [{ x, y, depth: 0 }];
+      const seen = new Set([`${x},${y}`]);
+      let safe = false;
+      for (const p of queue) {
+        if (
+          p.depth >= 2 &&
+          !(
+            (p.x === x && Math.abs(p.y - y) <= C.initialRange) ||
+            (p.y === y && Math.abs(p.x - x) <= C.initialRange)
+          )
+        )
+          safe = true;
+        if (p.depth === 4) continue;
+        for (const [dx, dy] of [
+          [1, 0],
+          [-1, 0],
+          [0, 1],
+          [0, -1],
+        ]) {
+          const nx = p.x + dx,
+            ny = p.y + dy,
+            key = `${nx},${ny}`;
+          if (map[ny]?.[nx] !== "floor" || seen.has(key)) continue;
+          seen.add(key);
+          queue.push({ x: nx, y: ny, depth: p.depth + 1 });
+        }
+      }
+      expect(safe, `${arena.id}: ${x},${y}`).toBe(true);
+    }
   }
 });
