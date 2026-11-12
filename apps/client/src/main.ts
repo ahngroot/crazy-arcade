@@ -146,6 +146,7 @@ function updateGameHud(state: PracticeState) {
     button.textContent = self?.ready ? "재대결 준비 중" : "재대결 준비";
   }
   for (const player of state.players) {
+    if (player.practiceOpponent) continue;
     const panel = document.querySelector<HTMLElement>(
       `[data-player="${player.id}"]`,
     )!;

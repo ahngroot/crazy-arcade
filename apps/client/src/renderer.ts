@@ -20,6 +20,7 @@ import { PresentationTracker, type PresentationEvent } from "./presentation";
 import { arcadeAudio } from "./audio";
 import { balloonTexture } from "./balloon-skins";
 import { BALLOON_ART } from "./balloon-art";
+import { pirateDisplaySize, pirateTexture } from "./pirate-art";
 
 type Actor = {
   image: Phaser.GameObjects.Image;
@@ -398,9 +399,13 @@ export class GameRenderer {
     const trappedKey = `art-trapped${suffix}`;
     const foamKey = `art-trapped-white${suffix}`;
     const normalCharacter =
-      p.characterId !== undefined && pose !== "trapped" && !dying;
+      (p.practiceOpponent || p.characterId !== undefined) &&
+      pose !== "trapped" &&
+      !dying;
     const size = normalCharacter
-      ? characterDisplaySize[p.characterId!]
+      ? p.practiceOpponent
+        ? pirateDisplaySize
+        : characterDisplaySize[p.characterId!]
       : undefined;
     const playerWidth = size?.width ?? ART.playerWidth;
     const playerHeight = size?.height ?? ART.playerHeight;
@@ -409,15 +414,17 @@ export class GameRenderer {
       p.id,
       pose === "trapped"
         ? trappedKey
-        : dying
-          ? `art-prone-${p.characterId ?? 0}`
-          : p.characterId === undefined
-            ? keyPlayer(p.team, pose, facing, frame)
-            : characterTexture(
-                p.characterId,
-                facing,
-                pose === "walk" ? frame : 0,
-              ),
+        : p.practiceOpponent
+          ? pirateTexture(dying ? "down" : facing)
+          : dying
+            ? `art-prone-${p.characterId ?? 0}`
+            : p.characterId === undefined
+              ? keyPlayer(p.team, pose, facing, frame)
+              : characterTexture(
+                  p.characterId,
+                  facing,
+                  pose === "walk" ? frame : 0,
+                ),
       playerWidth,
       ART.playerHeight,
     );

@@ -13,6 +13,7 @@ import { arcadeAudio } from "./audio";
 import { createStartOverlay, startCue, START_MESSAGE_MS } from "./countdown";
 import { selectedCharacter } from "./character-selection";
 import { selectedBalloon } from "./balloon-selection";
+import { addPracticeOpponent, roamingOpponent } from "./practice-opponent";
 
 const GAME_KEYS = new Set([
   "ArrowUp",
@@ -150,12 +151,15 @@ export function mountGame(
     observedView: RoomView | null = null;
   const characterId = selectedCharacter();
   const balloonSkinId = selectedBalloon();
+  let opponentInput = roamingOpponent();
   const solo = () => {
     const seed = crypto.getRandomValues(new Uint32Array(1))[0];
     const state = createArenaPractice(seed, previousSoloArenaId);
     previousSoloArenaId = state.arenaId;
     state.players[0].characterId = characterId;
     state.players[0].balloonSkinId = balloonSkinId;
+    addPracticeOpponent(state);
+    opponentInput = roamingOpponent();
     return state;
   };
   let state = session?.initial ?? solo(),
@@ -217,7 +221,11 @@ export function mountGame(
         keyboard.consumeActions();
       } else if (!waiting && !document.hidden) {
         const before = state.tick;
-        stepPractice(state, [keyboard.input()], Math.min(delta, C.maxFrameMs));
+        stepPractice(
+          state,
+          () => [keyboard.input(), opponentInput(state)],
+          Math.min(delta, C.maxFrameMs),
+        );
         // Preserve fast presses until a fixed simulation step actually consumes them.
         if (state.tick !== before) keyboard.consumeActions();
       }

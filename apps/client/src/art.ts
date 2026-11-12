@@ -18,6 +18,7 @@ import { balloonSkins, balloonTexture } from "./balloon-skins";
 import speedUrl from "./assets/speed.png";
 import arenaTilesUrl from "./assets/arena-tiles.png";
 import arenaLandmarksUrl from "./assets/arena-landmarks.png";
+import { installPirateArt } from "./pirate-art";
 
 const proneImage = new Image();
 const selfArrowImage = new Image();
@@ -1064,6 +1065,7 @@ export function installArt(
   // Use the approved Uni +10% height for every character. Cap horizontal
   // extent separately so wider silhouettes still clear a one-tile corridor.
   const commonHeight = frontHeights[1] * characterClearanceScale[1] * 1.1;
+  installPirateArt(scene, commonHeight);
   for (let id = 0; id < 13; id++) {
     const scale = commonHeight / frontHeights[id];
     characterDisplaySize[id] = {

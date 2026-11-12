@@ -315,7 +315,7 @@ export function mountRendererFixture(parent: HTMLElement, playerId = "p1") {
         .filter(
           (obj): obj is Phaser.GameObjects.Image =>
             obj instanceof Phaser.GameObjects.Image &&
-            /art-(character|direction|trapped|trap-help|prone)/.test(
+            /art-(character|direction|practice-pirate|trapped|trap-help|prone)/.test(
               obj.texture.key,
             ),
         )
@@ -341,7 +341,7 @@ export function mountRendererFixture(parent: HTMLElement, playerId = "p1") {
         .filter(
           (o): o is Phaser.GameObjects.Image =>
             o instanceof Phaser.GameObjects.Image &&
-            /^art-(character|direction)-/.test(o.texture.key) &&
+            /^art-(character|direction|practice-pirate)-/.test(o.texture.key) &&
             o.visible,
         )
         .map((o) => {

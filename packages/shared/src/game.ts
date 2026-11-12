@@ -39,6 +39,8 @@ export interface LocalInput {
   turnId?: number;
 }
 export interface PracticePlayer {
+  /** Local practice-only appearance; not a selectable online character. */
+  practiceOpponent?: boolean;
   balloonSkinId?: number;
   characterId?: number;
   id: string;
@@ -750,7 +752,7 @@ function tick(s: PracticeState, inputs: readonly LocalInput[]) {
       p.moving = false;
       continue;
     }
-    if (s.time < (p.pickupBlockedUntil ?? 0)) continue;
+    if (p.practiceOpponent || s.time < (p.pickupBlockedUntil ?? 0)) continue;
     s.items = s.items.filter((item) => {
       if (item.availableAt > s.time || !sameCell(p.position, item)) return true;
       return !collectItem(p, item.kind);
@@ -761,14 +763,14 @@ function tick(s: PracticeState, inputs: readonly LocalInput[]) {
 /** Fixed-step simulation; accepts elapsed milliseconds and has no browser dependency. */
 export function stepPractice(
   s: PracticeState,
-  inputs: readonly LocalInput[],
+  inputs: readonly LocalInput[] | (() => readonly LocalInput[]),
   elapsedMs: number,
 ) {
   if (!Number.isFinite(elapsedMs) || elapsedMs <= 0) return;
   if (s.round?.phase === "FINISHED") return;
   s.accumulator += elapsedMs;
   while (s.accumulator + 1e-7 >= C.fixedStepMs) {
-    tick(s, inputs);
+    tick(s, typeof inputs === "function" ? inputs() : inputs);
     s.accumulator -= C.fixedStepMs;
     if (s.round && s.time >= s.round.durationMs) {
       s.accumulator = 0;
