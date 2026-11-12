@@ -61,6 +61,53 @@ test("practice pirate uses four source poses at the approved character size", as
   await page
     .locator("#pirate-preview")
     .screenshot({ path: "test-results/practice-pirate-poses.png" });
+  const cycles = await page.evaluate(() => {
+    const f = (window as any).pirateFixture;
+    return ["down", "up", "left", "right"].map(
+      (dir) =>
+        new Set(
+          Array.from({ length: 16 }, (_, i) =>
+            f.characterTextureUrl(`art-practice-pirate-${dir}-walk-${i}`),
+          ),
+        ).size,
+    );
+  });
+  expect(cycles.every((count) => count >= 8)).toBe(true);
+  await page.evaluate(() =>
+    (window as any).pirateFixture.state.players
+      .slice(1)
+      .forEach((p: any) => (p.moving = true)),
+  );
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          (window as any).pirateFixture
+            .actorFrames()
+            .filter(
+              (x: any) => x.key.includes("pirate-") && x.key.includes("-walk-"),
+            ).length,
+      ),
+    )
+    .toBe(4);
+  await page.evaluate(() =>
+    (window as any).pirateFixture.state.players
+      .slice(1)
+      .forEach((p: any) => (p.moving = false)),
+  );
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          (window as any).pirateFixture
+            .actorFrames()
+            .filter(
+              (x: any) =>
+                x.key.includes("pirate-") && !x.key.includes("-walk-"),
+            ).length,
+      ),
+    )
+    .toBe(4);
 });
 
 test("solo mode has a moving, non-attacking opponent and retains it on restart", async ({

@@ -415,7 +415,10 @@ export class GameRenderer {
       pose === "trapped"
         ? trappedKey
         : p.practiceOpponent
-          ? pirateTexture(dying ? "down" : facing)
+          ? pirateTexture(
+              dying ? "down" : facing,
+              !dying && p.moving ? Math.floor(this.clock / 37.5) : undefined,
+            )
           : dying
             ? `art-prone-${p.characterId ?? 0}`
             : p.characterId === undefined

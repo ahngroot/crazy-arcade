@@ -204,7 +204,9 @@ const images = await Promise.all(
     return { ...source, image };
   }),
 );
-export const pirateTexture = (dir: Facing) => `art-practice-pirate-${dir}`;
+export const PIRATE_WALK_FRAMES = 16;
+export const pirateTexture = (dir: Facing, frame?: number) =>
+  `art-practice-pirate-${dir}${frame === undefined ? "" : `-walk-${frame % PIRATE_WALK_FRAMES}`}`;
 export const pirateDisplaySize = { width: 0, height: 0 };
 export function installPirateArt(scene: Phaser.Scene, height: number) {
   let maxWidth = 0;
@@ -237,6 +239,33 @@ export function installPirateArt(scene: Phaser.Scene, height: number) {
     ctx.imageSmoothingQuality = "high";
     ctx.drawImage(crop, x, y, w, h, 72 - (w / h) * 72, 12, (w / h) * 144, 144);
     scene.textures.addCanvas(key, canvas);
+    // Animate the photographed pixels, keeping the face/hat unpainted and
+    // unchanged. Two leg regions swing alternately, blending into the torso.
+    // One foot remains planted while the other lifts. No shared positions or
+    // collision bounds change as part of this presentation-only walk cycle.
+    for (let frame = 0; frame < PIRATE_WALK_FRAMES; frame++) {
+      const walk = document.createElement("canvas");
+      walk.width = 144;
+      walk.height = 160;
+      const c = walk.getContext("2d")!;
+      c.imageSmoothingEnabled = true;
+      const phase = Math.sin((frame / PIRATE_WALK_FRAMES) * Math.PI * 2);
+      const bodyLift = -Math.abs(phase) * 1.2;
+      c.drawImage(canvas, 0, 0, 144, 112, 0, bodyLift, 144, 112);
+      for (let sy = 112; sy < 156; sy++) {
+        const weight = Math.pow((sy - 112) / 44, 2);
+        for (const side of [-1, 1]) {
+          const lift = Math.max(0, phase * side) * 6;
+          const stride =
+            source.dir === "left" || source.dir === "right" ? 8 : 4;
+          const dx = side * phase * stride * weight;
+          const dy = bodyLift * (1 - weight) - lift * weight;
+          const sx = side < 0 ? 0 : 72;
+          c.drawImage(canvas, sx, sy, 72, 1, sx + dx, sy + dy, 72, 1.5);
+        }
+      }
+      scene.textures.addCanvas(pirateTexture(source.dir, frame), walk);
+    }
   }
   pirateDisplaySize.height = (height * 160) / 144;
   pirateDisplaySize.width = Math.min(height, (38 * 144) / maxWidth);
