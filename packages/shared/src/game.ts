@@ -641,7 +641,9 @@ export function defeatPlayer(s: PracticeState, p: PracticePlayer) {
   p.range = C.initialRange;
   p.rangePickups = 0;
   p.ultraPickup = false;
-  p.speed = C.movementTilesPerSecond;
+  p.speed = p.practiceOpponent
+    ? C.practiceOpponentTilesPerSecond
+    : C.movementTilesPerSecond;
   p.shieldUntil = p.powerUntil = p.gloveUntil = p.shoesUntil = p.ghostUntil = 0;
   p.invulnerableUntil = 0;
   p.pickupBlockedUntil = 0;

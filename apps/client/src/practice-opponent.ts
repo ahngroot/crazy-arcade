@@ -25,6 +25,7 @@ export function addPracticeOpponent(s: PracticeState) {
     team: "green",
     characterId: undefined,
     practiceOpponent: true,
+    speed: C.practiceOpponentTilesPerSecond,
     position: { ...spawn },
     spawn: { ...spawn },
     inventory: [],
@@ -73,7 +74,7 @@ export function roamingOpponent() {
       origin = here;
     }
     if (!target) return EMPTY_INPUT;
-    p.speed = C.movementTilesPerSecond;
+    p.speed = C.practiceOpponentTilesPerSecond;
     const dx = target.x - p.position.x,
       dy = target.y - p.position.y;
     return {

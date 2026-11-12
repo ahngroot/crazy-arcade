@@ -103,14 +103,14 @@ const sources = [
     outline: [
       [18, 24],
       [24, 20],
-      [26, 10],
-      [34, 5],
-      [45, 13],
+      [33, 12],
+      [39, 11],
+      [45, 17],
       [48, 21],
       [64, 20],
-      [79, 12],
-      [85, 18],
-      [84, 27],
+      [78, 23],
+      [85, 25],
+      [88, 30],
       [104, 33],
       [114, 43],
       [126, 48],
@@ -231,6 +231,57 @@ export function installPirateArt(scene: Phaser.Scene, height: number) {
     c.closePath();
     c.clip();
     c.drawImage(source.image, 0, 0);
+    // The character is grey/black/white with orange skin. The saturated blue
+    // containers and yellow crate/flag fragments belong to the photo scenery.
+    // Drop those spill pixels before scaling; preserve remaining source RGB.
+    const pixels = c.getImageData(0, 0, crop.width, crop.height);
+    for (let i = 0; i < pixels.data.length; i += 4) {
+      const [r, g, b] = pixels.data.subarray(i, i + 3);
+      const blueScenery = b > 85 && b > r + 32 && b > g + 16 && g > r + 12;
+      const yellowScenery =
+        r > 120 &&
+        g > 95 &&
+        g > b * 1.38 &&
+        r >= g - 5 &&
+        r - g < (g - b) * 0.65;
+      if (blueScenery || yellowScenery) pixels.data[i + 3] = 0;
+    }
+    // Keep only the connected character silhouette, excluding isolated scraps.
+    const seen = new Uint8Array(crop.width * crop.height);
+    let largest: number[] = [];
+    for (let start = 0; start < seen.length; start++) {
+      if (seen[start] || pixels.data[start * 4 + 3] < 16) continue;
+      const component = [start];
+      seen[start] = 1;
+      for (let j = 0; j < component.length; j++) {
+        const at = component[j],
+          x = at % crop.width,
+          y = Math.floor(at / crop.width);
+        for (let dy = -1; dy <= 1; dy++)
+          for (let dx = -1; dx <= 1; dx++) {
+            const nx = x + dx,
+              ny = y + dy,
+              n = ny * crop.width + nx;
+            if (
+              nx < 0 ||
+              nx >= crop.width ||
+              ny < 0 ||
+              ny >= crop.height ||
+              seen[n] ||
+              pixels.data[n * 4 + 3] < 16
+            )
+              continue;
+            seen[n] = 1;
+            component.push(n);
+          }
+      }
+      if (component.length > largest.length) largest = component;
+    }
+    const keep = new Uint8Array(seen.length);
+    for (const at of largest) keep[at] = 1;
+    for (let at = 0; at < keep.length; at++)
+      if (!keep[at]) pixels.data[at * 4 + 3] = 0;
+    c.putImageData(pixels, 0, 0);
     const canvas = document.createElement("canvas");
     canvas.width = 144;
     canvas.height = 160;

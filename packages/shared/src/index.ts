@@ -6,6 +6,7 @@ export const GAME_CONFIG = Object.freeze({
   maxPlayers: 2,
   roundMs: 180_000,
   movementTilesPerSecond: 4,
+  practiceOpponentTilesPerSecond: 2.5,
   balloonFuseMs: 2_500,
   blastMs: 500,
   initialBalloons: 1,

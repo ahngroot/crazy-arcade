@@ -3,6 +3,7 @@ import {
   ARENAS,
   canOccupy,
   createArenaPractice,
+  defeatPlayer,
   EMPTY_INPUT,
   GAME_CONFIG as C,
   stepPractice,
@@ -10,6 +11,25 @@ import {
 import { addPracticeOpponent, roamingOpponent } from "./practice-opponent";
 
 describe("movement-only practice opponent", () => {
+  it("travels 2.5 tiles per second and retains that speed after death", () => {
+    const s = createArenaPractice(42);
+    addPracticeOpponent(s);
+    s.map.forEach((row) => row.fill("floor"));
+    const p = s.players[1];
+    p.position = { x: 7.5, y: 6.5 };
+    const input = roamingOpponent();
+    let distance = 0;
+    expect(p.speed).toBe(2.5);
+    expect(s.players[0].speed).toBe(4);
+    for (let n = 0; n < 60; n++) {
+      const before = { ...p.position };
+      stepPractice(s, () => [EMPTY_INPUT, input(s)], C.fixedStepMs);
+      distance += Math.hypot(p.position.x - before.x, p.position.y - before.y);
+    }
+    expect(distance).toBeCloseTo(2.5, 8);
+    defeatPlayer(s, p);
+    expect(p.speed).toBe(2.5);
+  });
   for (const arena of ARENAS)
     it(`roams safely in ${arena.id}`, () => {
       const s = createArenaPractice(42, undefined, arena.id);
