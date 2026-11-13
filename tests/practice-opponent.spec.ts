@@ -119,7 +119,7 @@ test("practice pirate uses four source poses at the approved character size", as
     .toBe(5);
 });
 
-test("solo mode has a moving, non-attacking opponent and retains it on restart", async ({
+test("solo opponent collects an item, installs a balloon and survives restart", async ({
   page,
 }) => {
   const errors: string[] = [];
@@ -136,10 +136,47 @@ test("solo mode has a moving, non-attacking opponent and retains it on restart",
   });
   await page.locator("#practice").click();
   await expect(page.locator("#game-arena")).toHaveAttribute(
+    "data-ready",
+    "true",
+  );
+  await page.evaluate(() => {
+    const s = (window as any).observedPractice;
+    s.map.forEach((row: any[], y: number) =>
+      row.forEach(
+        (_: any, x: number) =>
+          (row[x] =
+            x === 0 || y === 0 || x === 14 || y === 12 ? "wall" : "floor"),
+      ),
+    );
+    s.map[5][6] = "crate";
+    s.mapRevision++;
+    s.players[0].position = { x: 1.5, y: 1.5 };
+    s.players[1].position = { x: 5.5, y: 5.5 };
+    s.items = [{ id: 9999, kind: "range", x: 5, y: 5, availableAt: 0 }];
+  });
+  await expect(page.locator("#game-arena")).toHaveAttribute(
     "data-start-phase",
     "playing",
     { timeout: 10000 },
   );
+  await expect
+    .poll(() =>
+      page.evaluate(() => (window as any).observedPractice.players[1].range),
+    )
+    .toBe(2);
+  await expect
+    .poll(
+      () =>
+        page.evaluate(() => {
+          const s = (window as any).observedPractice;
+          return s.balloons.some((b: any) => b.owner === s.players[1].id);
+        }),
+      { timeout: 10000 },
+    )
+    .toBe(true);
+  await page
+    .locator("#game-arena")
+    .screenshot({ path: "test-results/practice-opponent-balloon.png" });
   const start = await page.evaluate(() =>
     JSON.stringify((window as any).observedPractice.players[1].position),
   );
@@ -155,10 +192,9 @@ test("solo mode has a moving, non-attacking opponent and retains it on restart",
     return {
       count: s.players.length,
       bot: s.players[1].practiceOpponent,
-      balloons: s.balloons.length,
     };
   });
-  expect(state).toEqual({ count: 2, bot: true, balloons: 0 });
+  expect(state).toEqual({ count: 2, bot: true });
   await page
     .getByRole("button", { name: "처음부터 다시", exact: true })
     .click();

@@ -41,6 +41,8 @@ export interface LocalInput {
 export interface PracticePlayer {
   /** Local practice-only appearance; not a selectable online character. */
   practiceOpponent?: boolean;
+  /** Local computer waypoint; clamps the last step after speed upgrades. */
+  practiceTarget?: Position;
   balloonSkinId?: number;
   characterId?: number;
   id: string;
@@ -391,6 +393,17 @@ function moveCardinal(
   if (!p.moving) return;
   p.facing = x ? (x > 0 ? "right" : "left") : y > 0 ? "down" : "up";
   let remaining = (effectiveStats(s, p).speed * dt) / 1000;
+  const waypoint = p.practiceOpponent ? p.practiceTarget : undefined;
+  if (
+    waypoint &&
+    ((x && Math.abs(waypoint.y - p.position.y) < 1e-6) ||
+      (y && Math.abs(waypoint.x - p.position.x) < 1e-6))
+  ) {
+    const distance = x
+      ? (waypoint.x - p.position.x) * x
+      : (waypoint.y - p.position.y) * y;
+    if (distance >= 0) remaining = Math.min(remaining, distance);
+  }
   // Small swept increments keep high speeds/large prediction steps from tunneling.
   let blocked = false;
   while (remaining > 1e-8) {
@@ -575,7 +588,10 @@ export function defeatPlayer(s: PracticeState, p: PracticePlayer) {
   const speedSteps = Math.max(
     0,
     Math.round(
-      (Math.min(p.speed, C.maxSpeed) - C.movementTilesPerSecond) /
+      (Math.min(p.speed, C.maxSpeed) -
+        (p.practiceOpponent
+          ? C.practiceOpponentTilesPerSecond
+          : C.movementTilesPerSecond)) /
         C.speedIncrement,
     ),
   );
@@ -634,6 +650,7 @@ export function defeatPlayer(s: PracticeState, p: PracticePlayer) {
     });
   }
   p.inventory = [];
+  p.practiceTarget = undefined;
   p.moveTarget = undefined;
   p.queuedTurn = undefined;
   p.queuedTurnRemainingMs = undefined;
@@ -754,7 +771,7 @@ function tick(s: PracticeState, inputs: readonly LocalInput[]) {
       p.moving = false;
       continue;
     }
-    if (p.practiceOpponent || s.time < (p.pickupBlockedUntil ?? 0)) continue;
+    if (s.time < (p.pickupBlockedUntil ?? 0)) continue;
     s.items = s.items.filter((item) => {
       if (item.availableAt > s.time || !sameCell(p.position, item)) return true;
       return !collectItem(p, item.kind);
