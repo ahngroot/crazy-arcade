@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import {
   GAME_CONFIG as C,
+  RODUMANI_CHARACTER_ID,
   arenaById,
   type PracticeState,
   type PracticePlayer,
@@ -398,12 +399,14 @@ export class GameRenderer {
           : "";
     const trappedKey = `art-trapped${suffix}`;
     const foamKey = `art-trapped-white${suffix}`;
+    const pirateAppearance =
+      p.practiceOpponent || p.characterId === RODUMANI_CHARACTER_ID;
     const normalCharacter =
-      (p.practiceOpponent || p.characterId !== undefined) &&
+      (pirateAppearance || p.characterId !== undefined) &&
       pose !== "trapped" &&
       !dying;
     const size = normalCharacter
-      ? p.practiceOpponent
+      ? pirateAppearance
         ? pirateDisplaySize
         : characterDisplaySize[p.characterId!]
       : undefined;
@@ -414,7 +417,7 @@ export class GameRenderer {
       p.id,
       pose === "trapped"
         ? trappedKey
-        : p.practiceOpponent
+        : pirateAppearance
           ? pirateTexture(
               dying ? "down" : facing,
               !dying && p.moving ? Math.floor(this.clock / 37.5) : undefined,

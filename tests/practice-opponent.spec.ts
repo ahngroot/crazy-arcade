@@ -33,6 +33,15 @@ test("practice pirate uses four source poses at the approved character size", as
         position: { x: 4.5 + i * 2.5, y: 6 },
       })),
     ];
+    f.state.players.push({
+      ...p,
+      id: "selected-rodumani",
+      characterId: 13,
+      practiceOpponent: false,
+      moving: false,
+      facing: "down",
+      position: { x: 14, y: 6 },
+    });
     f.state.map.forEach((row: any[]) => row.fill("floor"));
     f.state.mapRevision++;
     f.state.items = [];
@@ -48,11 +57,11 @@ test("practice pirate uses four source poses at the approved character size", as
             .filter((x: any) => x.key.startsWith("art-practice-pirate")).length,
       ),
     )
-    .toBe(4);
+    .toBe(5);
   const bounds = await page.evaluate(() =>
     (window as any).pirateFixture.characterVisibleBounds(),
   );
-  expect(bounds).toHaveLength(5);
+  expect(bounds).toHaveLength(6);
   for (const b of bounds) {
     expect(b.bottom - b.top).toBeCloseTo(47.37, 0);
     expect(b.right - b.left).toBeLessThanOrEqual(38.5);
@@ -89,7 +98,7 @@ test("practice pirate uses four source poses at the approved character size", as
             ).length,
       ),
     )
-    .toBe(4);
+    .toBe(5);
   await page.evaluate(() =>
     (window as any).pirateFixture.state.players
       .slice(1)
@@ -107,7 +116,7 @@ test("practice pirate uses four source poses at the approved character size", as
             ).length,
       ),
     )
-    .toBe(4);
+    .toBe(5);
 });
 
 test("solo mode has a moving, non-attacking opponent and retains it on restart", async ({

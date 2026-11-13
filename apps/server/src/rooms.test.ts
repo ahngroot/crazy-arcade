@@ -3,7 +3,7 @@ import { GAME_CONFIG as C } from "@bubble/shared";
 import { RoomService } from "./rooms";
 import { CHARACTERS } from "@bubble/shared";
 
-it("shares all 13 validated appearances without changing player stats and preserves them across resume", () => {
+it("shares every validated appearance without changing player stats and preserves them across resume", () => {
   for (let characterId = 0; characterId < CHARACTERS.length; characterId++) {
     const s = new RoomService(() => 1000);
     const a = s.create("a", "ip", {
@@ -15,7 +15,7 @@ it("shares all 13 validated appearances without changing player stats and preser
     const b = s.join("b", "ip", {
       nickname: "B",
       code: a.room.code,
-      characterId: 12 - characterId,
+      characterId: CHARACTERS.length - 1 - characterId,
     });
     if (!b.ok) throw Error(b.error);
     s.ready("a", true);
@@ -23,7 +23,7 @@ it("shares all 13 validated appearances without changing player stats and preser
     const game = s.current("a")!.game!;
     expect(game.players.map((p) => p.characterId)).toEqual([
       characterId,
-      12 - characterId,
+      CHARACTERS.length - 1 - characterId,
     ]);
     for (const p of game.players) {
       expect([p.speed, p.capacity, p.range]).toEqual([
@@ -43,7 +43,7 @@ it("shares all 13 validated appearances without changing player stats and preser
 });
 
 it("rejects untrusted appearance ids before creating a room", () => {
-  for (const characterId of [-1, 13, 1.5, "2", null, {}, NaN]) {
+  for (const characterId of [-1, CHARACTERS.length, 1.5, "2", null, {}, NaN]) {
     const s = new RoomService();
     expect(
       s.create("a", "ip", { nickname: "A", durationMs: 30000, characterId }).ok,

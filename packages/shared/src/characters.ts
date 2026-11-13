@@ -13,7 +13,9 @@ export const CHARACTERS = [
   "후우",
   "마리드",
   "케피",
+  "로두마니",
 ] as const;
+export const RODUMANI_CHARACTER_ID = 13;
 export function isCharacterId(value: unknown): value is number {
   return (
     typeof value === "number" &&

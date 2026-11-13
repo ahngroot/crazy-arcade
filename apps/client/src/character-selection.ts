@@ -1,5 +1,10 @@
-import { CHARACTERS, isCharacterId } from "@bubble/shared";
+import {
+  CHARACTERS,
+  isCharacterId,
+  RODUMANI_CHARACTER_ID,
+} from "@bubble/shared";
 import atlasUrl from "./assets/characters.png";
+import pirateUrl from "./assets/practice-pirate/volume.png";
 let selected = 0;
 try {
   const saved = Number(localStorage.getItem("myangcade-character") ?? 0);
@@ -7,6 +12,8 @@ try {
 } catch {}
 export const selectedCharacter = () => selected;
 export function characterPortrait(id: number) {
+  if (id === RODUMANI_CHARACTER_ID)
+    return `<span class="character-portrait" aria-hidden="true" style="background-image:url('${pirateUrl}');background-size:200% 200%;background-position:0 0;image-rendering:auto"></span>`;
   return `<span class="character-portrait" aria-hidden="true" style="background-image:url('${atlasUrl}');background-position:${((id % 4) * 100) / 3}% ${(Math.floor(id / 4) * 100) / 3}%"></span>`;
 }
 export function characterPicker() {
