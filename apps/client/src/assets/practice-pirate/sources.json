@@ -15,5 +15,10 @@
     "file": "arcade.png",
     "sha256": "f21d178d606a332b460503b6dcc91345705e7c5cdc583d0a4eecfbc7ea2b7370",
     "method": "Image-tool edit using volume.png, existing characters.png style and original front.png; bright arcade shading; transparent 2x2 front/back/left/right"
+  },
+  "drawnWalkEdit": {
+    "file": "walk.png",
+    "sha256": "cc8c48fd67c887733b25f90b9d19f0baf470c850b236b1f13b6f5326ebb2bad3",
+    "method": "Image-tool redrawn 4x4 full-body walk sheet using arcade.png identity and characters.png style; rows front/back/left/right, four complete poses per row; both boots drawn"
   }
 }

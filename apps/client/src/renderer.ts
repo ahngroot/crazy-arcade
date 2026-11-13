@@ -21,7 +21,11 @@ import { PresentationTracker, type PresentationEvent } from "./presentation";
 import { arcadeAudio } from "./audio";
 import { balloonTexture } from "./balloon-skins";
 import { BALLOON_ART } from "./balloon-art";
-import { pirateDisplaySize, pirateTexture } from "./pirate-art";
+import {
+  pirateDisplaySize,
+  pirateTexture,
+  PIRATE_WALK_FRAME_MS,
+} from "./pirate-art";
 
 type Actor = {
   image: Phaser.GameObjects.Image;
@@ -420,7 +424,9 @@ export class GameRenderer {
         : pirateAppearance
           ? pirateTexture(
               dying ? "down" : facing,
-              !dying && p.moving ? Math.floor(this.clock / 37.5) : undefined,
+              !dying && p.moving
+                ? Math.floor(this.clock / PIRATE_WALK_FRAME_MS)
+                : undefined,
             )
           : dying
             ? `art-prone-${p.characterId ?? 0}`

@@ -392,7 +392,9 @@ export function mountRendererFixture(parent: HTMLElement, playerId = "p1") {
     characterTextureInfo() {
       return scene.textures
         .getTextureKeys()
-        .filter((key) => /^art-(direction|character)-/.test(key))
+        .filter((key) =>
+          /^art-(direction|character|practice-pirate)-/.test(key),
+        )
         .map((key) => {
           const source = scene.textures
             .get(key)
@@ -408,10 +410,12 @@ export function mountRendererFixture(parent: HTMLElement, playerId = "p1") {
             footHash = 2166136261,
             top = source.height,
             bottom = 0,
-            edgePixels = 0;
+            edgePixels = 0,
+            footPixels = 0;
           for (let i = 0; i < pixels.length; i += 4) {
             if (pixels[i + 3] > 80) {
               visible++;
+              if (Math.floor(i / 4 / source.width) >= 134) footPixels++;
               const x = (i / 4) % source.width;
               const y = Math.floor(i / 4 / source.width);
               top = Math.min(top, y);
@@ -435,6 +439,7 @@ export function mountRendererFixture(parent: HTMLElement, playerId = "p1") {
             height: bottom - top + 1,
             bottom,
             edgePixels,
+            footPixels,
           };
         });
     },

@@ -75,13 +75,28 @@ test("practice pirate uses four source poses at the approved character size", as
     return ["down", "up", "left", "right"].map(
       (dir) =>
         new Set(
-          Array.from({ length: 16 }, (_, i) =>
+          Array.from({ length: 4 }, (_, i) =>
             f.characterTextureUrl(`art-practice-pirate-${dir}-walk-${i}`),
           ),
         ).size,
     );
   });
-  expect(cycles.every((count) => count >= 8)).toBe(true);
+  expect(cycles.every((count) => count === 4)).toBe(true);
+  const poses = await page.evaluate(() =>
+    (window as any).pirateFixture
+      .characterTextureInfo()
+      .filter(
+        (p: any) =>
+          p.key.includes("practice-pirate") && p.key.includes("-walk-"),
+      ),
+  );
+  expect(poses).toHaveLength(16);
+  for (const pose of poses) {
+    expect(pose.edgePixels, pose.key).toBe(0);
+    expect(pose.footPixels, pose.key).toBeGreaterThan(70);
+    expect(pose.height, pose.key).toBeGreaterThanOrEqual(142);
+  }
+
   await page.evaluate(() =>
     (window as any).pirateFixture.state.players
       .slice(1)
