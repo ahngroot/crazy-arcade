@@ -10,5 +10,10 @@
     "file": "volume.png",
     "sha256": "7ceb0999b7142daad9a0ce76aef9716a46864c13bddfbb807e6601d5a89edee6",
     "method": "Image-tool edit of four user-provided reference photos; 2x2 front/back/left/right; transparent background; not pixel-identical"
+  },
+  "arcadeEdit": {
+    "file": "arcade.png",
+    "sha256": "f21d178d606a332b460503b6dcc91345705e7c5cdc583d0a4eecfbc7ea2b7370",
+    "method": "Image-tool edit using volume.png, existing characters.png style and original front.png; bright arcade shading; transparent 2x2 front/back/left/right"
   }
 }

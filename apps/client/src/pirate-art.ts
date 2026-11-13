@@ -1,11 +1,11 @@
 import type Phaser from "phaser";
 import type { Facing } from "@bubble/shared";
-import volumeUrl from "./assets/practice-pirate/volume.png";
+import arcadeUrl from "./assets/practice-pirate/arcade.png";
 
 // The user's photographs remain in assets/practice-pirate for reference.
-// This edited 2x2 sheet adds dimensional lighting; it is not a live 3D model.
+// This edited 2x2 sheet matches the existing arcade palette and simple shading.
 const image = new Image();
-image.src = volumeUrl;
+image.src = arcadeUrl;
 await image.decode();
 const views = (["down", "up", "left", "right"] as const).map((dir, index) => {
   const col = index % 2,

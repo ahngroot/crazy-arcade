@@ -4,7 +4,7 @@ import {
   RODUMANI_CHARACTER_ID,
 } from "@bubble/shared";
 import atlasUrl from "./assets/characters.png";
-import pirateUrl from "./assets/practice-pirate/volume.png";
+import pirateUrl from "./assets/practice-pirate/arcade.png";
 let selected = 0;
 try {
   const saved = Number(localStorage.getItem("myangcade-character") ?? 0);
